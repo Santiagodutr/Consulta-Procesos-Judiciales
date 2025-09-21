@@ -105,3 +105,7 @@ tmp/
 temp/
 FRONT-END-WEB/.env.local
 BACKEND/.env.example
+BACKEND/test-auth-complete.js
+BACKEND/test-diagnostics.js
+BACKEND/test-simple.js
+BACKEND/test-step-by-step.js
