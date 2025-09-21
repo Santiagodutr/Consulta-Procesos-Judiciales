@@ -48,24 +48,56 @@ CREATE TABLE users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Judicial processes table
+-- Judicial processes table (based on Rama Judicial portal structure)
 CREATE TABLE judicial_processes (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    process_number VARCHAR(50) UNIQUE NOT NULL,
-    court_name VARCHAR(255) NOT NULL,
-    process_type VARCHAR(100) NOT NULL,
-    subject_matter TEXT NOT NULL,
-    plaintiff VARCHAR(255) NOT NULL,
-    defendant VARCHAR(255) NOT NULL,
+    numero_radicacion VARCHAR(50) UNIQUE NOT NULL,
+    fecha_radicacion DATE,
+    fecha_ultima_actuacion TIMESTAMP WITH TIME ZONE,
+    fecha_consulta TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    fecha_replicacion_datos TIMESTAMP WITH TIME ZONE,
+    
+    -- Court and jurisdiction info
+    despacho VARCHAR(255) NOT NULL,
+    departamento VARCHAR(100),
+    ponente VARCHAR(255),
+    ubicacion_expediente VARCHAR(255),
+    
+    -- Case classification
+    tipo_proceso VARCHAR(100),
+    clase_proceso VARCHAR(150),
+    subclase_proceso VARCHAR(150),
+    tipo_recurso VARCHAR(100),
+    contenido_radicacion TEXT,
+    
+    -- Process parties
+    demandante TEXT NOT NULL,
+    demandado TEXT NOT NULL,
+    apoderado_demandante TEXT,
+    apoderado_demandado TEXT,
+    otros_sujetos_procesales JSONB,
+    
+    -- Process status and metadata  
     status process_status DEFAULT 'active',
-    start_date DATE,
-    last_update TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    next_hearing_date TIMESTAMP WITH TIME ZONE,
-    case_summary TEXT,
+    es_privado BOOLEAN DEFAULT false,
+    cantidad_folios INTEGER,
     portal_url TEXT,
-    is_monitored BOOLEAN DEFAULT true,
+    
+    -- Monitoring and user association
+    is_monitored BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Search optimization
+    search_vector tsvector GENERATED ALWAYS AS (
+        to_tsvector('spanish', 
+            coalesce(numero_radicacion, '') || ' ' ||
+            coalesce(demandante, '') || ' ' ||
+            coalesce(demandado, '') || ' ' ||
+            coalesce(despacho, '') || ' ' ||
+            coalesce(tipo_proceso, '')
+        )
+    ) STORED
 );
 
 -- User processes relationship table
@@ -81,30 +113,87 @@ CREATE TABLE user_processes (
     UNIQUE(user_id, process_id)
 );
 
--- Process activities table
+-- Process activities/actuaciones table (based on portal structure)
 CREATE TABLE process_activities (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     process_id UUID REFERENCES judicial_processes(id) ON DELETE CASCADE,
-    activity_type activity_type NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    activity_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    document_url TEXT,
+    id_actuacion BIGINT, -- From portal API
+    cons_actuacion INTEGER,
+    
+    -- Activity details
+    fecha_actuacion TIMESTAMP WITH TIME ZONE NOT NULL,
+    actuacion VARCHAR(255) NOT NULL,
+    anotacion TEXT,
+    
+    -- Timing information  
+    fecha_inicio_termino TIMESTAMP WITH TIME ZONE,
+    fecha_finaliza_termino TIMESTAMP WITH TIME ZONE,
+    fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Additional metadata
+    codigo_regla VARCHAR(50),
+    con_documentos BOOLEAN DEFAULT false,
+    cant_folios INTEGER DEFAULT 0,
+    
+    -- System fields
     is_new BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Process documents table
+-- Process subjects/sujetos procesales table (based on portal structure)
+CREATE TABLE process_subjects (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    process_id UUID REFERENCES judicial_processes(id) ON DELETE CASCADE,
+    
+    -- Portal API fields
+    id_sujeto_proceso BIGINT,
+    nombre_sujeto VARCHAR(255) NOT NULL,
+    tipo_sujeto VARCHAR(100) NOT NULL, -- DEMANDANTE, DEMANDADO, etc
+    
+    -- Person details
+    identificacion VARCHAR(50),
+    tipo_identificacion VARCHAR(50),
+    nombre_completo TEXT,
+    
+    -- Legal representation
+    apoderado VARCHAR(255),
+    tiene_apoderado BOOLEAN DEFAULT false,
+    
+    -- Contact information (if available)
+    email VARCHAR(100),
+    telefono VARCHAR(20),
+    direccion TEXT,
+    ciudad VARCHAR(100),
+    
+    -- System fields
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Process documents table (based on portal structure)
 CREATE TABLE process_documents (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     process_id UUID REFERENCES judicial_processes(id) ON DELETE CASCADE,
-    document_name VARCHAR(255) NOT NULL,
-    document_type VARCHAR(50) NOT NULL,
-    file_url TEXT NOT NULL,
-    file_size BIGINT,
+    actuacion_id UUID REFERENCES process_activities(id) ON DELETE CASCADE,
+    
+    -- Document details from portal
+    id_documento BIGINT,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    tipo_documento VARCHAR(100),
+    url_descarga TEXT,
+    
+    -- File information
+    tamano_archivo BIGINT,
+    extension_archivo VARCHAR(10),
+    fecha_documento TIMESTAMP WITH TIME ZONE,
+    
+    -- Access control
     uploaded_by UUID REFERENCES users(id),
     is_downloaded BOOLEAN DEFAULT false,
+    is_public BOOLEAN DEFAULT true,
+    
+    -- System fields  
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -174,14 +263,18 @@ CREATE TABLE email_verification_tokens (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_document_number ON users(document_number);
 CREATE INDEX idx_users_company_id ON users(company_id);
-CREATE INDEX idx_judicial_processes_process_number ON judicial_processes(process_number);
+CREATE INDEX idx_judicial_processes_numero_radicacion ON judicial_processes(numero_radicacion);
 CREATE INDEX idx_judicial_processes_status ON judicial_processes(status);
 CREATE INDEX idx_judicial_processes_is_monitored ON judicial_processes(is_monitored);
 CREATE INDEX idx_user_processes_user_id ON user_processes(user_id);
 CREATE INDEX idx_user_processes_process_id ON user_processes(process_id);
 CREATE INDEX idx_process_activities_process_id ON process_activities(process_id);
-CREATE INDEX idx_process_activities_activity_date ON process_activities(activity_date);
+CREATE INDEX idx_process_activities_fecha_actuacion ON process_activities(fecha_actuacion);
+CREATE INDEX idx_process_subjects_process_id ON process_subjects(process_id);
+CREATE INDEX idx_process_subjects_tipo_sujeto ON process_subjects(tipo_sujeto);
+CREATE INDEX idx_process_subjects_identificacion ON process_subjects(identificacion);
 CREATE INDEX idx_process_documents_process_id ON process_documents(process_id);
+CREATE INDEX idx_process_documents_actuacion_id ON process_documents(actuacion_id);
 CREATE INDEX idx_consultation_history_user_id ON consultation_history(user_id);
 CREATE INDEX idx_consultation_history_process_id ON consultation_history(process_id);
 CREATE INDEX idx_consultation_history_created_at ON consultation_history(created_at);
@@ -221,6 +314,8 @@ ALTER TABLE scraping_jobs ENABLE ROW LEVEL SECURITY;
 -- Users can read/update their own profile
 CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
+-- Allow user registration (INSERT operations for new users)
+CREATE POLICY "Allow user registration" ON users FOR INSERT WITH CHECK (true);
 
 -- Company members can view their company
 CREATE POLICY "Company members can view company" ON companies FOR SELECT 
@@ -248,31 +343,72 @@ USING (user_id = auth.uid());
 CREATE POLICY "Users can update their notifications" ON notifications FOR UPDATE 
 USING (user_id = auth.uid());
 
+-- PUBLIC ACCESS POLICIES (for judicial consultation system)
+-- Allow public read access to non-private processes
+CREATE POLICY "Public access to non-private processes" ON judicial_processes FOR SELECT 
+USING (es_privado = false OR es_privado IS NULL);
+
+-- Allow public read access to activities of non-private processes
+CREATE POLICY "Public access to activities of non-private processes" ON process_activities FOR SELECT 
+USING (process_id IN (SELECT id FROM judicial_processes WHERE es_privado = false OR es_privado IS NULL));
+
+-- Allow public read access to subjects of non-private processes
+CREATE POLICY "Public access to subjects of non-private processes" ON process_subjects FOR SELECT 
+USING (process_id IN (SELECT id FROM judicial_processes WHERE es_privado = false OR es_privado IS NULL));
+
+-- Allow public read access to documents of non-private processes
+CREATE POLICY "Public access to documents of non-private processes" ON process_documents FOR SELECT 
+USING (is_public = true AND process_id IN (SELECT id FROM judicial_processes WHERE es_privado = false OR es_privado IS NULL));
+
+-- Allow service role to insert/update processes (for scraping)
+CREATE POLICY "Service role can manage processes" ON judicial_processes FOR ALL 
+USING (true);
+
+CREATE POLICY "Service role can manage activities" ON process_activities FOR ALL 
+USING (true);
+
+CREATE POLICY "Service role can manage subjects" ON process_subjects FOR ALL 
+USING (true);
+
+CREATE POLICY "Service role can manage documents" ON process_documents FOR ALL 
+USING (true);
+
+-- Allow logging consultations (both authenticated and anonymous)
+CREATE POLICY "Allow consultation logging" ON consultation_history FOR INSERT 
+WITH CHECK (true);
+
 -- Functions for common operations
 CREATE OR REPLACE FUNCTION get_user_processes(user_uuid UUID)
 RETURNS TABLE (
-    process_id UUID,
-    process_number VARCHAR,
-    court_name VARCHAR,
-    process_type VARCHAR,
-    status process_status,
-    role VARCHAR,
-    last_update TIMESTAMP WITH TIME ZONE
+    id UUID,
+    numero_radicacion VARCHAR(100),
+    despacho VARCHAR(200),
+    tipo_proceso VARCHAR(100),
+    fecha_inicio DATE,
+    ultima_actualizacion TIMESTAMP WITH TIME ZONE,
+    estado VARCHAR(50),
+    es_favorito BOOLEAN
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
         jp.id,
-        jp.process_number,
-        jp.court_name,
-        jp.process_type,
-        jp.status,
-        up.role,
-        jp.last_update
+        jp.numero_radicacion,
+        jp.despacho,
+        jp.tipo_proceso,
+        jp.fecha_inicio,
+        jp.updated_at as ultima_actualizacion,
+        jp.estado,
+        COALESCE((uf.process_id IS NOT NULL), false) as es_favorito
     FROM judicial_processes jp
-    INNER JOIN user_processes up ON jp.id = up.process_id
-    WHERE up.user_id = user_uuid
-    ORDER BY jp.last_update DESC;
+    LEFT JOIN user_favorites uf ON jp.id = uf.process_id AND uf.user_id = user_uuid
+    WHERE jp.id IN (
+        SELECT DISTINCT process_id 
+        FROM process_subjects 
+        WHERE LOWER(nombre) LIKE '%' || LOWER(COALESCE((SELECT email FROM auth.users WHERE id = user_uuid), '')) || '%'
+           OR LOWER(documento) = LOWER(COALESCE((SELECT raw_user_meta_data->>'document' FROM auth.users WHERE id = user_uuid), ''))
+    )
+    ORDER BY jp.updated_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -283,9 +419,9 @@ DECLARE
 BEGIN
     SELECT json_build_object(
         'total_processes', COUNT(*),
-        'active_processes', COUNT(*) FILTER (WHERE jp.status = 'active'),
-        'recent_updates', COUNT(*) FILTER (WHERE jp.last_update > NOW() - INTERVAL '7 days'),
-        'upcoming_hearings', COUNT(*) FILTER (WHERE jp.next_hearing_date > NOW() AND jp.next_hearing_date < NOW() + INTERVAL '30 days')
+        'active_processes', COUNT(*) FILTER (WHERE jp.estado = 'Activo'),
+        'recent_updates', COUNT(*) FILTER (WHERE jp.updated_at > NOW() - INTERVAL '7 days'),
+        'private_processes', COUNT(*) FILTER (WHERE jp.es_privado = true)
     ) INTO result
     FROM judicial_processes jp
     INNER JOIN user_processes up ON jp.id = up.process_id

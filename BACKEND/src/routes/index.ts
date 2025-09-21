@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './auth';
+import judicialRoutes from './judicial';
 // import processRoutes from './processes';
 // import userRoutes from './users';
 // import companyRoutes from './companies';
@@ -12,6 +13,7 @@ const router = Router();
 
 // Mount routes
 router.use('/auth', authRoutes);
+router.use('/judicial', judicialRoutes);
 // router.use('/processes', processRoutes);
 // router.use('/users', userRoutes);
 // router.use('/companies', companyRoutes);
@@ -28,6 +30,7 @@ router.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',
+      judicial: '/api/judicial',
       users: '/api/users',
       processes: '/api/processes',
       companies: '/api/companies',
