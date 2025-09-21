@@ -8,33 +8,24 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const registerSchema = z.object({
   email: z.string().email('Ingrese un email válido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   confirmPassword: z.string(),
-  firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  documentType: z.enum(['CC', 'CE', 'NIT', 'PASSPORT'], {
+  first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
+  document_type: z.enum(['CC', 'CE', 'NIT', 'passport'], {
     errorMap: () => ({ message: 'Seleccione un tipo de documento válido' })
   }),
-  documentNumber: z.string().min(6, 'El número de documento debe tener al menos 6 caracteres'),
-  phone: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos'),
-  userType: z.enum(['natural', 'juridica', 'empresa'], {
+  document_number: z.string().min(5, 'El número de documento debe tener al menos 5 caracteres'),
+  phone_number: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos').optional(),
+  user_type: z.enum(['natural', 'juridical', 'company'], {
     errorMap: () => ({ message: 'Seleccione un tipo de usuario válido' })
   }),
-  companyName: z.string().optional(),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: 'Debe aceptar los términos y condiciones'
   })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"]
-}).refine((data) => {
-  if (data.userType === 'juridica' || data.userType === 'empresa') {
-    return data.companyName && data.companyName.length >= 2;
-  }
-  return true;
-}, {
-  message: "El nombre de la empresa es requerido",
-  path: ["companyName"]
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -53,7 +44,7 @@ export const RegisterPage: React.FC = () => {
     resolver: zodResolver(registerSchema)
   });
 
-  const watchUserType = watch('userType');
+  const watchUserType = watch('user_type');
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -64,7 +55,7 @@ export const RegisterPage: React.FC = () => {
       await signUp(userData);
       
       toast.success('Cuenta creada exitosamente. Revisa tu email para verificar tu cuenta.');
-      navigate('/verify-email-sent');
+      navigate('/login');
       
     } catch (error: any) {
       toast.error(error.message || 'Error al crear la cuenta');
@@ -102,113 +93,96 @@ export const RegisterPage: React.FC = () => {
           <div className="space-y-4">
             {/* Tipo de Usuario */}
             <div>
-              <label htmlFor="userType" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="user_type" className="block text-sm font-medium text-gray-700">
                 Tipo de Usuario
               </label>
               <select
-                id="userType"
-                {...register('userType')}
+                id="user_type"
+                {...register('user_type')}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Seleccionar tipo</option>
                 <option value="natural">Persona Natural</option>
-                <option value="juridica">Persona Jurídica</option>
-                <option value="empresa">Empresa</option>
+                <option value="juridical">Persona Jurídica</option>
+                <option value="company">Empresa</option>
               </select>
-              {errors.userType && (
-                <p className="mt-1 text-sm text-red-600">{errors.userType.message}</p>
+              {errors.user_type && (
+                <p className="mt-1 text-sm text-red-600">{errors.user_type.message}</p>
               )}
             </div>
 
             {/* Nombres y Apellidos */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
                   Nombres
                 </label>
                 <input
-                  id="firstName"
+                  id="first_name"
                   type="text"
-                  {...register('firstName')}
+                  {...register('first_name')}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Ingrese sus nombres"
                 />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                {errors.first_name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.first_name.message}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
                   Apellidos
                 </label>
                 <input
-                  id="lastName"
+                  id="last_name"
                   type="text"
-                  {...register('lastName')}
+                  {...register('last_name')}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Ingrese sus apellidos"
                 />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                {errors.last_name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.last_name.message}</p>
                 )}
               </div>
             </div>
 
-            {/* Nombre de Empresa (si aplica) */}
-            {(watchUserType === 'juridica' || watchUserType === 'empresa') && (
-              <div>
-                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                  Nombre de la {watchUserType === 'juridica' ? 'Entidad' : 'Empresa'}
-                </label>
-                <input
-                  id="companyName"
-                  type="text"
-                  {...register('companyName')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Ingrese el nombre de la empresa"
-                />
-                {errors.companyName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.companyName.message}</p>
-                )}
-              </div>
-            )}
+
 
             {/* Documento */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="documentType" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="document_type" className="block text-sm font-medium text-gray-700">
                   Tipo de Documento
                 </label>
                 <select
-                  id="documentType"
-                  {...register('documentType')}
+                  id="document_type"
+                  {...register('document_type')}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="">Seleccionar</option>
                   <option value="CC">Cédula de Ciudadanía</option>
                   <option value="CE">Cédula de Extranjería</option>
                   <option value="NIT">NIT</option>
-                  <option value="PASSPORT">Pasaporte</option>
+                  <option value="passport">Pasaporte</option>
                 </select>
-                {errors.documentType && (
-                  <p className="mt-1 text-sm text-red-600">{errors.documentType.message}</p>
+                {errors.document_type && (
+                  <p className="mt-1 text-sm text-red-600">{errors.document_type.message}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="documentNumber" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="document_number" className="block text-sm font-medium text-gray-700">
                   Número de Documento
                 </label>
                 <input
-                  id="documentNumber"
+                  id="document_number"
                   type="text"
-                  {...register('documentNumber')}
+                  {...register('document_number')}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Número sin puntos ni comas"
                 />
-                {errors.documentNumber && (
-                  <p className="mt-1 text-sm text-red-600">{errors.documentNumber.message}</p>
+                {errors.document_number && (
+                  <p className="mt-1 text-sm text-red-600">{errors.document_number.message}</p>
                 )}
               </div>
             </div>
@@ -233,18 +207,18 @@ export const RegisterPage: React.FC = () => {
 
             {/* Teléfono */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Teléfono
+              <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">
+                Teléfono (Opcional)
               </label>
               <input
-                id="phone"
+                id="phone_number"
                 type="tel"
-                {...register('phone')}
+                {...register('phone_number')}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Ej: 3001234567"
               />
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              {errors.phone_number && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone_number.message}</p>
               )}
             </div>
 

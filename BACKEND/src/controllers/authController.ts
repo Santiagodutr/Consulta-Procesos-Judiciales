@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { supabaseService } from '../config/supabase';
 import { logger } from '../utils/logger';
@@ -14,16 +14,21 @@ interface AuthRequest extends Request {
 
 // Helper function to generate JWT tokens
 const generateTokens = (userId: string) => {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+
   const accessToken = jwt.sign(
     { userId },
-    process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    jwtSecret,
+    { expiresIn: '7d' } as any
   );
 
   const refreshToken = jwt.sign(
     { userId, type: 'refresh' },
-    process.env.JWT_SECRET!,
-    { expiresIn: '30d' }
+    jwtSecret,
+    { expiresIn: '30d' } as any
   );
 
   return { accessToken, refreshToken };

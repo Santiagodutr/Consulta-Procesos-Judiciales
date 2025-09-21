@@ -1,7 +1,7 @@
 import { Router } from 'express';
-// import authRoutes from './auth';
-// import userRoutes from './users';
+import authRoutes from './auth';
 // import processRoutes from './processes';
+// import userRoutes from './users';
 // import companyRoutes from './companies';
 // import notificationRoutes from './notifications';
 // import scrapingRoutes from './scraping';
@@ -11,9 +11,9 @@ import { Router } from 'express';
 const router = Router();
 
 // Mount routes
-// router.use('/auth', authRoutes);
-// router.use('/users', userRoutes);
+router.use('/auth', authRoutes);
 // router.use('/processes', processRoutes);
+// router.use('/users', userRoutes);
 // router.use('/companies', companyRoutes);
 // router.use('/notifications', notificationRoutes);
 // router.use('/scraping', scrapingRoutes);
