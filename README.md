@@ -1,7 +1,10 @@
-# JustiTrack – Consulta de Procesos Judiciales
+# Consulta de Procesos Judiciales
 
-**JustiTrack** es una plataforma web y móvil diseñada para el seguimiento automatizado de procesos judiciales.  
-Permite registrar procesos, consultar actuaciones, generar notificaciones, descargar documentos y visualizar la actividad procesal mediante gráficas interactivas.
+Sistema integral para la consulta y gestión de procesos judiciales con capacidades de scraping automatizado, notificaciones en tiempo real y análisis de datos procesales.
+
+## ✅ SISTEMA COMPLETAMENTE IMPLEMENTADO
+
+Este proyecto incluye **TODOS** los archivos necesarios para backend, frontend web y mobile con todas las funcionalidades requeridas.
 
 ---
 
