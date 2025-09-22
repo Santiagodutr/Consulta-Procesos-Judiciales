@@ -19,7 +19,7 @@ class ApiService {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000/api',
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -57,7 +57,10 @@ class ApiService {
   }
 
   private handleError(error: AxiosError<ApiResponse>) {
-    if (error.response) {
+    // Don't show toast errors for judicial consultation endpoints (public)
+    const isJudicialConsultation = error.config?.url?.includes('/judicial/');
+    
+    if (error.response && !isJudicialConsultation) {
       const { status, data } = error.response;
 
       switch (status) {
@@ -99,10 +102,10 @@ class ApiService {
         default:
           toast.error(data?.message || 'An unexpected error occurred.');
       }
-    } else if (error.request) {
+    } else if (error.request && !isJudicialConsultation) {
       // Network error
       toast.error('Network error. Please check your connection.');
-    } else {
+    } else if (!isJudicialConsultation) {
       // Something else happened
       toast.error('An unexpected error occurred.');
     }
@@ -325,6 +328,29 @@ export const companyAPI = {
   
   inviteUser: (email: string, role: string) =>
     apiService.post('/companies/invite', { email, role }),
+};
+
+export const judicialAPI = {
+  consultProcess: (numeroRadicacion: string, soloActivos?: boolean, refresh?: boolean) =>
+    apiService.post('/judicial/consult' + (refresh ? '?refresh=true' : ''), { 
+      numeroRadicacion, 
+      soloActivos 
+    }),
+  
+  searchProcesses: (query: string, params?: any) =>
+    apiService.get('/judicial/search', { q: query, ...params }),
+  
+  getProcessActivities: (numeroRadicacion: string, params?: any) =>
+    apiService.get(`/judicial/${numeroRadicacion}/activities`, params),
+  
+  getProcessSubjects: (numeroRadicacion: string, params?: any) =>
+    apiService.get(`/judicial/${numeroRadicacion}/subjects`, params),
+  
+  getMonitoredProcesses: (params?: any) =>
+    apiService.get('/judicial/monitored', params),
+  
+  monitorProcess: (numeroRadicacion: string) =>
+    apiService.post('/judicial/monitor', { numeroRadicacion }),
 };
 
 export default apiService;

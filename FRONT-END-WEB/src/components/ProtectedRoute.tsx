@@ -34,7 +34,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // If user is authenticated but trying to access auth pages (login, register, etc.)
   if (!requireAuth && user) {
     // Redirect authenticated users away from auth pages
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <>{children}</>;
