@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/apiService.ts';
 
 interface ForgotPasswordFormData {
   email: string;
@@ -11,7 +11,6 @@ interface ForgotPasswordFormData {
 export const ForgotPasswordPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const { resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -25,13 +24,17 @@ export const ForgotPasswordPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      await resetPassword(data.email);
+      const response = await authAPI.forgotPassword(data.email);
       
-      setEmailSent(true);
-      toast.success('Enlace de recuperación enviado a tu correo electrónico');
+      if (response.success) {
+        setEmailSent(true);
+        toast.success(response.message || 'Enlace de recuperación enviado a tu correo electrónico');
+      } else {
+        throw new Error(response.message || 'Error al enviar el enlace de recuperación');
+      }
       
     } catch (error: any) {
-      toast.error(error.message || 'Error al enviar el enlace de recuperación');
+      toast.error(error.response?.data?.message || error.message || 'Error al enviar el enlace de recuperación');
     } finally {
       setIsLoading(false);
     }
@@ -46,10 +49,15 @@ export const ForgotPasswordPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      await resetPassword(email);
-      toast.success('Enlace reenviado exitosamente');
+      const response = await authAPI.forgotPassword(email);
+      
+      if (response.success) {
+        toast.success(response.message || 'Enlace reenviado exitosamente');
+      } else {
+        throw new Error(response.message || 'Error al reenviar el enlace');
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Error al reenviar el enlace');
+      toast.error(error.response?.data?.message || error.message || 'Error al reenviar el enlace');
     } finally {
       setIsLoading(false);
     }

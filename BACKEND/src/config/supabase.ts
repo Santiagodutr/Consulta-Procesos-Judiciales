@@ -181,6 +181,25 @@ class SupabaseService {
     }
   }
 
+  async deleteWhere(table: string, conditions: Record<string, any>) {
+    try {
+      let deleteBuilder = this.supabase.from(table).delete();
+
+      // Apply conditions
+      Object.entries(conditions).forEach(([key, value]) => {
+        deleteBuilder = deleteBuilder.eq(key, value);
+      });
+
+      const { error } = await deleteBuilder;
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      logger.error(`Supabase deleteWhere error in ${table}:`, error);
+      throw error;
+    }
+  }
+
   async upsert(table: string, data: any, conflictColumn?: string) {
     try {
       let upsertBuilder = this.supabase

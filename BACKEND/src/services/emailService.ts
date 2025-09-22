@@ -93,8 +93,7 @@ class EmailService {
     return this.sendEmail(email, 'Verify Your Email Address', html);
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string) {
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  async sendPasswordResetEmail(email: string, resetUrl: string) {
     
     const html = `
       <!DOCTYPE html>
@@ -129,7 +128,7 @@ class EmailService {
               <a href="${resetUrl}" class="button">Reset Password</a>
               <p>Or copy and paste this link in your browser:</p>
               <p><a href="${resetUrl}">${resetUrl}</a></p>
-              <p>This link will expire in 10 minutes for security reasons.</p>
+              <p>This link will expire in 1 hour for security reasons.</p>
             </div>
             <div class="footer">
               <p>If you didn't request a password reset, please ignore this email.</p>

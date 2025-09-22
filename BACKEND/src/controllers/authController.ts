@@ -323,38 +323,104 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response, n
     return next(new AppError('No user found with this email', 404));
   }
 
+  const user = users[0];
+
   // Generate reset token
   const resetToken = crypto.randomBytes(32).toString('hex');
-  const resetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-  // Store reset token (you'd need a password_resets table)
-  // For now, just log
+  // Delete any existing reset tokens for this user
+  await supabaseService.deleteWhere('password_reset_tokens', {
+    user_id: user.id
+  });
+
+  // Store reset token in database
+  await supabaseService.insert('password_reset_tokens', {
+    user_id: user.id,
+    token: resetToken,
+    expires_at: resetExpires,
+    used: false
+  });
+
   logger.info(`Password reset requested for: ${email}`);
 
   try {
-    await emailService.sendPasswordResetEmail(email, resetToken);
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    await emailService.sendPasswordResetEmail(email, resetUrl);
   } catch (error) {
     logger.error('Failed to send password reset email:', error);
+    // Delete the token if email failed to send
+    await supabaseService.deleteWhere('password_reset_tokens', {
+      token: resetToken
+    });
     return next(new AppError('Failed to send reset email', 500));
   }
 
   res.json({
     success: true,
-    message: 'Password reset email sent'
+    message: 'Password reset email sent successfully'
   });
 });
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const { token, new_password } = req.body;
 
-  // Verify reset token (implementation depends on your reset token storage)
-  // For now, just log
-  logger.info(`Password reset attempted with token: ${token}`);
-
-  res.json({
-    success: true,
-    message: 'Password reset successful'
+  // Find the reset token
+  const resetTokens = await supabaseService.select('password_reset_tokens', {
+    filters: { token, used: false }
   });
+
+  if (!resetTokens || resetTokens.length === 0) {
+    return next(new AppError('Invalid or expired reset token', 400));
+  }
+
+  const resetTokenRecord = resetTokens[0];
+
+  // Check if token has expired
+  if (new Date() > new Date(resetTokenRecord.expires_at)) {
+    // Delete expired token
+    await supabaseService.delete('password_reset_tokens', resetTokenRecord.id);
+    return next(new AppError('Reset token has expired', 400));
+  }
+
+  // Get user
+  const users = await supabaseService.select('users', {
+    filters: { id: resetTokenRecord.user_id }
+  });
+
+  if (!users || users.length === 0) {
+    return next(new AppError('User not found', 404));
+  }
+
+  const user = users[0];
+
+  try {
+    // Update password using Supabase Admin API
+    const { error } = await supabaseService.getClient().auth.admin.updateUserById(
+      user.id,
+      { password: new_password }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    // Mark token as used
+    await supabaseService.update('password_reset_tokens', resetTokenRecord.id, {
+      used: true
+    });
+
+    logger.info(`Password reset successful for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Password reset successful'
+    });
+  } catch (error) {
+    logger.error('Password reset error:', error);
+    return next(new AppError('Failed to reset password', 500));
+  }
 });
 
 export const verifyEmail = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {

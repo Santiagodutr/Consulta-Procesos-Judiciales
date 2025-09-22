@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/apiService.ts';
 
 interface ResetPasswordFormData {
   password: string;
@@ -12,9 +12,9 @@ interface ResetPasswordFormData {
 export const ResetPasswordPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
-  const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const navigate = useNavigate();
-  const { signIn } = useAuth();
 
   const {
     register,
@@ -52,21 +52,29 @@ export const ResetPasswordPage: React.FC = () => {
       return;
     }
 
+    if (!token) {
+      toast.error('Token de recuperación no válido');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      // Here you would call your API to reset the password
-      // await resetPasswordWithToken(token, data.password);
+      const response = await authAPI.resetPassword(token, data.password);
       
-      toast.success('Contraseña restablecida exitosamente');
-      
-      // Redirect to login page
-      navigate('/login', { 
-        state: { message: 'Contraseña restablecida. Puedes iniciar sesión con tu nueva contraseña.' }
-      });
+      if (response.success) {
+        toast.success(response.message || 'Contraseña restablecida exitosamente');
+        
+        // Redirect to login page
+        navigate('/login', { 
+          state: { message: 'Contraseña restablecida. Puedes iniciar sesión con tu nueva contraseña.' }
+        });
+      } else {
+        throw new Error(response.message || 'Error al restablecer la contraseña');
+      }
       
     } catch (error: any) {
-      toast.error(error.message || 'Error al restablecer la contraseña');
+      toast.error(error.response?.data?.message || error.message || 'Error al restablecer la contraseña');
     } finally {
       setIsLoading(false);
     }
@@ -169,8 +177,8 @@ export const ResetPasswordPage: React.FC = () => {
                 {...register('password', {
                   required: 'La contraseña es requerida',
                   minLength: {
-                    value: 6,
-                    message: 'La contraseña debe tener al menos 6 caracteres'
+                    value: 8,
+                    message: 'La contraseña debe tener al menos 8 caracteres'
                   },
                   pattern: {
                     value: /^(?=.*[A-Za-z])(?=.*\d)/,
