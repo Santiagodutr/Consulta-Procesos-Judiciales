@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ConsultationResult {
   success: boolean;
@@ -12,6 +12,34 @@ export const HomePage: React.FC = () => {
   const [searchType, setSearchType] = useState<'recent' | 'all'>('recent');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ConsultationResult | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  // Verificar si el usuario está logueado
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      setIsLoggedIn(true);
+      try {
+        setUser(JSON.parse(userData));
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
+
+  // Función para logout
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    setUser(null);
+    // Opcionalmente recargar la página para refrescar el estado
+    window.location.reload();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -394,12 +422,28 @@ export const HomePage: React.FC = () => {
               <button className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors">
                 <span className="text-sm">👁️ Visión</span>
               </button>
-              <button 
-                onClick={() => window.location.href = '/login'}
-                className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors"
-              >
-                <span className="text-sm">👤 Iniciar Sesión</span>
-              </button>
+              
+              {isLoggedIn ? (
+                <>
+                  <button 
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors bg-blue-600"
+                  >
+                    <span className="text-sm">🏠 Dashboard</span>
+                  </button>
+                  <div className="flex items-center space-x-2 px-3 py-2">
+                    <span className="text-sm">👋 Hola, {user?.first_name || 'Usuario'}</span>
+                  </div>
+                </>
+              ) : (
+                <button 
+                  onClick={() => window.location.href = '/login'}
+                  className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+                >
+                  <span className="text-sm">👤 Iniciar Sesión</span>
+                </button>
+              )}
+              
               <button className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors">
                 <span className="text-sm">📋 Servicios</span>
               </button>
@@ -408,6 +452,16 @@ export const HomePage: React.FC = () => {
               <button className="hover:bg-blue-700 px-3 py-2 rounded transition-colors">
                 <span className="text-sm">❓ Ayuda</span>
               </button>
+              
+              {isLoggedIn && (
+                <button 
+                  onClick={handleLogout}
+                  className="hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <span className="text-sm">🚪 Salir</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
