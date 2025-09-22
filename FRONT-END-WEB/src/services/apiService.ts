@@ -18,8 +18,11 @@ class ApiService {
   private client: AxiosInstance;
 
   constructor() {
+    // Configurar la URL base del backend
+    const apiBaseURL = 'http://localhost:8000/api';
+    
     this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
+      baseURL: apiBaseURL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
