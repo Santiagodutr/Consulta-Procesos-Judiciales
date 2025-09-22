@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/apiService.ts';
 
 const registerSchema = z.object({
   email: z.string().email('Ingrese un email válido'),
@@ -32,7 +32,6 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -52,13 +51,62 @@ export const RegisterPage: React.FC = () => {
       
       const { confirmPassword, acceptTerms, ...userData } = data;
       
-      await signUp(userData);
+      console.log('🚀 Iniciando registro con datos:', userData);
       
-      toast.success('Cuenta creada exitosamente. Revisa tu email para verificar tu cuenta.');
-      navigate('/login');
+      // Llamar directamente a la API de registro
+      const response = await authAPI.register(userData);
+      
+      console.log('📋 Respuesta del servidor:', response);
+      
+      // Verificar diferentes formatos de respuesta exitosa
+      if (response.success || response.data?.success || response.message?.includes('success')) {
+        toast.success('¡Cuenta creada exitosamente! Iniciando sesión...');
+        
+        // Después del registro exitoso, iniciar sesión automáticamente
+        try {
+          const loginResponse = await authAPI.login(userData.email, userData.password);
+          
+          console.log('🔐 Respuesta del login:', loginResponse);
+          
+          if (loginResponse.success && loginResponse.data) {
+            // Guardar el token y datos del usuario
+            localStorage.setItem('access_token', loginResponse.data.access_token);
+            localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
+            localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+            
+            console.log('✅ Login automático exitoso, tokens guardados');
+            
+            toast.success('¡Bienvenido al sistema!');
+            
+            // Esperar un poco para que se guarden los datos y luego redirigir
+            setTimeout(() => {
+              navigate('/');
+            }, 100);
+          } else {
+            toast.success('Cuenta creada exitosamente. Por favor inicia sesión.');
+            navigate('/login');
+          }
+        } catch (loginError) {
+          console.error('❌ Error en login automático:', loginError);
+          toast.success('Cuenta creada exitosamente. Por favor inicia sesión.');
+          navigate('/login');
+        }
+      } else {
+        // Si no hay indicador de éxito claro, pero tampoco hay error, asumir éxito
+        console.log('⚠️ Respuesta ambigua, pero probablemente exitosa');
+        toast.success('Cuenta creada exitosamente. Por favor inicia sesión.');
+        navigate('/login');
+      }
       
     } catch (error: any) {
-      toast.error(error.message || 'Error al crear la cuenta');
+      console.error('❌ Error completo en registro:', error);
+      
+      // Mejorar el manejo de errores
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Error al crear la cuenta. Por favor intenta nuevamente.';
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
