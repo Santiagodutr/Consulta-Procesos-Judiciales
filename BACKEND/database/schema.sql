@@ -51,14 +51,21 @@ CREATE TABLE users (
 -- Judicial processes table (based on Rama Judicial portal structure)
 CREATE TABLE judicial_processes (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    numero_radicacion VARCHAR(50) UNIQUE NOT NULL,
-    fecha_radicacion DATE,
-    fecha_ultima_actuacion TIMESTAMP WITH TIME ZONE,
+    
+    -- Portal API fields
+    id_proceso BIGINT, -- Portal's internal process ID
+    id_conexion INTEGER, -- Portal's connection ID
+    numero_radicacion VARCHAR(50) UNIQUE NOT NULL, -- llaveProceso from API
+    
+    -- Date fields from API
+    fecha_radicacion DATE, -- fechaProceso
+    fecha_proceso TIMESTAMP WITH TIME ZONE, -- fechaProceso with time
+    fecha_ultima_actuacion TIMESTAMP WITH TIME ZONE, -- fechaUltimaActuacion
     fecha_consulta TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     fecha_replicacion_datos TIMESTAMP WITH TIME ZONE,
     
     -- Court and jurisdiction info
-    despacho VARCHAR(255) NOT NULL,
+    despacho VARCHAR(500) NOT NULL, -- Increased size for long court names
     departamento VARCHAR(100),
     ponente VARCHAR(255),
     ubicacion_expediente VARCHAR(255),
@@ -70,18 +77,22 @@ CREATE TABLE judicial_processes (
     tipo_recurso VARCHAR(100),
     contenido_radicacion TEXT,
     
-    -- Process parties
+    -- Process parties (from sujetosProcesales field)
     demandante TEXT NOT NULL,
     demandado TEXT NOT NULL,
     apoderado_demandante TEXT,
     apoderado_demandado TEXT,
+    sujetos_procesales TEXT, -- Full sujetosProcesales text from API
     otros_sujetos_procesales JSONB,
     
-    -- Process status and metadata  
-    status process_status DEFAULT 'active',
-    es_privado BOOLEAN DEFAULT false,
-    cantidad_folios INTEGER,
+    -- Process status and metadata from API
+    estado VARCHAR(50) DEFAULT 'Activo', -- Changed from status to estado for Colombian context
+    es_privado BOOLEAN DEFAULT false, -- esPrivado from API
+    cantidad_folios INTEGER, -- cantFilas from API (can be negative)
     portal_url TEXT,
+    
+    -- Additional API fields
+    solo_activos BOOLEAN DEFAULT false, -- SoloActivos parameter
     
     -- Monitoring and user association
     is_monitored BOOLEAN DEFAULT false,
@@ -95,7 +106,8 @@ CREATE TABLE judicial_processes (
             coalesce(demandante, '') || ' ' ||
             coalesce(demandado, '') || ' ' ||
             coalesce(despacho, '') || ' ' ||
-            coalesce(tipo_proceso, '')
+            coalesce(tipo_proceso, '') || ' ' ||
+            coalesce(sujetos_procesales, '')
         )
     ) STORED
 );
@@ -239,6 +251,32 @@ CREATE TABLE scraping_jobs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Consultation parameters and pagination table (from API response)
+CREATE TABLE consultation_parameters (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    numero VARCHAR(50), -- Search number parameter
+    nombre VARCHAR(255), -- Person name parameter
+    tipo_persona VARCHAR(50), -- Person type parameter
+    id_sujeto VARCHAR(50), -- Subject ID parameter
+    ponente VARCHAR(255), -- Ponente parameter
+    clase_proceso VARCHAR(150), -- Process class parameter
+    codificacion_despacho VARCHAR(100), -- Court codification parameter
+    solo_activos BOOLEAN DEFAULT false, -- SoloActivos parameter
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Pagination information table (from API response)
+CREATE TABLE pagination_info (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    consultation_id UUID REFERENCES consultation_parameters(id) ON DELETE CASCADE,
+    cantidad_registros INTEGER, -- Total records count
+    registros_pagina INTEGER, -- Records per page
+    cantidad_paginas INTEGER, -- Total pages count
+    pagina INTEGER, -- Current page
+    paginas INTEGER, -- Alternative pages field
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Password reset tokens table
 CREATE TABLE password_reset_tokens (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -264,8 +302,15 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_document_number ON users(document_number);
 CREATE INDEX idx_users_company_id ON users(company_id);
 CREATE INDEX idx_judicial_processes_numero_radicacion ON judicial_processes(numero_radicacion);
-CREATE INDEX idx_judicial_processes_status ON judicial_processes(status);
+CREATE INDEX idx_judicial_processes_id_proceso ON judicial_processes(id_proceso);
+CREATE INDEX idx_judicial_processes_estado ON judicial_processes(estado);
 CREATE INDEX idx_judicial_processes_is_monitored ON judicial_processes(is_monitored);
+CREATE INDEX idx_judicial_processes_fecha_proceso ON judicial_processes(fecha_proceso);
+CREATE INDEX idx_judicial_processes_departamento ON judicial_processes(departamento);
+CREATE INDEX idx_judicial_processes_es_privado ON judicial_processes(es_privado);
+CREATE INDEX idx_consultation_parameters_numero ON consultation_parameters(numero);
+CREATE INDEX idx_consultation_parameters_nombre ON consultation_parameters(nombre);
+CREATE INDEX idx_pagination_info_consultation_id ON pagination_info(consultation_id);
 CREATE INDEX idx_user_processes_user_id ON user_processes(user_id);
 CREATE INDEX idx_user_processes_process_id ON user_processes(process_id);
 CREATE INDEX idx_process_activities_process_id ON process_activities(process_id);
@@ -421,7 +466,9 @@ BEGIN
         'total_processes', COUNT(*),
         'active_processes', COUNT(*) FILTER (WHERE jp.estado = 'Activo'),
         'recent_updates', COUNT(*) FILTER (WHERE jp.updated_at > NOW() - INTERVAL '7 days'),
-        'private_processes', COUNT(*) FILTER (WHERE jp.es_privado = true)
+        'private_processes', COUNT(*) FILTER (WHERE jp.es_privado = true),
+        'closed_processes', COUNT(*) FILTER (WHERE jp.estado = 'Terminado'),
+        'suspended_processes', COUNT(*) FILTER (WHERE jp.estado = 'Suspendido')
     ) INTO result
     FROM judicial_processes jp
     INNER JOIN user_processes up ON jp.id = up.process_id

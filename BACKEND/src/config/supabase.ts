@@ -181,6 +181,27 @@ class SupabaseService {
     }
   }
 
+  async upsert(table: string, data: any, conflictColumn?: string) {
+    try {
+      let upsertBuilder = this.supabase
+        .from(table)
+        .upsert(data, { 
+          onConflict: conflictColumn,
+          ignoreDuplicates: false 
+        })
+        .select()
+        .single();
+
+      const { data: result, error } = await upsertBuilder;
+
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      logger.error(`Supabase upsert error in ${table}:`, error);
+      throw error;
+    }
+  }
+
   async rpc(functionName: string, params?: any) {
     try {
       const { data, error } = await this.supabase.rpc(functionName, params);

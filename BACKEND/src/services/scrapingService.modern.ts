@@ -3,17 +3,37 @@ import { supabaseService } from '../config/supabase';
 import axios, { AxiosResponse } from 'axios';
 
 export interface ProcessData {
-  // Basic process information
+  // Portal API fields
+  id_proceso?: number;
+  id_conexion?: number;
   numero_radicacion: string;
+  
+  // Date fields
   fecha_radicacion: string;
+  fecha_proceso?: string;
+  fecha_ultima_actuacion?: string;
+  
+  // Court and case info
   despacho: string;
+  departamento?: string;
+  ponente?: string;
+  ubicacion_expediente?: string;
+  tipo_proceso: string;
+  clase_proceso?: string;
+  subclase_proceso?: string;
+  
+  // Parties information
   demandante: string;
   demandado: string;
-  tipo_proceso: string;
+  sujetos_procesales?: string;
+  apoderado_demandante?: string;
+  apoderado_demandado?: string;
   
-  // Additional details
+  // Process metadata
   cantidad_folios?: number;
   es_privado?: boolean;
+  estado?: string;
+  solo_activos?: boolean;
   portal_url?: string;
   
   // Related data
@@ -155,14 +175,30 @@ export class ModernScrapingService {
         }
         
         return {
+          // Portal API fields
+          id_proceso: proceso.idProceso,
+          id_conexion: proceso.idConexion,
           numero_radicacion: proceso.llaveProceso || numeroRadicacion,
+          
+          // Date fields
           fecha_radicacion: proceso.fechaProceso ? proceso.fechaProceso.split('T')[0] : null,
+          fecha_proceso: proceso.fechaProceso,
+          fecha_ultima_actuacion: proceso.fechaUltimaActuacion,
+          
+          // Court and case info
           despacho: proceso.despacho || 'DESPACHO NO DISPONIBLE',
+          departamento: proceso.departamento || null,
+          tipo_proceso: proceso.departamento || 'TIPO NO DISPONIBLE',
+          
+          // Parties information
           demandante: demandante,
           demandado: demandado,
-          tipo_proceso: proceso.departamento || 'TIPO NO DISPONIBLE',
+          sujetos_procesales: proceso.sujetosProcesales || null,
+          
+          // Process metadata
           cantidad_folios: proceso.cantFilas || 0,
           es_privado: proceso.esPrivado === true,
+          estado: 'Activo', // Default state for new processes
           portal_url: `${this.BASE_URL}/Procesos/NumeroRadicacion?numeroRadicacion=${numeroRadicacion}`
         };
       }
@@ -328,22 +364,51 @@ export class ModernScrapingService {
   }
   
   /**
-   * Save scraped process data to database
+   * Save scraped process data to database using upsert
    */
   static async saveProcessData(processData: ProcessData): Promise<string | null> {
     try {
-      // Insert main process record
-      const processRecord = await supabaseService.insert('judicial_processes', {
+      logger.info(`Saving process data to database: ${processData.numero_radicacion}`);
+      
+      // Use upsert to insert or update based on numero_radicacion
+      const processRecord = await supabaseService.upsert('judicial_processes', {
+        // Portal API fields
+        id_proceso: processData.id_proceso,
+        id_conexion: processData.id_conexion,
         numero_radicacion: processData.numero_radicacion,
+        
+        // Date fields
         fecha_radicacion: processData.fecha_radicacion,
+        fecha_proceso: processData.fecha_proceso,
+        fecha_ultima_actuacion: processData.fecha_ultima_actuacion,
+        
+        // Court and case info
         despacho: processData.despacho,
+        departamento: processData.departamento,
+        ponente: processData.ponente,
+        ubicacion_expediente: processData.ubicacion_expediente,
+        tipo_proceso: processData.tipo_proceso,
+        clase_proceso: processData.clase_proceso,
+        subclase_proceso: processData.subclase_proceso,
+        
+        // Parties information
         demandante: processData.demandante,
         demandado: processData.demandado,
-        tipo_proceso: processData.tipo_proceso,
+        sujetos_procesales: processData.sujetos_procesales,
+        apoderado_demandante: processData.apoderado_demandante,
+        apoderado_demandado: processData.apoderado_demandado,
+        
+        // Process metadata
         cantidad_folios: processData.cantidad_folios,
-        es_privado: processData.es_privado,
-        portal_url: processData.portal_url
-      });
+        es_privado: processData.es_privado || false,
+        estado: processData.estado || 'Activo',
+        solo_activos: processData.solo_activos || false,
+        portal_url: processData.portal_url,
+        
+        // Timestamps
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, 'numero_radicacion');
       
       if (!processRecord) {
         logger.error('Error saving process data: No record returned');
@@ -355,12 +420,30 @@ export class ModernScrapingService {
       // Save activities
       if (processData.actuaciones && processData.actuaciones.length > 0) {
         try {
+          logger.info(`Saving ${processData.actuaciones.length} activities for process ${processId}`);
+          
+          // First, delete existing activities for this process to avoid duplicates
+          await supabaseService.getClient()
+            .from('process_activities')
+            .delete()
+            .eq('process_id', processId);
+          
           for (const activity of processData.actuaciones) {
             await supabaseService.insert('process_activities', {
               process_id: processId,
-              ...activity
+              id_actuacion: activity.id_actuacion,
+              cons_actuacion: activity.cons_actuacion,
+              fecha_actuacion: activity.fecha_actuacion,
+              actuacion: activity.actuacion,
+              anotacion: activity.anotacion,
+              fecha_inicio_termino: activity.fecha_inicio_termino,
+              fecha_finaliza_termino: activity.fecha_finaliza_termino,
+              codigo_regla: activity.codigo_regla,
+              con_documentos: activity.con_documentos,
+              cant_folios: activity.cant_folios
             });
           }
+          logger.info(`Successfully saved ${processData.actuaciones.length} activities`);
         } catch (error) {
           logger.error('Error saving activities:', error);
         }
@@ -369,24 +452,48 @@ export class ModernScrapingService {
       // Save subjects
       if (processData.sujetos && processData.sujetos.length > 0) {
         try {
+          logger.info(`Saving ${processData.sujetos.length} subjects for process ${processId}`);
+          
+          // First, delete existing subjects for this process to avoid duplicates
+          await supabaseService.getClient()
+            .from('process_subjects')
+            .delete()
+            .eq('process_id', processId);
+          
           for (const subject of processData.sujetos) {
             await supabaseService.insert('process_subjects', {
               process_id: processId,
-              ...subject
+              id_sujeto_proceso: subject.id_sujeto_proceso,
+              nombre_sujeto: subject.nombre_sujeto,
+              tipo_sujeto: subject.tipo_sujeto,
+              identificacion: subject.identificacion,
+              tipo_identificacion: subject.tipo_identificacion,
+              apoderado: subject.apoderado,
+              tiene_apoderado: subject.tiene_apoderado
             });
           }
+          logger.info(`Successfully saved ${processData.sujetos.length} subjects`);
         } catch (error) {
           logger.error('Error saving subjects:', error);
         }
       }
       
-      // Save documents (note: we'll need to link them to activities later)
+      // Save documents
       if (processData.documentos && processData.documentos.length > 0) {
         try {
+          logger.info(`Saving ${processData.documentos.length} documents for process ${processId}`);
+          
+          // First, delete existing documents for this process to avoid duplicates
+          await supabaseService.getClient()
+            .from('process_documents')
+            .delete()
+            .eq('process_id', processId);
+          
           for (const document of processData.documentos) {
             await supabaseService.insert('process_documents', {
               process_id: processId,
-              actuacion_id: null, // Would need to match with activity
+              actuacion_id: null, // Could be linked to specific activity later
+              id_documento: document.id_documento,
               nombre_archivo: document.nombre_archivo,
               tipo_documento: document.tipo_documento,
               url_descarga: document.url_descarga,
@@ -395,6 +502,7 @@ export class ModernScrapingService {
               fecha_documento: document.fecha_documento
             });
           }
+          logger.info(`Successfully saved ${processData.documentos.length} documents`);
         } catch (error) {
           logger.error('Error saving documents:', error);
         }
