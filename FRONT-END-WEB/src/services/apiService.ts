@@ -20,7 +20,7 @@ class ApiService {
 
   constructor() {
     // Configurar la URL base del backend desde variables de entorno
-    const apiBaseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+    const apiBaseURL = process.env.REACT_APP_API_URL;
     
     this.client = axios.create({
       baseURL: apiBaseURL,
