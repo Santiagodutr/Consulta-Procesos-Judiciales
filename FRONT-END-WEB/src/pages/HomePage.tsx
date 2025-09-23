@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { JudicialProcessData } from '../services/judicialPortalService.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useNavigate } from 'react-router-dom';
 
 interface ConsultationResult {
   success: boolean;
@@ -14,33 +16,21 @@ export const HomePage: React.FC = () => {
   const [searchType, setSearchType] = useState<'recent' | 'all'>('recent');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ConsultationResult | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<any>(null);
-
-  // Verificar si el usuario está logueado
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      setIsLoggedIn(true);
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-      }
-    }
-  }, []);
+  
+  // Usar el contexto de autenticación
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   // Función para logout
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
-    setUser(null);
-    // Opcionalmente recargar la página para refrescar el estado
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Forzar navegación aunque haya error
+      navigate('/');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -367,10 +357,10 @@ export const HomePage: React.FC = () => {
                 <span className="text-sm">👁️ Visión</span>
               </button>
               
-              {isLoggedIn ? (
+              {user ? (
                 <>
                   <button 
-                    onClick={() => window.location.href = '/dashboard'}
+                    onClick={() => navigate('/dashboard')}
                     className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors bg-blue-600"
                   >
                     <span className="text-sm">🏠 Dashboard</span>
@@ -381,7 +371,7 @@ export const HomePage: React.FC = () => {
                 </>
               ) : (
                 <button 
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => navigate('/login')}
                   className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors"
                 >
                   <span className="text-sm">👤 Iniciar Sesión</span>
@@ -397,7 +387,7 @@ export const HomePage: React.FC = () => {
                 <span className="text-sm">❓ Ayuda</span>
               </button>
               
-              {isLoggedIn && (
+              {user && (
                 <button 
                   onClick={handleLogout}
                   className="hover:bg-blue-700 px-3 py-2 rounded transition-colors"

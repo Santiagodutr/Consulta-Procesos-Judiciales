@@ -1,23 +1,27 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
 export const SimpleDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user, signOut } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      navigate('/');
+    }
   };
 
   const quickActions = [
     {
       title: 'Consultar Procesos',
-      description: 'Buscar procesos judiciales',
-      icon: '📄',
-      href: '/',
+      description: 'Buscar procesos judiciales por número de radicación',
+      icon: '�',
+      href: '/consulta',
       color: 'bg-blue-500',
     },
     {
