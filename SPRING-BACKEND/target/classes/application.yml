@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: judicial-processes-backend
+    
+  # CORS Configuration
+  web:
+    cors:
+      allowed-origins:
+        - "http://localhost:3000"
+        - "http://localhost:3001"
+        - "http://localhost:19006"
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+      
+  # Mail Configuration
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+    
+# Supabase Configuration
+supabase:
+  url: ${SUPABASE_URL}
+  anon-key: ${SUPABASE_ANON_KEY}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+  auth-url: ${SUPABASE_URL}/auth/v1
+  rest-url: ${SUPABASE_URL}/rest/v1
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: ${JWT_EXPIRATION:604800} # 7 days in seconds
+
+# Frontend Configuration
+frontend:
+  url: ${FRONTEND_URL:http://localhost:3000}
+
+# Rate Limiting Configuration
+rate-limit:
+  auth:
+    requests: 5
+    window: 900 # 15 minutes in seconds
+  general:
+    requests: 100
+    window: 3600 # 1 hour in seconds
+
+# Logging Configuration
+logging:
+  level:
+    com.judicial.processes: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+    
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    mail:
+      enabled: false

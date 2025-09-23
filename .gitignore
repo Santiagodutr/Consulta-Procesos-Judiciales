@@ -109,3 +109,4 @@ BACKEND/test-auth-complete.js
 BACKEND/test-diagnostics.js
 BACKEND/test-simple.js
 BACKEND/test-step-by-step.js
+SPRING-BACKEND/.env.example
