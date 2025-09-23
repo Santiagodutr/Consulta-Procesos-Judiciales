@@ -85,11 +85,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Permitir orígenes específicos
+        // Permitir orígenes específicos (desarrollo y producción)
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",
             "http://localhost:3001", 
-            "http://localhost:19006"
+            "http://localhost:19006",
+            "https://consulta-procesos-judiciales.vercel.app",
+            "https://*.vercel.app",
+            "https://consulta-procesos-judiciales-*.vercel.app"
         ));
         
         // Métodos HTTP permitidos
