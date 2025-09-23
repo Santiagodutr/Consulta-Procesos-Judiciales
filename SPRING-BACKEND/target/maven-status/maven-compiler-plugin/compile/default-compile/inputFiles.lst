@@ -15,5 +15,6 @@ C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BAC
 C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BACKEND\src\main\java\com\judicial\processes\dto\ProcessMonitorRequest.java
 C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BACKEND\src\main\java\com\judicial\processes\dto\ProcessData.java
 C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BACKEND\src\main\java\com\judicial\processes\service\SupabaseService.java
+C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BACKEND\src\main\java\com\judicial\processes\security\JwtAuthenticationFilter.java
 C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BACKEND\src\main\java\com\judicial\processes\dto\ApiResponse.java
 C:\Users\USUARIO\OneDrive\Documentos\sw2\Consulta-Procesos-Judiciales\SPRING-BACKEND\src\main\java\com\judicial\processes\dto\ProcessConsultRequest.java
