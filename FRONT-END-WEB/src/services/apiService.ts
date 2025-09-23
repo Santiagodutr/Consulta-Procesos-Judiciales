@@ -20,8 +20,7 @@ class ApiService {
 
   constructor() {
     // Configurar la URL base del backend (Spring Boot)
-    // Usar variable de entorno para producción, localhost para desarrollo
-    const apiBaseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    const apiBaseURL = 'http://localhost:8080/api';
     
     this.client = axios.create({
       baseURL: apiBaseURL,
