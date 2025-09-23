@@ -361,17 +361,31 @@ export const judicialAPI = {
 // Nueva API que consulta directamente al portal judicial
 export const directJudicialAPI = {
   /**
-   * Consulta un proceso directamente al portal judicial
+   * Consulta un proceso directamente al portal judicial y lo guarda en BD
    */
   consultProcess: async (numeroRadicacion: string, soloActivos?: boolean): Promise<ApiResponse<JudicialProcessData>> => {
     try {
+      console.log(`Consultando proceso ${numeroRadicacion} al portal judicial...`);
+      
+      // Paso 1: Consultar directamente al portal judicial
       const processData = await judicialPortalService.consultProcess(numeroRadicacion, soloActivos || false);
       
       if (processData) {
+        console.log('Datos obtenidos del portal, guardando en base de datos...');
+        
+        // Paso 2: Guardar automáticamente en la base de datos local (opcional)
+        try {
+          await directJudicialAPI.saveProcessToDatabase(processData);
+          console.log('✅ Proceso guardado exitosamente en la base de datos local');
+        } catch (saveError) {
+          console.log('ℹ️ Backend local no disponible, consulta realizada solo desde portal judicial');
+          // No fallar la consulta si no se puede guardar en BD - esto es completamente opcional
+        }
+        
         return {
           success: true,
           data: processData,
-          message: 'Proceso consultado exitosamente desde el portal judicial'
+          message: 'Proceso consultado exitosamente desde el portal judicial y guardado en BD local'
         };
       } else {
         return {
@@ -386,6 +400,44 @@ export const directJudicialAPI = {
         message: error.message || 'Error al consultar el proceso',
         errors: [error.message || 'Error desconocido']
       };
+    }
+  },
+
+  /**
+   * Guarda la información del proceso en la base de datos local (modo silencioso)
+   */
+  saveProcessToDatabase: async (processData: JudicialProcessData): Promise<void> => {
+    try {
+      // Convertir los datos al formato esperado por el backend
+      const backendData = {
+        processData: {
+          numero_radicacion: processData.numeroRadicacion,
+          fecha_radicacion: processData.fechaRadicacion,
+          fecha_proceso: processData.fechaProceso,
+          fecha_ultima_actuacion: processData.fechaUltimaActuacion,
+          despacho: processData.despacho,
+          departamento: processData.departamento,
+          tipo_proceso: processData.tipoProceso,
+          demandante: processData.demandante,
+          demandado: processData.demandado,
+          sujetos_procesales: processData.sujetosProcesales,
+          cantidad_folios: processData.cantidadFolios || 0,
+          es_privado: processData.esPrivado || false,
+          estado: processData.estado || 'Activo',
+          portal_url: processData.portalUrl,
+          actuaciones: processData.actuaciones || [],
+          sujetos: processData.sujetos || [],
+          documentos: processData.documentos || []
+        }
+      };
+
+      // Enviar al backend usando el apiService normal
+      await apiService.post('/judicial/save-process', backendData);
+      console.log('Proceso guardado exitosamente en la base de datos');
+    } catch (error) {
+      // Solo loguear el error, no mostrarlo al usuario ya que es opcional
+      console.debug('Backend local no disponible para guardar proceso:', error);
+      // No re-lanzamos el error para que sea silencioso
     }
   },
 

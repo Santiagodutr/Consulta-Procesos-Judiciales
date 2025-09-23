@@ -119,6 +119,132 @@ public class JudicialController {
     }
     
     /**
+     * POST /api/judicial/save-process - Save process data to database (public endpoint)
+     */
+    @PostMapping("/save-process")
+    public ResponseEntity<?> saveProcess(@RequestBody Map<String, Object> request,
+                                       HttpServletRequest httpRequest) {
+        try {
+            logger.info("Saving process data to database from frontend");
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> processData = (Map<String, Object>) request.get("processData");
+            
+            if (processData == null) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Datos del proceso requeridos",
+                    "message", "No se proporcionaron los datos del proceso"
+                ));
+            }
+            
+            // Crear objeto ProcessData desde los datos recibidos
+            ProcessData processDataObj = new ProcessData();
+            
+            // Mapear campos básicos
+            processDataObj.setNumeroRadicacion((String) processData.get("numero_radicacion"));
+            processDataObj.setFechaRadicacion((String) processData.get("fecha_radicacion"));
+            processDataObj.setFechaProceso((String) processData.get("fecha_proceso"));
+            processDataObj.setFechaUltimaActuacion((String) processData.get("fecha_ultima_actuacion"));
+            
+            processDataObj.setDespacho((String) processData.get("despacho"));
+            processDataObj.setDepartamento((String) processData.get("departamento"));
+            processDataObj.setTipoProceso((String) processData.get("tipo_proceso"));
+            
+            processDataObj.setDemandante((String) processData.get("demandante"));
+            processDataObj.setDemandado((String) processData.get("demandado"));
+            processDataObj.setSujetosProcesales((String) processData.get("sujetos_procesales"));
+            
+            // Campos numéricos y booleanos con valores por defecto
+            processDataObj.setCantidadFolios(processData.get("cantidad_folios") != null ? 
+                ((Number) processData.get("cantidad_folios")).intValue() : 0);
+            processDataObj.setEsPrivado(processData.get("es_privado") != null ? 
+                (Boolean) processData.get("es_privado") : false);
+            processDataObj.setEstado((String) processData.get("estado"));
+            processDataObj.setPortalUrl((String) processData.get("portal_url"));
+            
+            // Mapear actuaciones si existen
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> actuacionesData = (List<Map<String, Object>>) processData.get("actuaciones");
+            if (actuacionesData != null) {
+                List<ProcessActivity> actuaciones = new ArrayList<>();
+                for (Map<String, Object> actData : actuacionesData) {
+                    ProcessActivity activity = new ProcessActivity();
+                    activity.setIdActuacion(actData.get("idActuacion") != null ? 
+                        ((Number) actData.get("idActuacion")).longValue() : null);
+                    activity.setConsActuacion(actData.get("consActuacion") != null ? 
+                        ((Number) actData.get("consActuacion")).longValue() : null);
+                    activity.setFechaActuacion((String) actData.get("fechaActuacion"));
+                    activity.setActuacion((String) actData.get("actuacion"));
+                    activity.setAnotacion((String) actData.get("anotacion"));
+                    activity.setFechaInicioTermino((String) actData.get("fechaInicioTermino"));
+                    activity.setFechaFinalizaTermino((String) actData.get("fechaFinalizaTermino"));
+                    activity.setCodigoRegla((String) actData.get("codigoRegla"));
+                    activity.setConDocumentos(actData.get("conDocumentos") != null ? 
+                        (Boolean) actData.get("conDocumentos") : false);
+                    activity.setCantFolios(actData.get("cantFolios") != null ? 
+                        ((Number) actData.get("cantFolios")).intValue() : 0);
+                    actuaciones.add(activity);
+                }
+                processDataObj.setActuaciones(actuaciones);
+            }
+            
+            // Mapear sujetos si existen
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> sujetosData = (List<Map<String, Object>>) processData.get("sujetos");
+            if (sujetosData != null) {
+                List<ProcessSubject> sujetos = new ArrayList<>();
+                for (Map<String, Object> sujData : sujetosData) {
+                    ProcessSubject subject = new ProcessSubject();
+                    subject.setIdSujetoProceso(sujData.get("lnIdSujetoProceso") != null ? 
+                        ((Number) sujData.get("lnIdSujetoProceso")).longValue() : null);
+                    subject.setNombreSujeto((String) sujData.get("lsNombreSujeto"));
+                    subject.setTipoSujeto((String) sujData.get("lsTipoSujeto"));
+                    subject.setIdentificacion((String) sujData.get("lsIdentificacion"));
+                    subject.setTipoIdentificacion((String) sujData.get("lsTipoIdentificacion"));
+                    subject.setApoderado((String) sujData.get("lsApoderado"));
+                    subject.setTieneApoderado("S".equals(sujData.get("lbTieneApoderado")));
+                    sujetos.add(subject);
+                }
+                processDataObj.setSujetos(sujetos);
+            }
+            
+            // Guardar en la base de datos usando el servicio existente
+            String processId = scrapingService.saveProcessData(processDataObj);
+            
+            if (processId != null) {
+                // Log the save operation
+                judicialService.logConsultation(null, processId, "frontend_save", 
+                    httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "success", null);
+                
+                logger.info("Process {} saved successfully with ID: {}", 
+                    processDataObj.getNumeroRadicacion(), processId);
+                
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Proceso guardado exitosamente en la base de datos",
+                    "processId", processId
+                ));
+            } else {
+                return ResponseEntity.status(500).body(Map.of(
+                    "error", "Error guardando proceso",
+                    "message", "No se pudo guardar el proceso en la base de datos"
+                ));
+            }
+            
+        } catch (Exception error) {
+            logger.error("Error saving process data:", error);
+            
+            judicialService.logConsultation(null, null, "frontend_save", 
+                httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "error", error.getMessage());
+            
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error interno del servidor",
+                "message", "Error al guardar el proceso: " + error.getMessage()
+            ));
+        }
+    }
+    
+    /**
      * GET /api/judicial/search - Search processes by various criteria
      */
     @GetMapping("/search")
