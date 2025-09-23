@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { directJudicialAPI } from '../services/apiService.ts';
+import { JudicialProcessData } from '../services/judicialPortalService.ts';
 
 interface ConsultationResult {
   success: boolean;
-  data?: any;
+  data?: JudicialProcessData;
   error?: string;
   source: 'portal' | 'database';
 }
@@ -48,90 +50,38 @@ export const HomePage: React.FC = () => {
       return;
     }
 
+    // Validar formato del número de radicación
+    if (!directJudicialAPI.validateRadicationNumber(numeroRadicacion)) {
+      setResult({
+        success: false,
+        error: 'El número de radicación debe tener entre 20 y 25 dígitos numéricos',
+        source: 'portal'
+      });
+      return;
+    }
+
     setIsLoading(true);
     setResult(null);
 
     try {
-      // Construir URL con parámetros para la API oficial de la Rama Judicial
-      const apiUrl = new URL('https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Procesos/Consulta/NumeroRadicacion');
-      apiUrl.searchParams.append('numero', numeroRadicacion.trim());
-      apiUrl.searchParams.append('SoloActivos', searchType === 'recent' ? 'true' : 'false');
-      apiUrl.searchParams.append('pagina', '1');
+      console.log('Consultando proceso con el nuevo servicio...');
       
-      const response = await fetch(apiUrl.toString(), {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-          'Cache-Control': 'no-cache'
-        },
-        mode: 'cors'
-      });
+      // Usar el nuevo servicio que consulta directamente al portal
+      const response = await directJudicialAPI.consultProcess(
+        numeroRadicacion.trim(), 
+        searchType === 'recent'
+      );
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error('Error en la consulta al portal oficial');
-      }
-
-      if (data && data.procesos && data.procesos.length > 0) {
-        const proceso = data.procesos[0];
-        
-        // Extraer demandante y demandado del campo sujetosProcesales
-        let demandante = 'NO DISPONIBLE';
-        let demandado = 'NO DISPONIBLE';
-        let ciudad = 'NO DISPONIBLE';
-        let departamento = 'NO DISPONIBLE';
-        
-        if (proceso.sujetosProcesales) {
-          const sujetos = proceso.sujetosProcesales;
-          
-          // Extraer demandante
-          const demandanteMatch = sujetos.match(/Demandante:\s*([^|]+)/i);
-          if (demandanteMatch) {
-            demandante = demandanteMatch[1].trim();
-          }
-          
-          // Extraer demandado  
-          const demandadoMatch = sujetos.match(/Demandado:\s*([^|]+)/i);
-          if (demandadoMatch) {
-            demandado = demandadoMatch[1].trim();
-          }
-        }
-        
-        // Extraer ciudad del despacho
-        if (proceso.despacho) {
-          const despachoPartes = proceso.despacho.split(' - ');
-          if (despachoPartes.length > 1) {
-            ciudad = despachoPartes[despachoPartes.length - 1].trim();
-          }
-        }
-        
-        const processData = {
-          numero_radicacion: proceso.llaveProceso || numeroRadicacion,
-          fecha_radicacion: proceso.fechaProceso ? proceso.fechaProceso.split('T')[0] : 'No disponible',
-          despacho: proceso.despacho || 'NO DISPONIBLE',
-          departamento: proceso.departamento || departamento,
-          ciudad: ciudad,
-          tipo_proceso: proceso.departamento || 'NO DISPONIBLE',
-          demandante: demandante,
-          demandado: demandado,
-          sujetos_procesales: proceso.sujetosProcesales || '',
-          ponente: proceso.ponente || 'No especificado',
-          estado: 'Activo',
-          es_privado: proceso.esPrivado === true,
-          cantidad_folios: proceso.cantFilas || 0
-        };
-
+      if (response.success && response.data) {
         setResult({
           success: true,
-          data: processData,
+          data: response.data,
           source: 'portal'
         });
       } else {
         setResult({
           success: false,
-          error: 'No se encontró información para el número de radicación ingresado',
+          error: response.message || 'No se encontró información para el número de radicación ingresado',
           source: 'portal'
         });
       }
@@ -213,7 +163,7 @@ export const HomePage: React.FC = () => {
                       Número de Radicación
                     </label>
                     <p className="text-lg font-mono bg-blue-50 p-3 rounded border border-blue-200">
-                      {result.data.numero_radicacion}
+                      {result.data.numeroRadicacion}
                     </p>
                   </div>
 
@@ -222,7 +172,7 @@ export const HomePage: React.FC = () => {
                       Fecha de Radicación
                     </label>
                     <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      {formatDate(result.data.fecha_radicacion)}
+                      {result.data.fechaRadicacion ? formatDate(result.data.fechaRadicacion) : 'No disponible'}
                     </p>
                   </div>
 
@@ -240,8 +190,8 @@ export const HomePage: React.FC = () => {
                       Ubicación
                     </label>
                     <div className="bg-gray-50 p-3 rounded">
-                      <p className="font-medium">{result.data.ciudad}</p>
-                      <p className="text-gray-600">{result.data.departamento}</p>
+                      <p className="font-medium">{result.data.departamento || 'No disponible'}</p>
+                      <p className="text-gray-600">Colombia</p>
                     </div>
                   </div>
                 </div>
@@ -262,7 +212,7 @@ export const HomePage: React.FC = () => {
                       Tipo de Proceso
                     </label>
                     <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      {result.data.tipo_proceso}
+                      {result.data.tipoProceso || 'No disponible'}
                     </p>
                   </div>
 
@@ -271,7 +221,7 @@ export const HomePage: React.FC = () => {
                       Ponente/Juez
                     </label>
                     <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      {result.data.ponente || 'No especificado'}
+                      No especificado
                     </p>
                   </div>
                 </div>
@@ -302,44 +252,38 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
 
-              {result.data.sujetos_procesales && (
+              {result.data.sujetosProcesales && (
                 <div className="mt-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Todos los Sujetos Procesales
                   </label>
                   <div className="bg-gray-50 border p-4 rounded">
                     <p className="text-gray-900 whitespace-pre-line leading-relaxed">
-                      {result.data.sujetos_procesales.replace(/\|/g, '\n')}
+                      {result.data.sujetosProcesales.replace(/\|/g, '\n')}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Información adicional si existe */}
-              {(result.data.categoria || result.data.subcategoria) && (
-                <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {result.data.categoria && (
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Categoría
-                      </label>
-                      <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                        {result.data.categoria}
-                      </p>
-                    </div>
-                  )}
-                  {result.data.subcategoria && (
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Subcategoría
-                      </label>
-                      <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                        {result.data.subcategoria}
-                      </p>
-                    </div>
-                  )}
+              {/* Información adicional */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Estado
+                  </label>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded">
+                    {result.data.estado || 'Activo'}
+                  </p>
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Cantidad de Folios
+                  </label>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded">
+                    {result.data.cantidadFolios || 0}
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-lg p-12 text-center">

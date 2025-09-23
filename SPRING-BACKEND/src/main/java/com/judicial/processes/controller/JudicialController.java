@@ -80,7 +80,8 @@ public class JudicialController {
             } else {
                 // Scrape from portal
                 logger.info("Process not in database, scraping from portal...");
-                processData = scrapingService.scrapeProcessData(numeroRadicacion);
+                Boolean soloActivos = request.getSoloActivos() != null ? request.getSoloActivos() : false;
+                processData = scrapingService.scrapeProcessData(numeroRadicacion, soloActivos);
                 
                 if (processData == null) {
                     return ResponseEntity.status(404).body(Map.of(

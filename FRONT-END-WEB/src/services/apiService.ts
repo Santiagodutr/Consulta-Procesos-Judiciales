@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { toast } from 'react-hot-toast';
+import { judicialPortalService, JudicialProcessData } from './judicialPortalService.ts';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -333,6 +334,7 @@ export const companyAPI = {
     apiService.post('/companies/invite', { email, role }),
 };
 
+// API tradicional que usa el backend local
 export const judicialAPI = {
   consultProcess: (numeroRadicacion: string, soloActivos?: boolean, refresh?: boolean) =>
     apiService.post('/judicial/consult' + (refresh ? '?refresh=true' : ''), { 
@@ -354,6 +356,52 @@ export const judicialAPI = {
   
   monitorProcess: (numeroRadicacion: string) =>
     apiService.post('/judicial/monitor', { numeroRadicacion }),
+};
+
+// Nueva API que consulta directamente al portal judicial
+export const directJudicialAPI = {
+  /**
+   * Consulta un proceso directamente al portal judicial
+   */
+  consultProcess: async (numeroRadicacion: string, soloActivos?: boolean): Promise<ApiResponse<JudicialProcessData>> => {
+    try {
+      const processData = await judicialPortalService.consultProcess(numeroRadicacion, soloActivos || false);
+      
+      if (processData) {
+        return {
+          success: true,
+          data: processData,
+          message: 'Proceso consultado exitosamente desde el portal judicial'
+        };
+      } else {
+        return {
+          success: false,
+          message: 'Proceso no encontrado en el portal judicial'
+        };
+      }
+    } catch (error: any) {
+      console.error('Error consultando proceso:', error);
+      return {
+        success: false,
+        message: error.message || 'Error al consultar el proceso',
+        errors: [error.message || 'Error desconocido']
+      };
+    }
+  },
+
+  /**
+   * Valida el formato del número de radicación
+   */
+  validateRadicationNumber: (numeroRadicacion: string): boolean => {
+    return judicialPortalService.isValidRadicationNumber(numeroRadicacion);
+  },
+
+  /**
+   * Obtiene la URL del portal para un proceso
+   */
+  getPortalUrl: (numeroRadicacion: string): string => {
+    return judicialPortalService.getPortalUrl(numeroRadicacion);
+  }
 };
 
 export default apiService;

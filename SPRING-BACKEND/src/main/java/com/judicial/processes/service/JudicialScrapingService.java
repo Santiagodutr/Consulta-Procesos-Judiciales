@@ -52,11 +52,15 @@ public class JudicialScrapingService {
      * Main method to scrape process data from Colombian judicial portal
      */
     public ProcessData scrapeProcessData(String numeroRadicacion) {
+        return scrapeProcessData(numeroRadicacion, false);
+    }
+    
+    public ProcessData scrapeProcessData(String numeroRadicacion, Boolean soloActivos) {
         try {
-            logger.info("Starting API consultation for process: {}", numeroRadicacion);
+            logger.info("Starting API consultation for process: {} (soloActivos: {})", numeroRadicacion, soloActivos);
             
             // Step 1: Get process basic information
-            ProcessData basicInfo = getProcessBasicInfo(numeroRadicacion);
+            ProcessData basicInfo = getProcessBasicInfo(numeroRadicacion, soloActivos);
             if (basicInfo == null) {
                 logger.warn("No basic info found for process: {}", numeroRadicacion);
                 return null;
@@ -92,12 +96,16 @@ public class JudicialScrapingService {
      * Get basic process information using the real API endpoint from the portal
      */
     private ProcessData getProcessBasicInfo(String numeroRadicacion) {
+        return getProcessBasicInfo(numeroRadicacion, false);
+    }
+    
+    private ProcessData getProcessBasicInfo(String numeroRadicacion, Boolean soloActivos) {
         try {
             // Build the request URL
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
                 .fromHttpUrl(PORTAL_API_URL)
                 .queryParam("numero", numeroRadicacion.trim())
-                .queryParam("SoloActivos", false)
+                .queryParam("SoloActivos", soloActivos != null ? soloActivos : false)
                 .queryParam("pagina", 1);
             
             // Set headers to mimic browser request
