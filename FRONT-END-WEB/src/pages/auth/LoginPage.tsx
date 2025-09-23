@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../../services/apiService.ts';
+import { useAuth } from '../../contexts/AuthContext.tsx';
 
 interface LoginFormData {
   email: string;
@@ -16,6 +16,7 @@ export const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginFormData> = {};
@@ -46,29 +47,22 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const response = await authAPI.login(formData.email, formData.password);
+      // Usar el signIn del AuthContext que maneja todo el estado
+      console.log('LoginPage: Starting signIn process...');
+      await signIn(formData.email, formData.password);
       
-      if (response.success && response.data) {
-        // Guardar tokens en localStorage
-        localStorage.setItem('access_token', response.data.access_token);
-        localStorage.setItem('refresh_token', response.data.refresh_token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Redirigir al dashboard o página principal
+      console.log('LoginPage: SignIn completed, navigating to dashboard...');
+      
+      // Pequeño delay para asegurar que el estado se haya actualizado
+      setTimeout(() => {
         navigate('/dashboard');
-      } else {
-        setErrors({ email: response.message || 'Error en el inicio de sesión' });
-      }
+      }, 100);
+      
     } catch (error: any) {
       console.error('Login error:', error);
       
-      if (error.response?.data?.message) {
-        setErrors({ email: error.response.data.message });
-      } else if (error.message) {
-        setErrors({ email: error.message });
-      } else {
-        setErrors({ email: 'Error de conexión. Intente nuevamente.' });
-      }
+      // El AuthContext ya maneja los errores, solo mostrar el mensaje
+      setErrors({ email: error.message || 'Error de conexión. Intente nuevamente.' });
     } finally {
       setIsLoading(false);
     }

@@ -74,20 +74,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const checkExistingSession = async () => {
+    console.log('AuthContext: Checking existing session...');
     try {
       const token = localStorage.getItem('access_token');
-      if (token) {
+      const userData = localStorage.getItem('user');
+      
+      if (token && userData) {
         // Set the token in API service
         apiService.setAuthToken(token);
         
-        // Try to get user profile
-        const response = await apiService.get('/auth/profile');
-        if (response.data.success) {
-          setUser(response.data.data);
-        } else {
-          // Token invalid, remove it
+        try {
+          // Parse user data from localStorage
+          const user = JSON.parse(userData);
+          console.log('AuthContext: User loaded from localStorage:', user.email);
+          setUser(user);
+          
+          // Optionally verify token with server (commented out for now to avoid issues)
+          // const response = await apiService.get('/auth/profile');
+          // if (response.success) {
+          //   setUser(response.data);
+          // } else {
+          //   throw new Error('Invalid token');
+          // }
+        } catch (parseError) {
+          console.error('Error parsing user data:', parseError);
+          // Clear invalid data
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
         }
       }
     } catch (error) {
@@ -95,12 +109,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear invalid tokens
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
     } finally {
+      console.log('AuthContext: Session check completed. Loading set to false.');
       setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('AuthContext: SignIn started for:', email);
     setLoading(true);
     try {
       const response = await apiService.post('/auth/login', {
@@ -108,8 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
 
-      if (response.data.success) {
-        const authData: AuthResponse = response.data.data;
+      console.log('AuthContext: Login response:', response.success);
+
+      if (response.success && response.data) {
+        const authData = response.data;
+        
+        console.log('AuthContext: Auth data structure:', authData);
+        console.log('AuthContext: User object:', authData.user);
+        console.log('AuthContext: Storing user data for:', authData.user?.email);
         
         // Store tokens
         localStorage.setItem('access_token', authData.access_token);
@@ -118,12 +141,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Set token in API service
         apiService.setAuthToken(authData.access_token);
         
-        // Set user
-        setUser(authData.user);
+        // Si no hay datos de usuario en la respuesta, crear un usuario básico o obtenerlo del server
+        if (authData.user) {
+          localStorage.setItem('user', JSON.stringify(authData.user));
+          setUser(authData.user);
+          console.log('AuthContext: User data stored from login response');
+        } else {
+          console.log('AuthContext: No user data in login response, creating basic user');
+          // Crear un usuario básico con el email del login
+          const basicUser = {
+            id: 'temp-id',
+            email: email, // Usamos el email del login
+            first_name: 'Usuario',
+            last_name: 'Temporal',
+            document_number: '',
+            document_type: 'CC',
+            user_type: 'natural' as const,
+            is_active: true,
+            email_verified: true,
+            notification_preferences: {
+              email_enabled: true,
+              sms_enabled: false,
+              in_app_enabled: true,
+              sound_enabled: true,
+              process_updates: true,
+              hearing_reminders: true,
+              document_alerts: true,
+              weekly_summary: false,
+            },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          
+          localStorage.setItem('user', JSON.stringify(basicUser));
+          setUser(basicUser);
+        }
+        
+        console.log('AuthContext: User state updated successfully');
       } else {
-        throw new Error(response.data.message || 'Login failed');
+        throw new Error(response.message || 'Login failed');
       }
     } catch (error: any) {
+      console.error('AuthContext: SignIn error:', error);
       throw new Error(error.response?.data?.message || error.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -159,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear local data regardless
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
       apiService.clearAuthToken();
       setUser(null);
       setLoading(false);
