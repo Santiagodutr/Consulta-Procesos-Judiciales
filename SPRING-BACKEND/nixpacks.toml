@@ -1,0 +1,21 @@
+# Configuración alternativa para Railway usando nixpacks
+# Este archivo le dice a Railway cómo manejar tu aplicación Java/Spring Boot
+
+[providers]
+java = "17"
+
+[phases.setup]
+nixPkgs = ["openjdk17", "maven"]
+
+[phases.build]
+cmds = [
+    "chmod +x ./mvnw",
+    "./mvnw clean package -DskipTests"
+]
+
+[phases.start]
+cmd = "java -jar target/*.jar"
+
+[variables]
+PORT = "8080"
+SPRING_PROFILES_ACTIVE = "prod"
