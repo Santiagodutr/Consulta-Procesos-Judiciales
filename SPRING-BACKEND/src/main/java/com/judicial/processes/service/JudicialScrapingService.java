@@ -466,12 +466,18 @@ public class JudicialScrapingService {
             
             JsonNode result = supabaseService.upsert("judicial_processes", processRecord, "numero_radicacion");
             
-            if (result == null) {
-                logger.error("Error saving process data: No record returned");
+            if (result == null || !result.isArray() || result.size() == 0) {
+                logger.error("Error saving process data: No record returned from upsert");
                 return null;
             }
             
-            String processId = result.get(0).get("id").asText();
+            JsonNode firstResult = result.get(0);
+            if (firstResult == null || !firstResult.has("id")) {
+                logger.error("Error saving process data: Result record has no 'id' field");
+                return null;
+            }
+            
+            String processId = firstResult.get("id").asText();
             
             // Save activities
             if (processData.getActuaciones() != null && !processData.getActuaciones().isEmpty()) {

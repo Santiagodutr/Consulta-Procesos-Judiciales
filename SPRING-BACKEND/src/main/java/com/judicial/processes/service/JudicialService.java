@@ -374,9 +374,18 @@ public class JudicialService {
             consultationRecord.put("error_message", errorMessage);
             consultationRecord.put("created_at", LocalDateTime.now().toString());
             
-            supabaseService.insert("consultation_history", consultationRecord);
+            logger.info("Attempting to log consultation - userId: {}, processId: {}, type: {}, status: {}", 
+                userId, processId, type, status);
+            
+            JsonNode result = supabaseService.insert("consultation_history", consultationRecord);
+            
+            if (result != null) {
+                logger.info("Successfully logged consultation to database");
+            } else {
+                logger.error("Failed to log consultation - insert returned null");
+            }
         } catch (Exception error) {
-            logger.error("Error logging consultation: {}", error.getMessage());
+            logger.error("Error logging consultation - Exception: {}", error.getMessage(), error);
         }
     }
     

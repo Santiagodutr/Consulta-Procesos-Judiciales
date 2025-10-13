@@ -211,6 +211,8 @@ public class SupabaseService {
         try {
             String url = supabaseProperties.getRestUrl() + "/" + table;
             
+            logger.debug("Inserting into table {}: {}", table, data);
+            
             HttpHeaders headers = createHeaders();
             headers.set("Prefer", "return=representation");
             
@@ -220,18 +222,21 @@ public class SupabaseService {
             
             if (response.getStatusCode().is2xxSuccessful()) {
                 JsonNode result = objectMapper.readTree(response.getBody());
+                logger.debug("Insert successful for table {}, result: {}", table, result);
                 if (result.isArray() && result.size() > 0) {
                     return result.get(0);
                 }
                 return result;
             } else {
-                logger.error("Supabase insert failed for table {}: {}", table, response.getStatusCode());
-                throw new RuntimeException("Insert failed");
+                logger.error("Supabase insert failed for table {}: {} - Response: {}", 
+                    table, response.getStatusCode(), response.getBody());
+                throw new RuntimeException("Insert failed with status: " + response.getStatusCode());
             }
             
         } catch (Exception e) {
-            logger.error("Supabase insert error in table " + table, e);
-            throw new RuntimeException("Insert failed", e);
+            logger.error("Supabase insert error in table {} with data {}: {}", 
+                table, data, e.getMessage(), e);
+            throw new RuntimeException("Insert failed: " + e.getMessage(), e);
         }
     }
     
@@ -401,10 +406,15 @@ public class SupabaseService {
             String url = supabaseProperties.getRestUrl() + "/" + table;
             
             HttpHeaders headers = createHeaders();
-            headers.set("Prefer", "return=representation");
+            // Use proper Supabase upsert header with on-conflict parameter
             if (conflictColumn != null) {
-                headers.set("Prefer", "resolution=merge-duplicates");
+                headers.set("Prefer", "return=representation,resolution=merge-duplicates");
+                url += "?on_conflict=" + conflictColumn;
+            } else {
+                headers.set("Prefer", "return=representation");
             }
+            
+            logger.debug("Upserting to table {} with conflict column: {}", table, conflictColumn);
             
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(data, headers);
             
@@ -412,18 +422,21 @@ public class SupabaseService {
             
             if (response.getStatusCode().is2xxSuccessful()) {
                 JsonNode result = objectMapper.readTree(response.getBody());
+                logger.debug("Upsert successful for table {}", table);
                 if (result.isArray() && result.size() > 0) {
                     return result.get(0);
                 }
                 return result;
             } else {
-                logger.error("Supabase upsert failed for table {}: {}", table, response.getStatusCode());
-                throw new RuntimeException("Upsert failed");
+                logger.error("Supabase upsert failed for table {}: {} - Response: {}", 
+                    table, response.getStatusCode(), response.getBody());
+                throw new RuntimeException("Upsert failed with status: " + response.getStatusCode());
             }
             
         } catch (Exception e) {
-            logger.error("Supabase upsert error in table " + table, e);
-            throw new RuntimeException("Upsert failed", e);
+            logger.error("Supabase upsert error in table {} with data {}: {}", 
+                table, data, e.getMessage(), e);
+            throw new RuntimeException("Upsert failed: " + e.getMessage(), e);
         }
     }
 }

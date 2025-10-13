@@ -35,17 +35,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Extract user ID from token (this is a simplified approach)
                 // In the original backend, the token structure is: temp_token_{userId}-{timestamp}-{random}
                 try {
-                    String[] tokenParts = token.split("-");
-                    if (tokenParts.length >= 2) {
-                        userId = tokenParts[0].replace("temp_token_", "");
+                    if (token.startsWith("temp_token_")) {
+                        // Remove "temp_token_" prefix
+                        String withoutPrefix = token.substring(11); // "temp_token_".length() = 11
                         
-                        // Create authentication object
-                        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                            UsernamePasswordAuthenticationToken authToken = 
-                                new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>());
+                        // Find the UUID part (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+                        // UUIDs have 36 characters with 4 hyphens at specific positions
+                        if (withoutPrefix.length() >= 36) {
+                            userId = withoutPrefix.substring(0, 36);
                             
-                            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                            SecurityContextHolder.getContext().setAuthentication(authToken);
+                            // Validate UUID format
+                            if (userId.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+                                // Create authentication object
+                                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                                    UsernamePasswordAuthenticationToken authToken = 
+                                        new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>());
+                                    
+                                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                                }
+                            }
                         }
                     }
                 } catch (Exception e) {
