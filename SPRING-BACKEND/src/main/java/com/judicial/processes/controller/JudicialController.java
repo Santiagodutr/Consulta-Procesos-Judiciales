@@ -58,11 +58,15 @@ public class JudicialController {
     public ResponseEntity<?> consultProcess(@Valid @RequestBody ProcessConsultRequest request,
                                           @RequestParam(value = "refresh", defaultValue = "false") boolean forceRefresh,
                                           @RequestParam(value = "fresh", defaultValue = "false") boolean fresh,
+                                          Authentication authentication,
                                           HttpServletRequest httpRequest) {
         try {
             String numeroRadicacion = request.getNumeroRadicacion();
+            String userId = (authentication != null && authentication.isAuthenticated()) 
+                ? (String) authentication.getPrincipal() : null;
             
-            logger.info("Public consultation for process: {}", numeroRadicacion);
+            logger.info("Consultation for process: {} by user: {}", numeroRadicacion, 
+                userId != null ? userId : "anonymous");
             
             // Check if forcing a fresh consultation
             boolean shouldForceRefresh = forceRefresh || fresh;
@@ -84,6 +88,9 @@ public class JudicialController {
                 processData = scrapingService.scrapeProcessData(numeroRadicacion, soloActivos);
                 
                 if (processData == null) {
+                    judicialService.logConsultation(userId, null, "user_consult", 
+                        httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "not_found", "Proceso no encontrado");
+                    
                     return ResponseEntity.status(404).body(Map.of(
                         "error", "Proceso no encontrado",
                         "message", "No se encontró información del proceso en el portal oficial"
@@ -95,8 +102,8 @@ public class JudicialController {
                 source = "portal";
             }
             
-            // Log the consultation
-            judicialService.logConsultation(null, processId, "public_consult", 
+            // Log the consultation with user_id if authenticated
+            judicialService.logConsultation(userId, processId, "user_consult", 
                 httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "success", null);
             
             return ResponseEntity.ok(Map.of(
@@ -108,7 +115,10 @@ public class JudicialController {
         } catch (Exception error) {
             logger.error("Process consultation error:", error);
             
-            judicialService.logConsultation(null, null, "public_consult", 
+            String userId = (authentication != null && authentication.isAuthenticated()) 
+                ? (String) authentication.getPrincipal() : null;
+            
+            judicialService.logConsultation(userId, null, "user_consult", 
                 httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "error", error.getMessage());
             
             return ResponseEntity.status(500).body(Map.of(
@@ -377,6 +387,33 @@ public class JudicialController {
     }
     
     // AUTHENTICATED ROUTES - Require authentication
+    
+    /**
+     * GET /api/judicial/consultation-history - Get user's consultation history
+     */
+    @GetMapping("/consultation-history")
+    public ResponseEntity<?> getConsultationHistory(Authentication authentication,
+                                                    @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("error", "No autorizado"));
+            }
+            
+            String userId = (String) authentication.getPrincipal();
+            
+            // Get user's consultation history
+            List<Map<String, Object>> history = judicialService.getUserConsultationHistory(userId, limit);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", history != null ? history : new ArrayList<>()
+            ));
+            
+        } catch (Exception error) {
+            logger.error("Get consultation history error:", error);
+            return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
+        }
+    }
     
     /**
      * GET /api/judicial/monitored - Get user's monitored processes

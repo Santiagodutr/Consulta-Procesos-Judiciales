@@ -1,10 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { judicialAPI } from '../services/apiService.ts';
+
+interface ConsultationHistoryItem {
+  consultation_id: string;
+  process_id: string;
+  numero_radicacion: string;
+  despacho: string;
+  demandante: string;
+  demandado: string;
+  consulted_at: string;
+}
 
 export const SimpleDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [consultationHistory, setConsultationHistory] = useState<ConsultationHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadConsultationHistory();
+  }, []);
+
+  const loadConsultationHistory = async () => {
+    try {
+      setLoading(true);
+      const response = await judicialAPI.getConsultationHistory(10);
+      if (response.success && response.data) {
+        setConsultationHistory(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading consultation history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -138,10 +169,10 @@ export const SimpleDashboard: React.FC = () => {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Total Procesos
+                        Total Consultas
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {consultationHistory.length}
                       </dd>
                     </dl>
                   </div>
@@ -161,7 +192,7 @@ export const SimpleDashboard: React.FC = () => {
                         Procesos Activos
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {consultationHistory.length}
                       </dd>
                     </dl>
                   </div>
@@ -198,10 +229,15 @@ export const SimpleDashboard: React.FC = () => {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Audiencias Pendientes
+                        Última Consulta
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {consultationHistory.length > 0 
+                          ? new Date(consultationHistory[0].consulted_at).toLocaleDateString('es-CO', {
+                              day: '2-digit',
+                              month: 'short'
+                            })
+                          : 'N/A'}
                       </dd>
                     </dl>
                   </div>
@@ -214,25 +250,78 @@ export const SimpleDashboard: React.FC = () => {
         {/* Recent Activity */}
         <div className="px-4 py-6 sm:px-0">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Actividad Reciente
+            Historial de Consultas
           </h2>
           
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <div className="text-center py-12">
-              <span className="text-4xl mb-4 block">📋</span>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No hay actividad reciente
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Cuando tengas procesos registrados, su actividad aparecerá aquí.
-              </p>
-              <Link
-                to="/"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Consultar Procesos
-              </Link>
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <span className="text-4xl mb-4 block">⏳</span>
+                <p className="text-gray-500">Cargando historial...</p>
+              </div>
+            ) : consultationHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <span className="text-4xl mb-4 block">📋</span>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No hay consultas recientes
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Cuando consultes procesos, aparecerán aquí.
+                </p>
+                <Link
+                  to="/"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Consultar Procesos
+                </Link>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {consultationHistory.map((item) => (
+                  <li key={item.consultation_id}>
+                    <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">⚖️</span>
+                            <div>
+                              <p className="text-sm font-medium text-blue-600 truncate">
+                                {item.numero_radicacion}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                {item.despacho}
+                              </p>
+                              {item.demandante && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Demandante: {item.demandante}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                          <span className="text-xs text-gray-400">
+                            {new Date(item.consulted_at).toLocaleDateString('es-CO', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <button
+                            onClick={() => navigate(`/process/${item.numero_radicacion}`)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            Ver Detalles
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 

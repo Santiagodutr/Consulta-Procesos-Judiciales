@@ -272,6 +272,49 @@ public class SupabaseService {
     }
     
     /**
+     * Select data from Supabase table with limit and ordering
+     */
+    public JsonNode selectWithLimit(String table, Map<String, Object> filters, int limit, String orderBy, String order) {
+        try {
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromHttpUrl(supabaseProperties.getRestUrl() + "/" + table)
+                .queryParam("select", "*")
+                .queryParam("limit", limit);
+            
+            // Add ordering
+            if (orderBy != null && !orderBy.isEmpty()) {
+                String orderParam = orderBy + "." + (order != null && order.equalsIgnoreCase("desc") ? "desc" : "asc");
+                uriBuilder.queryParam("order", orderParam);
+            }
+            
+            // Add filters as query parameters
+            if (filters != null) {
+                filters.forEach((key, value) -> {
+                    uriBuilder.queryParam(key, "eq." + value);
+                });
+            }
+            
+            String url = uriBuilder.toUriString();
+            
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+            
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return objectMapper.readTree(response.getBody());
+            } else {
+                logger.error("Supabase selectWithLimit failed for table {}: {}", table, response.getStatusCode());
+                return objectMapper.createArrayNode();
+            }
+            
+        } catch (Exception e) {
+            logger.error("Supabase selectWithLimit error in table " + table, e);
+            return objectMapper.createArrayNode();
+        }
+    }
+    
+    /**
      * Update data in Supabase table
      */
     public JsonNode update(String table, String id, Map<String, Object> data) {

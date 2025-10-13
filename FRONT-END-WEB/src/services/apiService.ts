@@ -351,6 +351,9 @@ export const judicialAPI = {
   getProcessSubjects: (numeroRadicacion: string, params?: any) =>
     apiService.get(`/judicial/${numeroRadicacion}/subjects`, params),
   
+  getConsultationHistory: (limit?: number) =>
+    apiService.get('/judicial/consultation-history', { limit: limit || 10 }),
+  
   getMonitoredProcesses: (params?: any) =>
     apiService.get('/judicial/monitored', params),
   

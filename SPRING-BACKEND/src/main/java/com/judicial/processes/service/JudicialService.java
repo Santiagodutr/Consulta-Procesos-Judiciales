@@ -254,6 +254,57 @@ public class JudicialService {
     }
     
     /**
+     * Get user's consultation history
+     */
+    public List<Map<String, Object>> getUserConsultationHistory(String userId, int limit) {
+        try {
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("user_id", userId);
+            filters.put("result_status", "success");
+            
+            JsonNode consultations = supabaseService.selectWithLimit("consultation_history", filters, limit, "created_at", "desc");
+            
+            if (consultations == null || !consultations.isArray()) {
+                return new ArrayList<>();
+            }
+            
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (JsonNode consultation : consultations) {
+                String processId = consultation.has("process_id") && !consultation.get("process_id").isNull() 
+                    ? consultation.get("process_id").asText() : null;
+                
+                if (processId != null) {
+                    // Get process basic info
+                    Map<String, Object> processFilters = new HashMap<>();
+                    processFilters.put("id", processId);
+                    JsonNode processes = supabaseService.select("judicial_processes", processFilters);
+                    
+                    if (processes != null && processes.isArray() && processes.size() > 0) {
+                        JsonNode process = processes.get(0);
+                        
+                        Map<String, Object> historyItem = new HashMap<>();
+                        historyItem.put("consultation_id", consultation.get("id").asText());
+                        historyItem.put("process_id", processId);
+                        historyItem.put("numero_radicacion", process.get("numero_radicacion").asText());
+                        historyItem.put("despacho", process.has("despacho") ? process.get("despacho").asText() : null);
+                        historyItem.put("demandante", process.has("demandante") ? process.get("demandante").asText() : null);
+                        historyItem.put("demandado", process.has("demandado") ? process.get("demandado").asText() : null);
+                        historyItem.put("consulted_at", consultation.get("created_at").asText());
+                        
+                        result.add(historyItem);
+                    }
+                }
+            }
+            
+            return result;
+        } catch (Exception error) {
+            logger.error("Error getting user consultation history: {}", error.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    
+    /**
      * Check if user is monitoring a process
      */
     public boolean isUserMonitoringProcess(String userId, String processId) {

@@ -6,6 +6,7 @@ import { RegisterPage } from './pages/auth/RegisterPage.tsx';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage.tsx';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage.tsx';
 import { SimpleDashboard } from './pages/SimpleDashboard.tsx';
+import { ProcessDetailsPage } from './pages/ProcessDetailsPage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
 
@@ -203,6 +204,15 @@ function App() {
         element={
           <ProtectedRoute>
             <SimpleDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/process/:numeroRadicacion" 
+        element={
+          <ProtectedRoute>
+            <ProcessDetailsPage />
           </ProtectedRoute>
         } 
       />
