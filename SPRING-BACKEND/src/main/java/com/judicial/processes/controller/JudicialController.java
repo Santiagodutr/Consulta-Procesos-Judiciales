@@ -62,11 +62,22 @@ public class JudicialController {
                                           HttpServletRequest httpRequest) {
         try {
             String numeroRadicacion = request.getNumeroRadicacion();
+            
+            // Debug authentication
+            logger.debug("Authentication object: {}", authentication);
+            logger.debug("Authentication isAuthenticated: {}", 
+                authentication != null ? authentication.isAuthenticated() : "null");
+            logger.debug("Authentication principal: {}", 
+                authentication != null ? authentication.getPrincipal() : "null");
+            
             String userId = (authentication != null && authentication.isAuthenticated()) 
                 ? (String) authentication.getPrincipal() : null;
             
-            logger.info("Consultation for process: {} by user: {}", numeroRadicacion, 
-                userId != null ? userId : "anonymous");
+            logger.info("Consultation for process: {} by user: {} (auth present: {}, authenticated: {})", 
+                numeroRadicacion, 
+                userId != null ? userId : "anonymous",
+                authentication != null,
+                authentication != null && authentication.isAuthenticated());
             
             // Check if forcing a fresh consultation
             boolean shouldForceRefresh = forceRefresh || fresh;
@@ -133,9 +144,15 @@ public class JudicialController {
      */
     @PostMapping("/save-process")
     public ResponseEntity<?> saveProcess(@RequestBody Map<String, Object> request,
+                                       Authentication authentication,
                                        HttpServletRequest httpRequest) {
         try {
-            logger.info("Saving process data to database from frontend");
+            // Extract user ID if authenticated
+            String userId = (authentication != null && authentication.isAuthenticated()) 
+                ? (String) authentication.getPrincipal() : null;
+            
+            logger.info("Saving process data to database from frontend by user: {}", 
+                userId != null ? userId : "anonymous");
             
             @SuppressWarnings("unchecked")
             Map<String, Object> processData = (Map<String, Object>) request.get("processData");
@@ -222,12 +239,12 @@ public class JudicialController {
             String processId = scrapingService.saveProcessData(processDataObj);
             
             if (processId != null) {
-                // Log the save operation
-                judicialService.logConsultation(null, processId, "frontend_save", 
+                // Log the save operation with user ID if authenticated
+                judicialService.logConsultation(userId, processId, "frontend_save", 
                     httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "success", null);
                 
-                logger.info("Process {} saved successfully with ID: {}", 
-                    processDataObj.getNumeroRadicacion(), processId);
+                logger.info("Process {} saved successfully with ID: {} by user: {}", 
+                    processDataObj.getNumeroRadicacion(), processId, userId != null ? userId : "anonymous");
                 
                 return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -244,7 +261,11 @@ public class JudicialController {
         } catch (Exception error) {
             logger.error("Error saving process data:", error);
             
-            judicialService.logConsultation(null, null, "frontend_save", 
+            // Extract user ID from authentication if available
+            String userId = (authentication != null && authentication.isAuthenticated()) 
+                ? (String) authentication.getPrincipal() : null;
+            
+            judicialService.logConsultation(userId, null, "frontend_save", 
                 httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"), "error", error.getMessage());
             
             return ResponseEntity.status(500).body(Map.of(

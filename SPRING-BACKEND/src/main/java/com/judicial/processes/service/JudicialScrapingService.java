@@ -460,24 +460,39 @@ public class JudicialScrapingService {
             processRecord.put("solo_activos", processData.getSoloActivos() != null ? processData.getSoloActivos() : false);
             processRecord.put("portal_url", processData.getPortalUrl());
             
-            // Timestamps
-            processRecord.put("created_at", LocalDateTime.now().toString());
-            processRecord.put("updated_at", LocalDateTime.now().toString());
+            // Timestamps - ALWAYS update these
+            String now = LocalDateTime.now().toString();
+            processRecord.put("updated_at", now);
+            // Only set created_at if it's a new record (Supabase will handle this)
             
             JsonNode result = supabaseService.upsert("judicial_processes", processRecord, "numero_radicacion");
             
-            if (result == null || !result.isArray() || result.size() == 0) {
-                logger.error("Error saving process data: No record returned from upsert");
-                return null;
+            String processId = null;
+            
+            // If upsert returns data, use it
+            if (result != null && result.isArray() && result.size() > 0) {
+                JsonNode firstResult = result.get(0);
+                if (firstResult != null && firstResult.has("id")) {
+                    processId = firstResult.get("id").asText();
+                    logger.debug("Process ID from upsert result: {}", processId);
+                }
             }
             
-            JsonNode firstResult = result.get(0);
-            if (firstResult == null || !firstResult.has("id")) {
-                logger.error("Error saving process data: Result record has no 'id' field");
-                return null;
+            // If no ID returned (update case), query by numero_radicacion
+            if (processId == null) {
+                logger.debug("No ID in upsert result, querying by numero_radicacion: {}", processData.getNumeroRadicacion());
+                Map<String, Object> filters = new HashMap<>();
+                filters.put("numero_radicacion", processData.getNumeroRadicacion());
+                JsonNode queryResult = supabaseService.select("judicial_processes", filters);
+                
+                if (queryResult != null && queryResult.isArray() && queryResult.size() > 0) {
+                    processId = queryResult.get(0).get("id").asText();
+                    logger.debug("Process ID from query: {}", processId);
+                } else {
+                    logger.error("Error saving process data: Could not find process after upsert");
+                    return null;
+                }
             }
-            
-            String processId = firstResult.get("id").asText();
             
             // Save activities
             if (processData.getActuaciones() != null && !processData.getActuaciones().isEmpty()) {
@@ -494,7 +509,7 @@ public class JudicialScrapingService {
                 saveProcessDocuments(processId, processData.getDocumentos());
             }
             
-            logger.info("Successfully saved process data for: {}", processData.getNumeroRadicacion());
+            logger.info("Successfully saved process data for: {} with ID: {}", processData.getNumeroRadicacion(), processId);
             return processId;
             
         } catch (Exception error) {

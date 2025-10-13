@@ -415,17 +415,20 @@ public class SupabaseService {
             }
             
             logger.debug("Upserting to table {} with conflict column: {}", table, conflictColumn);
+            logger.debug("Upsert data: {}", data);
             
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(data, headers);
             
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                JsonNode result = objectMapper.readTree(response.getBody());
-                logger.debug("Upsert successful for table {}", table);
-                if (result.isArray() && result.size() > 0) {
-                    return result.get(0);
-                }
+                String responseBody = response.getBody();
+                logger.debug("Upsert response body: {}", responseBody);
+                
+                JsonNode result = objectMapper.readTree(responseBody);
+                logger.debug("Upsert successful for table {}. Result is array: {}, size: {}", 
+                    table, result.isArray(), result.isArray() ? result.size() : "N/A");
+                
                 return result;
             } else {
                 logger.error("Supabase upsert failed for table {}: {} - Response: {}", 
