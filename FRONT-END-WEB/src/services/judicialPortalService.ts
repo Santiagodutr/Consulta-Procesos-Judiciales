@@ -28,13 +28,20 @@ export interface ProcessActivity {
 }
 
 export interface ProcessSubject {
-  lnIdSujetoProceso: number;
-  lsNombreSujeto: string;
-  lsTipoSujeto: string;
+  idRegSujeto?: number;
+  tipoSujeto?: string;
+  esEmplazado?: boolean;
+  identificacion?: string | null;
+  nombreRazonSocial?: string;
+  cant?: number;
+  // Mantener compatibilidad con respuestas antiguas
+  lnIdSujetoProceso?: number;
+  lsNombreSujeto?: string;
+  lsTipoSujeto?: string;
   lsIdentificacion?: string;
   lsTipoIdentificacion?: string;
   lsApoderado?: string;
-  lbTieneApoderado: string;
+  lbTieneApoderado?: string;
 }
 
 export interface ProcessDocument {
@@ -49,6 +56,8 @@ export interface ProcessDocument {
 
 export interface JudicialProcessData {
   // Información básica
+  idProceso?: number;  // ID interno del portal
+  idConexion?: number;
   numeroRadicacion: string;
   fechaRadicacion?: string;
   fechaProceso?: string;
@@ -92,9 +101,15 @@ class JudicialPortalService {
   // URLs del portal judicial
   private readonly BASE_URL = 'https://consultaprocesos.ramajudicial.gov.co';
   private readonly PORTAL_API_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Procesos/Consulta/NumeroRadicacion';
+  private readonly DETAILS_API_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Detalle';
   private readonly ACTIVITIES_API_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Actuaciones';
   private readonly SUBJECTS_API_URL = 'https://consultaprocesos.ramajudicial.gov.co/api/v1/Process/GetSujetosProcesales';
   private readonly DOCUMENTS_API_URL = 'https://consultaprocesos.ramajudicial.gov.co/api/Process/GetDocumentos';
+  
+  // Nuevos endpoints específicos por ID de proceso (para pestañas)
+  private readonly SUJETOS_BY_ID_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Sujetos';
+  private readonly DOCUMENTOS_BY_ID_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Documentos';
+  private readonly ACTUACIONES_BY_ID_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Actuaciones';
 
   constructor() {
     this.client = axios.create({
@@ -153,6 +168,8 @@ class JudicialPortalService {
       // Construir el objeto de respuesta
       const processData: JudicialProcessData = {
         // Información básica
+        idProceso: basicInfo.idProceso,
+        idConexion: basicInfo.idConexion,
         numeroRadicacion: basicInfo.llaveProceso,
         fechaRadicacion: basicInfo.fechaProceso ? basicInfo.fechaProceso.split('T')[0] : undefined,
         fechaProceso: basicInfo.fechaProceso,
@@ -187,6 +204,123 @@ class JudicialPortalService {
     } catch (error) {
       console.error('Error consultando proceso:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Obtener detalles completos del proceso usando idProceso
+   * Usa la API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Detalle/{idProceso}
+   */
+  async getProcessDetails(idProceso: number): Promise<any | null> {
+    try {
+      console.log(`Obteniendo detalles del proceso con ID: ${idProceso}`);
+      
+      const response = await this.client.get(`${this.DETAILS_API_URL}/${idProceso}`);
+      
+      if (!response.data) {
+        console.warn('No se encontraron detalles para el proceso');
+        return null;
+      }
+
+      return response.data;
+
+    } catch (error) {
+      console.error('Error obteniendo detalles del proceso:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Obtener sujetos procesales por ID de proceso
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Sujetos/{idProceso}?pagina=1
+   */
+  async getSujetosByIdProceso(idProceso: number, pagina: number = 1): Promise<ProcessSubject[]> {
+    try {
+      console.log(`Obteniendo sujetos del proceso ID: ${idProceso}, pagina: ${pagina}`);
+      
+      const response = await this.client.get(`${this.SUJETOS_BY_ID_URL}/${idProceso}`, {
+        params: { pagina }
+      });
+      
+      console.log('Respuesta de sujetos:', response.data);
+      
+      // La API devuelve { sujetos: [...], paginacion: {...} }
+      if (response.data && Array.isArray(response.data.sujetos)) {
+        return response.data.sujetos;
+      }
+      
+      // Si viene directamente el array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      return [];
+
+    } catch (error) {
+      console.error('Error obteniendo sujetos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtener documentos por ID de proceso
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Documentos/{idProceso}
+   */
+  async getDocumentosByIdProceso(idProceso: number): Promise<ProcessDocument[]> {
+    try {
+      console.log(`Obteniendo documentos del proceso ID: ${idProceso}`);
+      
+      const response = await this.client.get(`${this.DOCUMENTOS_BY_ID_URL}/${idProceso}`);
+      
+      console.log('Respuesta de documentos:', response.data);
+      
+      // La API puede devolver { documentos: [...] }
+      if (response.data && Array.isArray(response.data.documentos)) {
+        return response.data.documentos;
+      }
+      
+      // Si viene directamente el array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      return [];
+
+    } catch (error) {
+      console.error('Error obteniendo documentos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtener actuaciones por ID de proceso
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Actuaciones/{idProceso}?pagina=1
+   */
+  async getActuacionesByIdProceso(idProceso: number, pagina: number = 1): Promise<ProcessActivity[]> {
+    try {
+      console.log(`Obteniendo actuaciones del proceso ID: ${idProceso}, pagina: ${pagina}`);
+      
+      const response = await this.client.get(`${this.ACTUACIONES_BY_ID_URL}/${idProceso}`, {
+        params: { pagina }
+      });
+      
+      console.log('Respuesta de actuaciones:', response.data);
+      
+      // La API puede devolver { actuaciones: [...], paginacion: {...} }
+      if (response.data && Array.isArray(response.data.actuaciones)) {
+        return response.data.actuaciones;
+      }
+      
+      // Si viene directamente el array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      return [];
+
+    } catch (error) {
+      console.error('Error obteniendo actuaciones:', error);
+      return [];
     }
   }
 

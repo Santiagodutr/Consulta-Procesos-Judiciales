@@ -1,124 +1,180 @@
 import React, { useState } from 'react';
+import { Download, FileDown, ArrowLeft } from 'lucide-react';
+import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
-import { JudicialProcessData, judicialPortalService } from '../services/judicialPortalService.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
-import { useNavigate } from 'react-router-dom';
-import { FileDown, Download } from 'lucide-react';
 
-interface ConsultationResult {
+type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
+
+interface SearchResult {
   success: boolean;
   data?: JudicialProcessData;
   error?: string;
-  source: 'portal' | 'database';
+  source?: 'portal' | 'database';
 }
 
-export const HomePage: React.FC = () => {
+const HomePage: React.FC = () => {
+  // Estados para búsqueda
   const [numeroRadicacion, setNumeroRadicacion] = useState('');
-  const [searchType, setSearchType] = useState<'recent' | 'all'>('recent');
+  const [searchType, setSearchType] = useState<'recent' | 'all'>('all');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<ConsultationResult | null>(null);
+  
+  // Estados para resultados de búsqueda (listado)
+  const [searchResults, setSearchResults] = useState<JudicialProcessData[]>([]);
+  
+  // Estados para vista de detalles
+  const [selectedProcess, setSelectedProcess] = useState<JudicialProcessData | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('datos');
+  const [processDetails, setProcessDetails] = useState<any>(null);
+  const [sujetos, setSujetos] = useState<ProcessSubject[]>([]);
+  const [documentos, setDocumentos] = useState<ProcessDocument[]>([]);
+  const [actuaciones, setActuaciones] = useState<ProcessActivity[]>([]);
+  const [isLoadingTab, setIsLoadingTab] = useState(false);
+  
+  // Estados para descargas
   const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
-  
-  // Usar el contexto de autenticación
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
 
-  // Función para logout
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/');
-    } catch (error) {
-      console.error('Error during logout:', error);
-      // Forzar navegación aunque haya error
-      navigate('/');
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Manejar búsqueda
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!numeroRadicacion.trim()) {
+      alert('Por favor ingrese un número de radicación');
       return;
     }
 
-    // Validar formato del número de radicación
     if (!directJudicialAPI.validateRadicationNumber(numeroRadicacion)) {
-      setResult({
-        success: false,
-        error: 'El número de radicación debe tener entre 20 y 25 dígitos numéricos',
-        source: 'portal'
-      });
+      alert('Número de radicación inválido. Debe tener 23 dígitos.');
       return;
     }
 
     setIsLoading(true);
-    setResult(null);
+    setSearchResults([]);
+    setSelectedProcess(null);
 
     try {
-      console.log('Consultando proceso con el nuevo servicio...');
+      console.log('Consultando proceso...');
       
-      // Usar el nuevo servicio que consulta directamente al portal
       const response = await directJudicialAPI.consultProcess(
         numeroRadicacion.trim(), 
         searchType === 'recent'
       );
 
       if (response.success && response.data) {
-        setResult({
-          success: true,
-          data: response.data,
-          source: 'portal'
-        });
+        // Mostrar como resultado de búsqueda (listado)
+        setSearchResults([response.data]);
       } else {
-        setResult({
-          success: false,
-          error: response.message || 'No se encontró información para el número de radicación ingresado',
-          source: 'portal'
-        });
+        alert(response.message || 'No se encontró información para el número de radicación ingresado');
       }
     } catch (error) {
       console.error('Error en consulta:', error);
-      setResult({
-        success: false,
-        error: error instanceof Error ? error.message : 'Error de conexión con el portal oficial',
-        source: 'portal'
-      });
+      alert('Error de conexión con el portal oficial');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNewConsultation = () => {
-    setNumeroRadicacion('');
-    setResult(null);
-    setSearchType('recent');
+  // Seleccionar proceso y cargar detalles
+  const handleSelectProcess = async (process: JudicialProcessData) => {
+    setSelectedProcess(process);
+    setActiveTab('datos');
+    
+    // Cargar detalles del proceso
+    if (process.idProceso) {
+      setIsLoadingTab(true);
+      try {
+        const details = await judicialPortalService.getProcessDetails(process.idProceso);
+        setProcessDetails(details);
+      } catch (error) {
+        console.error('Error cargando detalles:', error);
+      } finally {
+        setIsLoadingTab(false);
+      }
+    }
   };
 
+  // Cargar datos de pestaña específica
+  const loadTabData = async (tab: TabType) => {
+    if (!selectedProcess?.idProceso) return;
+    
+    setIsLoadingTab(true);
+    
+    try {
+      switch (tab) {
+        case 'sujetos':
+          if (sujetos.length === 0) {
+            const data = await judicialPortalService.getSujetosByIdProceso(selectedProcess.idProceso);
+            setSujetos(data);
+          }
+          break;
+        case 'documentos':
+          if (documentos.length === 0) {
+            const data = await judicialPortalService.getDocumentosByIdProceso(selectedProcess.idProceso);
+            setDocumentos(data);
+          }
+          break;
+        case 'actuaciones':
+          if (actuaciones.length === 0) {
+            const data = await judicialPortalService.getActuacionesByIdProceso(selectedProcess.idProceso);
+            setActuaciones(data);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error(`Error cargando ${tab}:`, error);
+    } finally {
+      setIsLoadingTab(false);
+    }
+  };
+
+  // Cambiar pestaña
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    loadTabData(tab);
+  };
+
+  // Regresar al listado
+  const handleBack = () => {
+    setSelectedProcess(null);
+    setProcessDetails(null);
+    setSujetos([]);
+    setDocumentos([]);
+    setActuaciones([]);
+    setActiveTab('datos');
+  };
+
+  // Nueva consulta
+  const handleNewSearch = () => {
+    setNumeroRadicacion('');
+    setSearchResults([]);
+    setSelectedProcess(null);
+    setSearchType('all');
+  };
+
+  // Descargas
   const handleDownloadDOCX = async () => {
-    if (!result?.data?.numeroRadicacion) return;
+    if (!selectedProcess?.numeroRadicacion) return;
     
     setIsDownloadingDOCX(true);
     try {
-      await judicialPortalService.downloadDOCX(result.data.numeroRadicacion, searchType === 'recent');
+      await judicialPortalService.downloadDOCX(selectedProcess.numeroRadicacion, searchType === 'recent');
     } catch (error) {
       console.error('Error descargando DOCX:', error);
-      alert('Error al descargar el archivo DOCX. Por favor, intente nuevamente.');
+      alert('Error al descargar el archivo DOCX');
     } finally {
       setIsDownloadingDOCX(false);
     }
   };
 
   const handleDownloadCSV = async () => {
-    if (!result?.data?.numeroRadicacion) return;
+    if (!selectedProcess?.numeroRadicacion) return;
     
     setIsDownloadingCSV(true);
     try {
-      await judicialPortalService.downloadCSV(result.data.numeroRadicacion, searchType === 'recent');
+      await judicialPortalService.downloadCSV(selectedProcess.numeroRadicacion, searchType === 'recent');
     } catch (error) {
       console.error('Error descargando CSV:', error);
-      alert('Error al descargar el archivo CSV. Por favor, intente nuevamente.');
+      alert('Error al descargar el archivo CSV');
     } finally {
       setIsDownloadingCSV(false);
     }
@@ -128,30 +184,37 @@ export const HomePage: React.FC = () => {
     try {
       return new Date(dateString).toLocaleDateString('es-CO', {
         year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        month: '2-digit',
+        day: '2-digit'
       });
     } catch {
       return dateString;
     }
   };
 
-  // Pantalla de resultados
-  if (result) {
+  // ==================== VISTA DE DETALLES CON PESTAÑAS ====================
+  if (selectedProcess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Header simplificado para resultados */}
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
           <div className="bg-white shadow-sm border-b mb-6 rounded-lg">
             <div className="px-6 py-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleBack}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Regresar al listado"
+                  >
+                    <ArrowLeft className="h-6 w-6 text-gray-600" />
+                  </button>
                   <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-sm">🏛️</span>
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-blue-800">CONSULTA DE PROCESOS</h1>
-                    <h2 className="text-lg font-semibold text-blue-700">NACIONAL UNIFICADA</h2>
+                    <h1 className="text-xl font-bold text-blue-800">DETALLE DEL PROCESO</h1>
+                    <h2 className="text-lg font-semibold text-blue-700">{selectedProcess.numeroRadicacion}</h2>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -159,7 +222,6 @@ export const HomePage: React.FC = () => {
                     onClick={handleDownloadDOCX}
                     disabled={isDownloadingDOCX}
                     className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                    title="Descargar en formato DOC"
                   >
                     {isDownloadingDOCX ? (
                       <>
@@ -169,7 +231,7 @@ export const HomePage: React.FC = () => {
                     ) : (
                       <>
                         <FileDown className="h-5 w-5" />
-                        <span>DOC</span>
+                        <span>Descargar DOC</span>
                       </>
                     )}
                   </button>
@@ -177,7 +239,6 @@ export const HomePage: React.FC = () => {
                     onClick={handleDownloadCSV}
                     disabled={isDownloadingCSV}
                     className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                    title="Descargar en formato CSV"
                   >
                     {isDownloadingCSV ? (
                       <>
@@ -187,455 +248,493 @@ export const HomePage: React.FC = () => {
                     ) : (
                       <>
                         <Download className="h-5 w-5" />
-                        <span>CSV</span>
+                        <span>Descargar CSV</span>
                       </>
                     )}
                   </button>
-                  <button
-                    onClick={handleNewConsultation}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
-                  >
-                    Nueva Consulta
-                  </button>
                 </div>
+              </div>
+
+              {/* Fecha de consulta */}
+              <div className="mt-4 text-sm text-gray-600">
+                Fecha de consulta: {new Date().toLocaleString('es-CO')}
+              </div>
+              <div className="mt-1 text-sm text-gray-600">
+                Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}
               </div>
             </div>
           </div>
 
-          {result.success && result.data ? (
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <div className="border-b pb-6 mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Información del Proceso Judicial
-                </h2>
-                <div className="flex items-center text-sm text-gray-600">
-                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                  Consultado desde: {result.source === 'database' ? 'Base de datos local' : 'Portal oficial'}
-                </div>
+          {/* Pestañas */}
+          <div className="bg-white shadow-sm rounded-lg">
+            <div className="border-b">
+              <div className="flex">
+                <button
+                  onClick={() => handleTabChange('datos')}
+                  className={`px-6 py-4 font-semibold text-sm ${
+                    activeTab === 'datos'
+                      ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  DATOS DEL PROCESO
+                </button>
+                <button
+                  onClick={() => handleTabChange('sujetos')}
+                  className={`px-6 py-4 font-semibold text-sm ${
+                    activeTab === 'sujetos'
+                      ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  SUJETOS PROCESALES
+                </button>
+                <button
+                  onClick={() => handleTabChange('documentos')}
+                  className={`px-6 py-4 font-semibold text-sm ${
+                    activeTab === 'documentos'
+                      ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  DOCUMENTOS DEL PROCESO
+                </button>
+                <button
+                  onClick={() => handleTabChange('actuaciones')}
+                  className={`px-6 py-4 font-semibold text-sm ${
+                    activeTab === 'actuaciones'
+                      ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  ACTUACIONES
+                </button>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Información básica */}
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Número de Radicación
-                    </label>
-                    <p className="text-lg font-mono bg-blue-50 p-3 rounded border border-blue-200">
-                      {result.data.numeroRadicacion}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Fecha de Radicación
-                    </label>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      {result.data.fechaRadicacion ? formatDate(result.data.fechaRadicacion) : 'No disponible'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Estado del Proceso
-                    </label>
-                    <span className="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                      {result.data.estado || 'Activo'}
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Ubicación
-                    </label>
-                    <div className="bg-gray-50 p-3 rounded">
-                      <p className="font-medium">{result.data.departamento || 'No disponible'}</p>
-                      <p className="text-gray-600">Colombia</p>
+            {/* Contenido de las pestañas */}
+            <div className="p-6">
+              {isLoadingTab ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Cargando...</span>
+                </div>
+              ) : (
+                <>
+                  {/* PESTAÑA: DATOS DEL PROCESO */}
+                  {activeTab === 'datos' && processDetails && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha de Radicación:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{formatDate(processDetails.fechaRadicacion || selectedProcess.fechaRadicacion || 'N/A')}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Recurso:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.recurso || 'SIN TIPO DE RECURSO'}</p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Despacho:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.despacho || selectedProcess.despacho}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Ponente:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.ponente || 'No especificado'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Ubicación del Expediente:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.ubicacionExpediente || 'ARCHIVO'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Proceso:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.tipoProceso || selectedProcess.tipoProceso || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Clase de Proceso:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.claseProceso || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Subclase de Proceso:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.subclaseProceso || 'SIN SUBCLASE DE PROCESO'}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Contenido de Radicación:</label>
+                          <p className="text-gray-900 bg-gray-50 p-3 rounded">{processDetails.contenidoRadicacion || ''}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
 
-                {/* Información del proceso */}
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Despacho Judicial
-                    </label>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      {result.data.despacho}
-                    </p>
-                  </div>
+                  {/* PESTAÑA: SUJETOS PROCESALES */}
+                  {activeTab === 'sujetos' && (
+                    <div className="space-y-4">
+                      {sujetos.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">No hay sujetos procesales disponibles</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Identificación</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Apoderado</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {sujetos.map((sujeto, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {sujeto.nombreRazonSocial || sujeto.lsNombreSujeto || '-'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {sujeto.tipoSujeto || sujeto.lsTipoSujeto || '-'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {sujeto.identificacion || sujeto.lsIdentificacion || '-'}
+                                  </td>
+                                  <td className="px-6 py-4 text-sm text-gray-600">
+                                    {sujeto.lsApoderado || '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Tipo de Proceso
-                    </label>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      {result.data.tipoProceso || 'No disponible'}
-                    </p>
-                  </div>
+                  {/* PESTAÑA: DOCUMENTOS */}
+                  {activeTab === 'documentos' && (
+                    <div className="space-y-4">
+                      {documentos.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">No hay documentos disponibles</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {documentos.map((documento, index) => (
+                            <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                              <div className="flex items-start gap-3">
+                                <div className="bg-blue-100 rounded p-2">
+                                  <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900 truncate">{documento.lsNombreArchivo}</p>
+                                  <p className="text-xs text-gray-600 mt-1">{documento.lsTipoDocumento}</p>
+                                  {documento.lsExtensionArchivo && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {documento.lsExtensionArchivo.toUpperCase()}
+                                      {documento.lnTamanoArchivo && ` • ${(documento.lnTamanoArchivo / 1024).toFixed(1)} KB`}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Ponente/Juez
-                    </label>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                      No especificado
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sujetos procesales */}
-              <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Demandante(s)
-                  </label>
-                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                    <p className="font-semibold text-blue-900">
-                      {result.data.demandante || 'No especificado'}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Demandado(s)
-                  </label>
-                  <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-                    <p className="font-semibold text-red-900">
-                      {result.data.demandado || 'No especificado'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {result.data.sujetosProcesales && (
-                <div className="mt-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Todos los Sujetos Procesales
-                  </label>
-                  <div className="bg-gray-50 border p-4 rounded">
-                    <p className="text-gray-900 whitespace-pre-line leading-relaxed">
-                      {result.data.sujetosProcesales.replace(/\|/g, '\n')}
-                    </p>
-                  </div>
-                </div>
+                  {/* PESTAÑA: ACTUACIONES */}
+                  {activeTab === 'actuaciones' && (
+                    <div className="space-y-4">
+                      {actuaciones.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">No hay actuaciones disponibles</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {actuaciones.map((actuacion, index) => (
+                            <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
+                                      #{actuacion.consActuacion}
+                                    </span>
+                                    <span className="text-sm text-gray-600">{formatDate(actuacion.fechaActuacion)}</span>
+                                    {actuacion.conDocumentos && (
+                                      <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
+                                        📎 Con documentos
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-gray-900 font-medium mb-1">{actuacion.actuacion}</p>
+                                  {actuacion.anotacion && (
+                                    <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">{actuacion.anotacion}</p>
+                                  )}
+                                </div>
+                                <div className="text-right text-sm text-gray-500 ml-4">
+                                  <p>{actuacion.cantFolios} folios</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-
-              {/* Información adicional */}
-              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Estado
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                    {result.data.estado || 'Activo'}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Cantidad de Folios
-                  </label>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded">
-                    {result.data.cantidadFolios || 0}
-                  </p>
-                </div>
-              </div>
             </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-              <div className="mb-4">
-                <div className="mx-auto h-16 w-16 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 text-2xl">⚠️</span>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Proceso no encontrado
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                {result.error || 'No se encontró información para el número de radicación ingresado'}
-              </p>
-              <button
-                onClick={handleNewConsultation}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-              >
-                Realizar nueva consulta
-              </button>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // Pantalla principal de consulta
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header oficial */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                <div className="h-14 w-14 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">🏛️</span>
+  // ==================== VISTA DE LISTADO DE RESULTADOS ====================
+  if (searchResults.length > 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="bg-white shadow-sm border-b mb-6 rounded-lg">
+            <div className="px-6 py-4">
+              <div className="flex items-center space-x-4">
+                <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">🏛️</span>
                 </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-blue-800">
-                  CONSULTA DE PROCESOS
-                </h1>
-                <h2 className="text-xl font-semibold text-blue-700">
-                  NACIONAL UNIFICADA
-                </h2>
+                <div className="flex-1">
+                  <h1 className="text-xl font-bold text-blue-800">Número de Radicación</h1>
+                </div>
+                <button
+                  onClick={handleNewSearch}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  NUEVA CONSULTA
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-600">
-                  {new Date().toLocaleDateString('es-CO', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Sistema Nacional de Consultas
-                </div>
+          {/* Formulario de búsqueda (compacto) */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <form onSubmit={handleSearch} className="flex gap-4 items-end">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={numeroRadicacion}
+                  onChange={(e) => setNumeroRadicacion(e.target.value)}
+                  placeholder="50001333100120070007600"
+                  maxLength={23}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-              <div className="flex-shrink-0">
-                <div className="h-14 w-14 bg-yellow-400 rounded-full flex items-center justify-center">
-                  <span className="text-blue-800 font-bold text-lg">🇨🇴</span>
-                </div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+              >
+                {isLoading ? 'Consultando...' : 'CONSULTAR'}
+              </button>
+            </form>
+          </div>
+
+          {/* Botones de descarga */}
+          <div className="flex justify-center gap-4 mb-6">
+            <button
+              onClick={handleDownloadDOCX}
+              disabled={isDownloadingDOCX}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+            >
+              {isDownloadingDOCX ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Descargando...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="h-5 w-5" />
+                  <span>Descargar DOC</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDownloadCSV}
+              disabled={isDownloadingCSV}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+            >
+              {isDownloadingCSV ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Descargando...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-5 w-5" />
+                  <span>Descargar CSV</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Tabla de resultados */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-3 bg-gray-50 border-b">
+              <div className="flex items-center gap-2">
+                <input type="checkbox" checked readOnly className="rounded" />
+                <span className="font-semibold text-sm text-gray-700">Consultado</span>
               </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Número de Radicación
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha de Radicación y última actuación
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Despacho y Departamento
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sujetos Procesales
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {searchResults.map((process, index) => (
+                    <tr key={index} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleSelectProcess(process)}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button className="text-blue-600 hover:text-blue-800 font-medium">
+                          {process.numeroRadicacion}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{formatDate(process.fechaRadicacion || '')}</div>
+                        {process.fechaUltimaActuacion && (
+                          <div className="text-sm text-blue-600">{formatDate(process.fechaUltimaActuacion)}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{process.despacho}</div>
+                        <div className="text-sm text-gray-500">({process.departamento || 'META'})</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          <div><strong>Demandante:</strong> {process.demandante || 'No especificado'}</div>
+                          <div><strong>Demandado:</strong> {process.demandado || 'No especificado'}</div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t text-center text-sm text-gray-600">
+              Resultados encontrados: {searchResults.length}
             </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Barra de navegación */}
-      <div className="bg-blue-800 text-white">
+  // ==================== PANTALLA INICIAL DE BÚSQUEDA ====================
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center space-x-6">
-              <button className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors">
-                <span className="text-sm">👁️ Visión</span>
-              </button>
-              
-              {user ? (
-                <>
-                  <button 
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors bg-blue-600"
-                  >
-                    <span className="text-sm">🏠 Dashboard</span>
-                  </button>
-                  <div className="flex items-center space-x-2 px-3 py-2">
-                    <span className="text-sm">👋 Hola, {user?.first_name || 'Usuario'}</span>
-                  </div>
-                </>
-              ) : (
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors"
-                >
-                  <span className="text-sm">👤 Iniciar Sesión</span>
-                </button>
-              )}
-              
-              <button className="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded transition-colors">
-                <span className="text-sm">📋 Servicios</span>
-              </button>
-            </div>
-            <div className="flex items-center space-x-1">
-              <button className="hover:bg-blue-700 px-3 py-2 rounded transition-colors">
-                <span className="text-sm">❓ Ayuda</span>
-              </button>
-              
-              {user && (
-                <button 
-                  onClick={handleLogout}
-                  className="hover:bg-blue-700 px-3 py-2 rounded transition-colors"
-                  title="Cerrar sesión"
-                >
-                  <span className="text-sm">🚪 Salir</span>
-                </button>
-              )}
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <div className="h-14 w-14 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">🏛️</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-blue-800">CONSULTA DE PROCESOS</h1>
+                <h2 className="text-xl font-semibold text-blue-700">NACIONAL UNIFICADA</h2>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Contenido principal */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <button className="flex items-center text-gray-600 hover:text-gray-800 transition-colors">
-            <span className="mr-2">←</span>
-            Regresar a opciones de Consulta
-          </button>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+            Número de Radicación
+          </h2>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center mb-4">
-              <div className="flex flex-col items-center">
-                <div className="w-3 h-8 bg-blue-600 rounded-full mb-1"></div>
-                <div className="w-5 h-3 bg-blue-600 rounded-full mb-1"></div>
-                <div className="w-7 h-3 bg-blue-600 rounded-full"></div>
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-3">
-              Consulta por Número de Radicación
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Ingrese el número de radicación de 23 dígitos para consultar la información del proceso judicial
-            </p>
+          {/* Opciones de búsqueda */}
+          <div className="mb-6 space-y-3">
+            <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+              <input
+                type="radio"
+                value="recent"
+                checked={searchType === 'recent'}
+                onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
+                className="w-5 h-5 text-blue-600"
+              />
+              <span className="ml-3 text-gray-700">
+                Procesos con Actuaciones Recientes (últimos 30 días)
+              </span>
+            </label>
+            <label className="flex items-center p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
+              <input
+                type="radio"
+                value="all"
+                checked={searchType === 'all'}
+                onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
+                className="w-5 h-5 text-blue-600"
+              />
+              <span className="ml-3 text-gray-700 font-medium">
+                Todos los Procesos (consulta completa, menos rápida)
+              </span>
+            </label>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Tipo de consulta:</h3>
-              <div className="space-y-3">
-                <label className="flex items-start cursor-pointer">
-                  <input
-                    type="radio"
-                    name="searchType"
-                    value="recent"
-                    checked={searchType === 'recent'}
-                    onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
-                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 mt-1"
-                  />
-                  <div className="ml-3">
-                    <span className="font-medium text-gray-700">
-                      Procesos con Actuaciones Recientes
-                    </span>
-                    <p className="text-sm text-gray-500">
-                      Consulta rápida de procesos con movimientos en los últimos 30 días
-                    </p>
-                  </div>
-                </label>
-                
-                <label className="flex items-start cursor-pointer">
-                  <input
-                    type="radio"
-                    name="searchType"
-                    value="all"
-                    checked={searchType === 'all'}
-                    onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
-                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 mt-1"
-                  />
-                  <div className="ml-3">
-                    <span className="font-medium text-gray-700">
-                      Todos los Procesos
-                    </span>
-                    <p className="text-sm text-gray-500">
-                      Consulta completa (puede tomar más tiempo)
-                    </p>
-                  </div>
-                </label>
+          {/* Formulario de búsqueda */}
+          <form onSubmit={handleSearch} className="space-y-6">
+            <div>
+              <input
+                type="text"
+                value={numeroRadicacion}
+                onChange={(e) => setNumeroRadicacion(e.target.value)}
+                placeholder="Ingrese el número de radicación (23 dígitos)"
+                maxLength={23}
+                className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="mt-2 text-right text-sm text-gray-500">
+                {numeroRadicacion.length} / 23
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Número de Radicación
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={numeroRadicacion}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    if (value.length <= 23) {
-                      setNumeroRadicacion(value);
-                    }
-                  }}
-                  placeholder="Ingrese los 23 dígitos del número de radicación"
-                  className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  disabled={isLoading}
-                />
-                <div className="absolute right-4 top-4 text-sm text-gray-500">
-                  {numeroRadicacion.length}/23
-                </div>
-              </div>
-              {numeroRadicacion.length > 0 && numeroRadicacion.length < 23 && (
-                <p className="text-sm text-orange-600">
-                  Faltan {23 - numeroRadicacion.length} dígitos
-                </p>
-              )}
-            </div>
-
-            <div className="flex justify-center space-x-4 pt-4">
+            <div className="flex gap-4">
               <button
                 type="submit"
-                disabled={isLoading || numeroRadicacion.length !== 23}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-10 py-3 rounded-lg font-semibold transition-colors text-lg min-w-[160px]"
+                disabled={isLoading}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors"
               >
                 {isLoading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    CONSULTANDO...
-                  </span>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span>Consultando...</span>
+                  </div>
                 ) : (
                   'CONSULTAR'
                 )}
               </button>
-              
               <button
                 type="button"
-                onClick={handleNewConsultation}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors text-lg"
+                onClick={handleNewSearch}
+                className="bg-gray-500 hover:bg-gray-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors"
               >
-                LIMPIAR
+                NUEVA CONSULTA
               </button>
             </div>
           </form>
-
-          <div className="mt-8 text-center text-sm text-gray-500">
-            <p>Sistema desarrollado para consulta de procesos del sistema judicial colombiano</p>
-          </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-slate-800 text-white py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3">
-            <div className="flex justify-center items-center space-x-4 mb-4">
-              <span className="text-2xl">🏛️</span>
-              <span className="font-semibold">Rama Judicial del Poder Público</span>
-              <span className="text-2xl">🇨🇴</span>
-            </div>
-            <p className="text-sm">
-              Políticas de Privacidad y Condiciones de Uso
-            </p>
-            <p className="text-sm">
-              Calle 12 No. 7 - 65 Bogotá D.C., Colombia
-            </p>
-            <p className="text-sm">
-              Teléfono (57) 601 - 565 8500 Ext 7550
-            </p>
-            <p className="text-sm">
-              soporteciu@cendoj.ramajudicial.gov.co
-            </p>
-            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-600">
-              <p className="text-xs">
-                © 2025 Consulta de Procesos Nacional Unificada
-              </p>
-              <div className="text-xs">
-                <p>Visitantes conectados: 1,247</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
+
+export default HomePage;

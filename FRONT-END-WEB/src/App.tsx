@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { HomePage } from './pages/HomePage.tsx';
+import HomePage from './pages/HomePage.tsx';
 import { LoginPage } from './pages/auth/LoginPage.tsx';
 import { RegisterPage } from './pages/auth/RegisterPage.tsx';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage.tsx';
