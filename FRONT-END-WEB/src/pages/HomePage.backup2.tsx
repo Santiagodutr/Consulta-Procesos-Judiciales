@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Download, FileDown, ArrowLeft, LogOut } from 'lucide-react';
+import { Download, FileDown, ArrowLeft } from 'lucide-react';
 import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
 
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
 
+interface SearchResult {
+  success: boolean;
+  data?: JudicialProcessData;
+  error?: string;
+  source?: 'portal' | 'database';
+}
+
 const HomePage: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  
   // Estados para búsqueda
   const [numeroRadicacion, setNumeroRadicacion] = useState('');
   const [searchType, setSearchType] = useState<'recent' | 'all'>('all');
@@ -32,15 +34,6 @@ const HomePage: React.FC = () => {
   const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
-
   // Manejar búsqueda
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,12 +53,15 @@ const HomePage: React.FC = () => {
     setSelectedProcess(null);
 
     try {
+      console.log('Consultando proceso...');
+      
       const response = await directJudicialAPI.consultProcess(
         numeroRadicacion.trim(), 
         searchType === 'recent'
       );
 
       if (response.success && response.data) {
+        // Mostrar como resultado de búsqueda (listado)
         setSearchResults([response.data]);
       } else {
         alert(response.message || 'No se encontró información para el número de radicación ingresado');
@@ -83,6 +79,7 @@ const HomePage: React.FC = () => {
     setSelectedProcess(process);
     setActiveTab('datos');
     
+    // Cargar detalles del proceso
     if (process.idProceso) {
       setIsLoadingTab(true);
       try {
@@ -198,115 +195,73 @@ const HomePage: React.FC = () => {
   // ==================== VISTA DE DETALLES CON PESTAÑAS ====================
   if (selectedProcess) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        {/* Header azul */}
-        <div className="bg-blue-700 text-white shadow-md">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center px-6 py-4">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleBack}
-                  className="p-2 hover:bg-blue-600 rounded-full transition-colors"
-                  title="Regresar"
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-                    <span className="text-blue-700 font-bold">🏛️</span>
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="bg-white shadow-sm border-b mb-6 rounded-lg">
+            <div className="px-6 py-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleBack}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Regresar al listado"
+                  >
+                    <ArrowLeft className="h-6 w-6 text-gray-600" />
+                  </button>
+                  <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">🏛️</span>
                   </div>
                   <div>
-                    <h1 className="text-lg font-bold">CONSULTA DE PROCESOS</h1>
-                    <h2 className="text-sm">NACIONAL UNIFICADA</h2>
+                    <h1 className="text-xl font-bold text-blue-800">DETALLE DEL PROCESO</h1>
+                    <h2 className="text-lg font-semibold text-blue-700">{selectedProcess.numeroRadicacion}</h2>
                   </div>
                 </div>
-              </div>
-              
-              {/* Botones de navegación */}
-              <div className="hidden md:flex items-center space-x-6">
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👁️</span>
-                  <span className="text-sm font-medium">Visión</span>
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center space-x-1 hover:text-blue-200 transition-colors"
-                >
-                  <span>📊</span>
-                  <span className="text-sm font-medium">Dashboard</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👤</span>
-                  <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>⚙️</span>
-                  <span className="text-sm font-medium">Servicios</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDownloadDOCX}
+                    disabled={isDownloadingDOCX}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                  >
+                    {isDownloadingDOCX ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Descargando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileDown className="h-5 w-5" />
+                        <span>Descargar DOC</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleDownloadCSV}
+                    disabled={isDownloadingCSV}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                  >
+                    {isDownloadingCSV ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Descargando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-5 w-5" />
+                        <span>Descargar CSV</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
-              {/* Botón cerrar sesión */}
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="hidden md:inline text-sm font-medium">Cerrar Sesión</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Contenido */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">DETALLE DEL PROCESO</h2>
-                <p className="text-lg text-blue-600 font-mono">{selectedProcess.numeroRadicacion}</p>
+              {/* Fecha de consulta */}
+              <div className="mt-4 text-sm text-gray-600">
+                Fecha de consulta: {new Date().toLocaleString('es-CO')}
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleDownloadDOCX}
-                  disabled={isDownloadingDOCX}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  {isDownloadingDOCX ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Descargando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileDown className="h-5 w-5" />
-                      <span>Descargar DOC</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDownloadCSV}
-                  disabled={isDownloadingCSV}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  {isDownloadingCSV ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Descargando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-5 w-5" />
-                      <span>Descargar CSV</span>
-                    </>
-                  )}
-                </button>
+              <div className="mt-1 text-sm text-gray-600">
+                Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}
               </div>
-            </div>
-
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
-              <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
             </div>
           </div>
 
@@ -532,77 +487,37 @@ const HomePage: React.FC = () => {
   // ==================== VISTA DE LISTADO DE RESULTADOS ====================
   if (searchResults.length > 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        {/* Header azul */}
-        <div className="bg-blue-700 text-white shadow-md">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center px-6 py-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-blue-700 font-bold">🏛️</span>
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="bg-white shadow-sm border-b mb-6 rounded-lg">
+            <div className="px-6 py-4">
+              <div className="flex items-center space-x-4">
+                <div className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">🏛️</span>
                 </div>
-                <div>
-                  <h1 className="text-lg font-bold">CONSULTA DE PROCESOS</h1>
-                  <h2 className="text-sm">NACIONAL UNIFICADA</h2>
+                <div className="flex-1">
+                  <h1 className="text-xl font-bold text-blue-800">Número de Radicación</h1>
                 </div>
-              </div>
-              
-              {/* Botones de navegación */}
-              <div className="hidden md:flex items-center space-x-6">
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👁️</span>
-                  <span className="text-sm font-medium">Visión</span>
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center space-x-1 hover:text-blue-200 transition-colors"
+                <button
+                  onClick={handleNewSearch}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
                 >
-                  <span>📊</span>
-                  <span className="text-sm font-medium">Dashboard</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👤</span>
-                  <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>⚙️</span>
-                  <span className="text-sm font-medium">Servicios</span>
+                  NUEVA CONSULTA
                 </button>
               </div>
-
-              {/* Botón cerrar sesión */}
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="hidden md:inline text-sm font-medium">Cerrar Sesión</span>
-              </button>
             </div>
           </div>
-        </div>
 
-        {/* Contenido */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">← Regresar a opciones de Consulta</h2>
-              <button
-                onClick={handleNewSearch}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
-              >
-                LIMPIAR
-              </button>
-            </div>
-            
+          {/* Formulario de búsqueda (compacto) */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <form onSubmit={handleSearch} className="flex gap-4 items-end">
               <div className="flex-1">
                 <input
                   type="text"
                   value={numeroRadicacion}
                   onChange={(e) => setNumeroRadicacion(e.target.value)}
-                  placeholder="Ingrese los 23 dígitos del número de radicación"
+                  placeholder="50001333100120070007600"
                   maxLength={23}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -724,157 +639,98 @@ const HomePage: React.FC = () => {
   // ==================== PANTALLA INICIAL DE BÚSQUEDA ====================
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header azul similar a la foto */}
-      <div className="bg-blue-700 text-white shadow-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center px-6 py-4">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-                <span className="text-blue-700 font-bold">🏛️</span>
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <div className="h-14 w-14 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-lg">🏛️</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold">CONSULTA DE PROCESOS</h1>
-                <h2 className="text-sm">NACIONAL UNIFICADA</h2>
+                <h1 className="text-2xl font-bold text-blue-800">CONSULTA DE PROCESOS</h1>
+                <h2 className="text-xl font-semibold text-blue-700">NACIONAL UNIFICADA</h2>
               </div>
             </div>
-            
-            {/* Botones de navegación */}
-            <div className="hidden md:flex items-center space-x-6">
-              <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                <span>👁️</span>
-                <span className="text-sm font-medium">Visión</span>
-              </button>
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-1 hover:text-blue-200 transition-colors"
-              >
-                <span>📊</span>
-                <span className="text-sm font-medium">Dashboard</span>
-              </button>
-              <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                <span>👤</span>
-                <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-              </button>
-              <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                <span>⚙️</span>
-                <span className="text-sm font-medium">Servicios</span>
-              </button>
-            </div>
-
-            {/* Botón cerrar sesión */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="hidden md:inline text-sm font-medium">Cerrar Sesión</span>
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-6 py-3">
-        <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center">
-          <span>← Regresar a opciones de Consulta</span>
-        </button>
-      </div>
-
-      {/* Contenido principal - Consulta por Número de Radicación */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Contenido principal */}
+      <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex items-center justify-center mb-8">
-            <div className="text-center">
-              <div className="inline-block bg-blue-100 p-4 rounded-full mb-4">
-                <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Consulta por Número de Radicación
-              </h2>
-              <p className="text-gray-600 mt-2">
-                Ingrese el número de radicación de 23 dígitos para consultar la información del proceso judicial
-              </p>
-            </div>
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+            Número de Radicación
+          </h2>
 
-          {/* Tipo de consulta */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Tipo de consulta:</label>
-            <div className="space-y-3">
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  value="recent"
-                  checked={searchType === 'recent'}
-                  onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
-                  className="w-5 h-5 text-blue-600"
-                />
-                <div className="ml-3">
-                  <span className="block font-medium text-gray-700">Procesos con Actuaciones Recientes</span>
-                  <span className="block text-sm text-gray-500">Consulta rápida de procesos con movimientos en los últimos 30 días</span>
-                </div>
-              </label>
-              <label className="flex items-center p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
-                <input
-                  type="radio"
-                  value="all"
-                  checked={searchType === 'all'}
-                  onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
-                  className="w-5 h-5 text-blue-600"
-                />
-                <div className="ml-3">
-                  <span className="block font-medium text-gray-700">Todos los Procesos</span>
-                  <span className="block text-sm text-gray-500">Consulta completa (puede tomar más tiempo)</span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Campo de número de radicación */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Número de Radicación
+          {/* Opciones de búsqueda */}
+          <div className="mb-6 space-y-3">
+            <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+              <input
+                type="radio"
+                value="recent"
+                checked={searchType === 'recent'}
+                onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
+                className="w-5 h-5 text-blue-600"
+              />
+              <span className="ml-3 text-gray-700">
+                Procesos con Actuaciones Recientes (últimos 30 días)
+              </span>
             </label>
-            <input
-              type="text"
-              value={numeroRadicacion}
-              onChange={(e) => setNumeroRadicacion(e.target.value)}
-              placeholder="Ingrese los 23 dígitos del número de radicación"
-              maxLength={23}
-              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="mt-2 text-right text-sm text-gray-500">
-              {numeroRadicacion.length} / 23
-            </div>
+            <label className="flex items-center p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
+              <input
+                type="radio"
+                value="all"
+                checked={searchType === 'all'}
+                onChange={(e) => setSearchType(e.target.value as 'recent' | 'all')}
+                className="w-5 h-5 text-blue-600"
+              />
+              <span className="ml-3 text-gray-700 font-medium">
+                Todos los Procesos (consulta completa, menos rápida)
+              </span>
+            </label>
           </div>
 
-          {/* Botones */}
-          <div className="flex gap-4">
-            <button
-              onClick={handleSearch}
-              disabled={isLoading}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors"
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                  <span>CONSULTANDO...</span>
-                </div>
-              ) : (
-                'CONSULTAR'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handleNewSearch}
-              className="bg-gray-500 hover:bg-gray-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors"
-            >
-              LIMPIAR
-            </button>
-          </div>
+          {/* Formulario de búsqueda */}
+          <form onSubmit={handleSearch} className="space-y-6">
+            <div>
+              <input
+                type="text"
+                value={numeroRadicacion}
+                onChange={(e) => setNumeroRadicacion(e.target.value)}
+                placeholder="Ingrese el número de radicación (23 dígitos)"
+                maxLength={23}
+                className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="mt-2 text-right text-sm text-gray-500">
+                {numeroRadicacion.length} / 23
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <span>Consultando...</span>
+                  </div>
+                ) : (
+                  'CONSULTAR'
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleNewSearch}
+                className="bg-gray-500 hover:bg-gray-600 text-white py-4 px-8 rounded-lg font-bold text-lg transition-colors"
+              >
+                NUEVA CONSULTA
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
