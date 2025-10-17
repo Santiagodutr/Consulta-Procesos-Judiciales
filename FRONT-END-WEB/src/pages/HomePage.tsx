@@ -156,11 +156,13 @@ const HomePage: React.FC = () => {
 
   // Descargas
   const handleDownloadDOCX = async () => {
-    if (!selectedProcess?.numeroRadicacion) return;
+    // Usar selectedProcess si está disponible, sino el primer resultado de búsqueda
+    const processToDownload = selectedProcess || searchResults[0];
+    if (!processToDownload?.numeroRadicacion) return;
     
     setIsDownloadingDOCX(true);
     try {
-      await judicialPortalService.downloadDOCX(selectedProcess.numeroRadicacion, searchType === 'recent');
+      await judicialPortalService.downloadDOCX(processToDownload.numeroRadicacion, searchType === 'recent');
     } catch (error) {
       console.error('Error descargando DOCX:', error);
       alert('Error al descargar el archivo DOCX');
@@ -170,11 +172,13 @@ const HomePage: React.FC = () => {
   };
 
   const handleDownloadCSV = async () => {
-    if (!selectedProcess?.numeroRadicacion) return;
+    // Usar selectedProcess si está disponible, sino el primer resultado de búsqueda
+    const processToDownload = selectedProcess || searchResults[0];
+    if (!processToDownload?.numeroRadicacion) return;
     
     setIsDownloadingCSV(true);
     try {
-      await judicialPortalService.downloadCSV(selectedProcess.numeroRadicacion, searchType === 'recent');
+      await judicialPortalService.downloadCSV(processToDownload.numeroRadicacion, searchType === 'recent');
     } catch (error) {
       console.error('Error descargando CSV:', error);
       alert('Error al descargar el archivo CSV');
