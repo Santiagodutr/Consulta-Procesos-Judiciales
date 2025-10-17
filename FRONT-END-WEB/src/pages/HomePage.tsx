@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { directJudicialAPI } from '../services/apiService.ts';
-import { JudicialProcessData } from '../services/judicialPortalService.ts';
+import { JudicialProcessData, judicialPortalService } from '../services/judicialPortalService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { useNavigate } from 'react-router-dom';
+import { FileDown, Download } from 'lucide-react';
 
 interface ConsultationResult {
   success: boolean;
@@ -16,6 +17,8 @@ export const HomePage: React.FC = () => {
   const [searchType, setSearchType] = useState<'recent' | 'all'>('recent');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ConsultationResult | null>(null);
+  const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
+  const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
   
   // Usar el contexto de autenticación
   const { user, signOut } = useAuth();
@@ -93,6 +96,34 @@ export const HomePage: React.FC = () => {
     setSearchType('recent');
   };
 
+  const handleDownloadDOCX = async () => {
+    if (!result?.data?.numeroRadicacion) return;
+    
+    setIsDownloadingDOCX(true);
+    try {
+      await judicialPortalService.downloadDOCX(result.data.numeroRadicacion, searchType === 'recent');
+    } catch (error) {
+      console.error('Error descargando DOCX:', error);
+      alert('Error al descargar el archivo DOCX. Por favor, intente nuevamente.');
+    } finally {
+      setIsDownloadingDOCX(false);
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    if (!result?.data?.numeroRadicacion) return;
+    
+    setIsDownloadingCSV(true);
+    try {
+      await judicialPortalService.downloadCSV(result.data.numeroRadicacion, searchType === 'recent');
+    } catch (error) {
+      console.error('Error descargando CSV:', error);
+      alert('Error al descargar el archivo CSV. Por favor, intente nuevamente.');
+    } finally {
+      setIsDownloadingCSV(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('es-CO', {
@@ -123,12 +154,50 @@ export const HomePage: React.FC = () => {
                     <h2 className="text-lg font-semibold text-blue-700">NACIONAL UNIFICADA</h2>
                   </div>
                 </div>
-                <button
-                  onClick={handleNewConsultation}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
-                >
-                  Nueva Consulta
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDownloadDOCX}
+                    disabled={isDownloadingDOCX}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    title="Descargar en formato DOC"
+                  >
+                    {isDownloadingDOCX ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Descargando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileDown className="h-5 w-5" />
+                        <span>DOC</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleDownloadCSV}
+                    disabled={isDownloadingCSV}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    title="Descargar en formato CSV"
+                  >
+                    {isDownloadingCSV ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Descargando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-5 w-5" />
+                        <span>CSV</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleNewConsultation}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    Nueva Consulta
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
-import React from 'react';
-import { AlertCircle, Calendar, MapPin, Users, FileText, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, Calendar, MapPin, Users, FileText, Activity, Download, FileDown } from 'lucide-react';
+import { judicialPortalService } from '../services/judicialPortalService.ts';
 
 interface ProcessData {
   id?: string;
@@ -34,6 +35,37 @@ interface Props {
 }
 
 export const ProcessConsultationResult: React.FC<Props> = ({ result, onNewConsultation }) => {
+  const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
+  const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
+
+  const handleDownloadDOCX = async () => {
+    if (!result.data?.numero_radicacion) return;
+    
+    setIsDownloadingDOCX(true);
+    try {
+      await judicialPortalService.downloadDOCX(result.data.numero_radicacion, false);
+    } catch (error) {
+      console.error('Error descargando DOCX:', error);
+      alert('Error al descargar el archivo DOCX. Por favor, intente nuevamente.');
+    } finally {
+      setIsDownloadingDOCX(false);
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    if (!result.data?.numero_radicacion) return;
+    
+    setIsDownloadingCSV(true);
+    try {
+      await judicialPortalService.downloadCSV(result.data.numero_radicacion, false);
+    } catch (error) {
+      console.error('Error descargando CSV:', error);
+      alert('Error al descargar el archivo CSV. Por favor, intente nuevamente.');
+    } finally {
+      setIsDownloadingCSV(false);
+    }
+  };
+
   if (!result.success || !result.data) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-8">
@@ -79,12 +111,50 @@ export const ProcessConsultationResult: React.FC<Props> = ({ result, onNewConsul
               )}
             </div>
           </div>
-          <button
-            onClick={onNewConsultation}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-          >
-            Nueva Consulta
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDownloadDOCX}
+              disabled={isDownloadingDOCX}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+              title="Descargar en formato DOC"
+            >
+              {isDownloadingDOCX ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Descargando...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="h-5 w-5" />
+                  <span>DOC</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDownloadCSV}
+              disabled={isDownloadingCSV}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+              title="Descargar en formato CSV"
+            >
+              {isDownloadingCSV ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Descargando...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-5 w-5" />
+                  <span>CSV</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={onNewConsultation}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+            >
+              Nueva Consulta
+            </button>
+          </div>
         </div>
 
         {/* Información básica del proceso */}
