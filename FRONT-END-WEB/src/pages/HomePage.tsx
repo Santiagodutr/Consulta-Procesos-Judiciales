@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, FileDown, ArrowLeft, LogOut, X } from 'lucide-react';
-import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument } from '../services/judicialPortalService.ts';
+import { Download, FileDown, ArrowLeft, LogOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument, PaginationInfo } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
@@ -27,6 +27,11 @@ const HomePage: React.FC = () => {
   const [documentos, setDocumentos] = useState<ProcessDocument[]>([]);
   const [actuaciones, setActuaciones] = useState<ProcessActivity[]>([]);
   const [isLoadingTab, setIsLoadingTab] = useState(false);
+  
+  // Estados para paginación de actuaciones
+  const [actuacionesPaginaActual, setActuacionesPaginaActual] = useState(1);
+  const [actuacionesPaginacion, setActuacionesPaginacion] = useState<PaginationInfo | null>(null);
+  const [todasActuaciones, setTodasActuaciones] = useState<ProcessActivity[]>([]); // Cache de todas las actuaciones
   
   // Estados para modal de documentos de actuación
   const [showDocumentModal, setShowDocumentModal] = useState(false);
@@ -123,14 +128,67 @@ const HomePage: React.FC = () => {
           }
           break;
         case 'actuaciones':
-          if (actuaciones.length === 0) {
-            const data = await judicialPortalService.getActuacionesByIdProceso(selectedProcess.idProceso);
-            setActuaciones(data);
-          }
+          await loadActuacionesPagina(actuacionesPaginaActual);
           break;
       }
     } catch (error) {
       console.error(`Error cargando ${tab}:`, error);
+    } finally {
+      setIsLoadingTab(false);
+    }
+  };
+
+  // Cargar página específica de actuaciones
+  const loadActuacionesPagina = async (pagina: number) => {
+    if (!selectedProcess?.idProceso) {
+      console.log('[HomePage] No hay proceso seleccionado');
+      return;
+    }
+    
+    console.log(`[HomePage] Solicitando página ${pagina} de actuaciones...`);
+    setIsLoadingTab(true);
+    
+    try {
+      // Si ya tenemos todas las actuaciones cacheadas, paginamos localmente
+      if (todasActuaciones.length > 0) {
+        console.log(`[HomePage] Usando cache (${todasActuaciones.length} actuaciones totales)`);
+        
+        const REGISTROS_POR_PAGINA = 30;
+        const totalRegistros = todasActuaciones.length;
+        const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
+        
+        const inicio = (pagina - 1) * REGISTROS_POR_PAGINA;
+        const fin = inicio + REGISTROS_POR_PAGINA;
+        const actuacionesPagina = todasActuaciones.slice(inicio, fin);
+        
+        setActuaciones(actuacionesPagina);
+        setActuacionesPaginacion({
+          paginaActual: pagina,
+          cantPaginas: totalPaginas,
+          cantRegistros: totalRegistros,
+          siguientePagina: pagina < totalPaginas,
+          anteriorPagina: pagina > 1
+        });
+        setActuacionesPaginaActual(pagina);
+        
+        console.log(`[HomePage] Mostrando ${actuacionesPagina.length} de ${totalRegistros} (página ${pagina}/${totalPaginas})`);
+      } else {
+        // Primera carga: obtener del API y cachear
+        console.log('[HomePage] Primera carga - obteniendo del API');
+        const response = await judicialPortalService.getActuacionesByIdProceso(selectedProcess.idProceso, pagina);
+        
+        setActuaciones(response.actuaciones);
+        setActuacionesPaginacion(response.paginacion || null);
+        setActuacionesPaginaActual(pagina);
+        
+        // Guardar todas las actuaciones en cache
+        if (response.todasActuaciones) {
+          setTodasActuaciones(response.todasActuaciones);
+          console.log(`[HomePage] Cache guardado: ${response.todasActuaciones.length} actuaciones`);
+        }
+      }
+    } catch (error) {
+      console.error('[HomePage] Error cargando actuaciones:', error);
     } finally {
       setIsLoadingTab(false);
     }
@@ -149,6 +207,9 @@ const HomePage: React.FC = () => {
     setSujetos([]);
     setDocumentos([]);
     setActuaciones([]);
+    setTodasActuaciones([]); // Limpiar cache de actuaciones
+    setActuacionesPaginaActual(1);
+    setActuacionesPaginacion(null);
     setActiveTab('datos');
   };
 
@@ -158,6 +219,7 @@ const HomePage: React.FC = () => {
     setSearchResults([]);
     setSelectedProcess(null);
     setSearchType('all');
+    setTodasActuaciones([]); // Limpiar cache de actuaciones
   };
 
   // Descargas
@@ -556,72 +618,126 @@ const HomePage: React.FC = () => {
                       {actuaciones.length === 0 ? (
                         <p className="text-center text-gray-500 py-8">No hay actuaciones disponibles</p>
                       ) : (
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full bg-white border border-gray-200">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha de Actuación
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Actuación
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Anotación
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha Inicio Término
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha Finaliza Término
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha de Registro
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {actuaciones.map((actuacion, index) => (
-                                <tr key={index} className="hover:bg-gray-50 transition-colors border-b">
-                                  <td className="px-4 py-3 text-sm text-gray-900">
-                                    {formatDate(actuacion.fechaActuacion)}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <div className="space-y-1">
-                                      <p className="font-medium text-gray-900">{actuacion.actuacion}</p>
-                                      {actuacion.conDocumentos && (
-                                        <button
-                                          onClick={() => handleVerDocumentos(actuacion)}
-                                          className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors"
-                                        >
-                                          📎 Con documentos
-                                        </button>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700">
-                                    {actuacion.anotacion || '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                    {actuacion.fechaInicioTermino || actuacion.fechaInicial 
-                                      ? formatDate(actuacion.fechaInicioTermino || actuacion.fechaInicial!) 
-                                      : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                    {actuacion.fechaFinalizaTermino || actuacion.fechaFinal 
-                                      ? formatDate(actuacion.fechaFinalizaTermino || actuacion.fechaFinal!) 
-                                      : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                    {actuacion.fechaRegistro 
-                                      ? formatDate(actuacion.fechaRegistro) 
-                                      : '-'}
-                                  </td>
+                        <>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full bg-white border border-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                    Fecha de Actuación
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                    Actuación
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                    Anotación
+                                  </th>
+                                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                    Fecha Inicio Término
+                                  </th>
+                                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                    Fecha Finaliza Término
+                                  </th>
+                                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                    Fecha de Registro
+                                  </th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                              </thead>
+                              <tbody>
+                                {actuaciones.map((actuacion, index) => (
+                                  <tr key={index} className="hover:bg-gray-50 transition-colors border-b">
+                                    <td className="px-4 py-3 text-sm text-gray-900">
+                                      {formatDate(actuacion.fechaActuacion)}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                      <div className="space-y-1">
+                                        <p className="font-medium text-gray-900">{actuacion.actuacion}</p>
+                                        {actuacion.conDocumentos && (
+                                          <button
+                                            onClick={() => handleVerDocumentos(actuacion)}
+                                            className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors"
+                                          >
+                                            📎 Con documentos
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-700">
+                                      {actuacion.anotacion || '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-center text-gray-900">
+                                      {actuacion.fechaInicioTermino || actuacion.fechaInicial 
+                                        ? formatDate(actuacion.fechaInicioTermino || actuacion.fechaInicial!) 
+                                        : '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-center text-gray-900">
+                                      {actuacion.fechaFinalizaTermino || actuacion.fechaFinal 
+                                        ? formatDate(actuacion.fechaFinalizaTermino || actuacion.fechaFinal!) 
+                                        : '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-center text-gray-900">
+                                      {actuacion.fechaRegistro 
+                                        ? formatDate(actuacion.fechaRegistro) 
+                                        : '-'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Controles de Paginación - Solo mostrar si hay navegación disponible */}
+                          {actuacionesPaginacion && (actuacionesPaginacion.siguientePagina || actuacionesPaginacion.anteriorPagina) && (
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                              <div className="flex items-center space-x-2 text-sm text-gray-700">
+                                <span>
+                                  Página <span className="font-semibold">{actuacionesPaginacion.paginaActual}</span>
+                                  {actuacionesPaginacion.cantPaginas > actuacionesPaginacion.paginaActual && (
+                                    <> de <span className="font-semibold">{actuacionesPaginacion.cantPaginas}+</span></>
+                                  )}
+                                </span>
+                                <span className="text-gray-500">•</span>
+                                <span>
+                                  Total: <span className="font-semibold">{actuaciones.length}</span> actuaciones
+                                </span>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => loadActuacionesPagina(actuacionesPaginaActual - 1)}
+                                  disabled={!actuacionesPaginacion.anteriorPagina || isLoadingTab}
+                                  className={`
+                                    inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg
+                                    ${actuacionesPaginacion.anteriorPagina && !isLoadingTab
+                                      ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }
+                                    transition-colors
+                                  `}
+                                >
+                                  <ChevronLeft className="h-4 w-4 mr-1" />
+                                  Anterior
+                                </button>
+
+                                <button
+                                  onClick={() => loadActuacionesPagina(actuacionesPaginaActual + 1)}
+                                  disabled={!actuacionesPaginacion.siguientePagina || isLoadingTab}
+                                  className={`
+                                    inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg
+                                    ${actuacionesPaginacion.siguientePagina && !isLoadingTab
+                                      ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }
+                                    transition-colors
+                                  `}
+                                >
+                                  Siguiente
+                                  <ChevronRight className="h-4 w-4 ml-1" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}

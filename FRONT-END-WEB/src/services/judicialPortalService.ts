@@ -38,6 +38,20 @@ export interface ActuacionDocument {
   fechaDocumento?: string;
 }
 
+export interface PaginationInfo {
+  paginaActual: number;
+  cantPaginas: number;
+  cantRegistros: number;
+  siguientePagina: boolean;
+  anteriorPagina: boolean;
+}
+
+export interface ActuacionesResponse {
+  actuaciones: ProcessActivity[];
+  paginacion?: PaginationInfo;
+  todasActuaciones?: ProcessActivity[]; // Cache de todas las actuaciones para paginación del lado del cliente
+}
+
 export interface ProcessSubject {
   idRegSujeto?: number;
   tipoSujeto?: string;
@@ -306,34 +320,68 @@ class JudicialPortalService {
   }
 
   /**
-   * Obtener actuaciones por ID de proceso
+   * Obtener actuaciones por ID de proceso con información de paginación
    * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Actuaciones/{idProceso}?pagina=1
+   * IMPORTANTE: El API devuelve TODAS las actuaciones de una vez, 
+   * por lo que la paginación se hace del lado del cliente
    */
-  async getActuacionesByIdProceso(idProceso: number, pagina: number = 1): Promise<ProcessActivity[]> {
+  async getActuacionesByIdProceso(idProceso: number, pagina: number = 1): Promise<ActuacionesResponse> {
     try {
-      console.log(`Obteniendo actuaciones del proceso ID: ${idProceso}, pagina: ${pagina}`);
+      console.log(`[API] Obteniendo actuaciones del proceso ID: ${idProceso}, pagina solicitada: ${pagina}`);
       
+      // Siempre pedimos página 1 porque el API devuelve todo
       const response = await this.client.get(`${this.ACTUACIONES_BY_ID_URL}/${idProceso}`, {
-        params: { pagina }
+        params: { pagina: 1 }
       });
       
-      console.log('Respuesta de actuaciones:', response.data);
+      const data = response.data;
+      let todasActuaciones: ProcessActivity[] = [];
       
-      // La API puede devolver { actuaciones: [...], paginacion: {...} }
-      if (response.data && Array.isArray(response.data.actuaciones)) {
-        return response.data.actuaciones;
+      // Extraer actuaciones de diferentes formatos de respuesta
+      if (data && Array.isArray(data.actuaciones)) {
+        todasActuaciones = data.actuaciones;
+      } else if (Array.isArray(data)) {
+        todasActuaciones = data;
+      } else if (data && data.lsData && Array.isArray(data.lsData)) {
+        todasActuaciones = data.lsData;
       }
       
-      // Si viene directamente el array
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
+      const totalRegistros = todasActuaciones.length;
+      console.log(`[API] Total de actuaciones recibidas: ${totalRegistros}`);
       
-      return [];
+      // PAGINACIÓN DEL LADO DEL CLIENTE (30 registros por página)
+      const REGISTROS_POR_PAGINA = 30;
+      const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
+      
+      // Calcular índices para la página solicitada
+      const inicio = (pagina - 1) * REGISTROS_POR_PAGINA;
+      const fin = inicio + REGISTROS_POR_PAGINA;
+      
+      // Extraer solo los registros de esta página
+      const actuacionesPagina = todasActuaciones.slice(inicio, fin);
+      
+      const paginacion: PaginationInfo = {
+        paginaActual: pagina,
+        cantPaginas: totalPaginas,
+        cantRegistros: totalRegistros,
+        siguientePagina: pagina < totalPaginas,
+        anteriorPagina: pagina > 1
+      };
+      
+      console.log(`[API] Paginación: Página ${pagina}/${totalPaginas} - Mostrando ${actuacionesPagina.length} registros (${inicio + 1} a ${Math.min(fin, totalRegistros)})`);
+      
+      return {
+        actuaciones: actuacionesPagina,
+        paginacion,
+        todasActuaciones // Devolver también todas para cacheo
+      };
 
     } catch (error) {
-      console.error('Error obteniendo actuaciones:', error);
-      return [];
+      console.error('[API] Error obteniendo actuaciones:', error);
+      return {
+        actuaciones: [],
+        paginacion: undefined
+      };
     }
   }
 
