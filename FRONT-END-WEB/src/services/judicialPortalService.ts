@@ -16,15 +16,26 @@ export interface ProcessBasicInfo {
 
 export interface ProcessActivity {
   idActuacion: number;
+  idRegActuacion?: number; // Para la API de documentos de actuación
   consActuacion: number;
   fechaActuacion: string;
   actuacion: string;
   anotacion?: string;
   fechaInicioTermino?: string;
   fechaFinalizaTermino?: string;
+  fechaInicial?: string;
+  fechaFinal?: string;
+  fechaRegistro?: string;
   codigoRegla?: string;
   conDocumentos: boolean;
   cantFolios: number;
+}
+
+export interface ActuacionDocument {
+  idRegDocumento: number;
+  nombre: string;
+  descripcion?: string;
+  fechaDocumento?: string;
 }
 
 export interface ProcessSubject {
@@ -110,6 +121,8 @@ class JudicialPortalService {
   private readonly SUJETOS_BY_ID_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Sujetos';
   private readonly DOCUMENTOS_BY_ID_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Documentos';
   private readonly ACTUACIONES_BY_ID_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Actuaciones';
+  private readonly DOCUMENTOS_ACTUACION_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/DocumentosActuacion';
+  private readonly DESCARGA_DOCUMENTO_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Descarga/Documento';
 
   constructor() {
     this.client = axios.create({
@@ -666,6 +679,78 @@ class JudicialPortalService {
     } catch (error) {
       console.error('Error descargando archivo CSV por ID:', error);
       throw new Error('No se pudo descargar el archivo CSV. Por favor, intente nuevamente.');
+    }
+  }
+
+  /**
+   * Obtener documentos de una actuación específica
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/DocumentosActuacion/{idRegActuacion}
+   */
+  async getDocumentosActuacion(idRegActuacion: number): Promise<ActuacionDocument[]> {
+    try {
+      const url = `${this.DOCUMENTOS_ACTUACION_URL}/${idRegActuacion}`;
+      console.log(`Obteniendo documentos de actuación: ${idRegActuacion}`);
+      
+      const response: AxiosResponse = await this.client.get(url);
+      
+      // La API puede devolver un array directamente o dentro de una propiedad
+      const data = response.data;
+      
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data.documentos && Array.isArray(data.documentos)) {
+        return data.documentos;
+      } else if (data.lsData && Array.isArray(data.lsData)) {
+        return data.lsData;
+      }
+      
+      console.warn('Estructura de respuesta inesperada:', data);
+      return [];
+    } catch (error) {
+      console.error('Error obteniendo documentos de actuación:', error);
+      throw new Error('No se pudieron obtener los documentos de la actuación.');
+    }
+  }
+
+  /**
+   * Descargar un documento específico por su ID
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Descarga/Documento/{idRegDocumento}
+   */
+  async downloadDocumento(idRegDocumento: number, nombreArchivo?: string): Promise<void> {
+    try {
+      const url = `${this.DESCARGA_DOCUMENTO_URL}/${idRegDocumento}`;
+      
+      console.log(`Descargando documento ID: ${idRegDocumento}`);
+      
+      // Usar fetch para descargar el archivo
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf,application/octet-stream'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al descargar el documento');
+      }
+
+      // Obtener el blob del archivo
+      const blob = await response.blob();
+      
+      // Crear un enlace temporal para descargar el archivo
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = nombreArchivo || `Documento_${idRegDocumento}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error descargando documento:', error);
+      throw new Error('No se pudo descargar el documento. Por favor, intente nuevamente.');
     }
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, FileDown, ArrowLeft, LogOut } from 'lucide-react';
-import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument } from '../services/judicialPortalService.ts';
+import { Download, FileDown, ArrowLeft, LogOut, X } from 'lucide-react';
+import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
@@ -27,6 +27,12 @@ const HomePage: React.FC = () => {
   const [documentos, setDocumentos] = useState<ProcessDocument[]>([]);
   const [actuaciones, setActuaciones] = useState<ProcessActivity[]>([]);
   const [isLoadingTab, setIsLoadingTab] = useState(false);
+  
+  // Estados para modal de documentos de actuación
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [actuacionDocuments, setActuacionDocuments] = useState<ActuacionDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [selectedActuacion, setSelectedActuacion] = useState<ProcessActivity | null>(null);
   
   // Estados para descargas
   const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
@@ -211,6 +217,49 @@ const HomePage: React.FC = () => {
     } catch {
       return dateString;
     }
+  };
+
+  // Manejar clic en "Con documentos" para abrir modal
+  const handleVerDocumentos = async (actuacion: ProcessActivity) => {
+    if (!actuacion.idRegActuacion && !actuacion.idActuacion) {
+      alert('No se puede obtener los documentos de esta actuación');
+      return;
+    }
+    
+    setSelectedActuacion(actuacion);
+    setShowDocumentModal(true);
+    setLoadingDocuments(true);
+    
+    try {
+      const idReg = actuacion.idRegActuacion || actuacion.idActuacion;
+      const docs = await judicialPortalService.getDocumentosActuacion(idReg);
+      setActuacionDocuments(docs);
+    } catch (error) {
+      console.error('Error cargando documentos:', error);
+      alert('No se pudieron cargar los documentos de la actuación');
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  // Manejar descarga de documento individual
+  const handleDownloadDocumento = async (documento: ActuacionDocument) => {
+    try {
+      await judicialPortalService.downloadDocumento(
+        documento.idRegDocumento,
+        documento.nombre || `Documento_${documento.idRegDocumento}.pdf`
+      );
+    } catch (error) {
+      console.error('Error descargando documento:', error);
+      alert('No se pudo descargar el documento');
+    }
+  };
+
+  // Cerrar modal
+  const handleCloseModal = () => {
+    setShowDocumentModal(false);
+    setActuacionDocuments([]);
+    setSelectedActuacion(null);
   };
 
   // ==================== VISTA DE DETALLES CON PESTAÑAS ====================
@@ -507,33 +556,71 @@ const HomePage: React.FC = () => {
                       {actuaciones.length === 0 ? (
                         <p className="text-center text-gray-500 py-8">No hay actuaciones disponibles</p>
                       ) : (
-                        <div className="space-y-4">
-                          {actuaciones.map((actuacion, index) => (
-                            <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
-                                      #{actuacion.consActuacion}
-                                    </span>
-                                    <span className="text-sm text-gray-600">{formatDate(actuacion.fechaActuacion)}</span>
-                                    {actuacion.conDocumentos && (
-                                      <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
-                                        📎 Con documentos
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-gray-900 font-medium mb-1">{actuacion.actuacion}</p>
-                                  {actuacion.anotacion && (
-                                    <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">{actuacion.anotacion}</p>
-                                  )}
-                                </div>
-                                <div className="text-right text-sm text-gray-500 ml-4">
-                                  <p>{actuacion.cantFolios} folios</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full bg-white border border-gray-200">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                  Fecha de Actuación
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                  Actuación
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                  Anotación
+                                </th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                  Fecha Inicio Término
+                                </th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                  Fecha Finaliza Término
+                                </th>
+                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
+                                  Fecha de Registro
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {actuaciones.map((actuacion, index) => (
+                                <tr key={index} className="hover:bg-gray-50 transition-colors border-b">
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {formatDate(actuacion.fechaActuacion)}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <div className="space-y-1">
+                                      <p className="font-medium text-gray-900">{actuacion.actuacion}</p>
+                                      {actuacion.conDocumentos && (
+                                        <button
+                                          onClick={() => handleVerDocumentos(actuacion)}
+                                          className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors"
+                                        >
+                                          📎 Con documentos
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700">
+                                    {actuacion.anotacion || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
+                                    {actuacion.fechaInicioTermino || actuacion.fechaInicial 
+                                      ? formatDate(actuacion.fechaInicioTermino || actuacion.fechaInicial!) 
+                                      : '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
+                                    {actuacion.fechaFinalizaTermino || actuacion.fechaFinal 
+                                      ? formatDate(actuacion.fechaFinalizaTermino || actuacion.fechaFinal!) 
+                                      : '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
+                                    {actuacion.fechaRegistro 
+                                      ? formatDate(actuacion.fechaRegistro) 
+                                      : '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
@@ -543,6 +630,66 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal de Documentos de Actuación */}
+        {showDocumentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
+              {/* Header del modal */}
+              <div className="bg-gray-100 px-6 py-4 flex justify-between items-center border-b">
+                <h3 className="text-lg font-semibold text-gray-900">Documentos de Actuación</h3>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Contenido del modal */}
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {loadingDocuments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">Cargando documentos...</span>
+                  </div>
+                ) : actuacionDocuments.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No hay documentos disponibles para esta actuación</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Nombre</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Descripción</th>
+                          <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Descargar</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {actuacionDocuments.map((doc, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">{doc.nombre || `Documento ${index + 1}`}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{doc.descripcion || '-'}</td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                onClick={() => handleDownloadDocumento(doc)}
+                                className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                title="Descargar documento"
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Descargar
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
