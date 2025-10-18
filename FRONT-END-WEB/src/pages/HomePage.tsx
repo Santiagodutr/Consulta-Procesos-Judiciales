@@ -156,13 +156,20 @@ const HomePage: React.FC = () => {
 
   // Descargas
   const handleDownloadDOCX = async () => {
-    // Usar selectedProcess si está disponible, sino el primer resultado de búsqueda
-    const processToDownload = selectedProcess || searchResults[0];
-    if (!processToDownload?.numeroRadicacion) return;
-    
     setIsDownloadingDOCX(true);
     try {
-      await judicialPortalService.downloadDOCX(processToDownload.numeroRadicacion, searchType === 'recent');
+      // Si estamos en la vista de detalles con idProceso, usar API con idProceso
+      if (selectedProcess?.idProceso) {
+        await judicialPortalService.downloadDOCXByIdProceso(selectedProcess.idProceso);
+      } else {
+        // Si estamos en la vista de listado, usar API con numeroRadicacion
+        const processToDownload = searchResults[0];
+        if (!processToDownload?.numeroRadicacion) {
+          alert('No hay proceso disponible para descargar');
+          return;
+        }
+        await judicialPortalService.downloadDOCX(processToDownload.numeroRadicacion, searchType === 'recent');
+      }
     } catch (error) {
       console.error('Error descargando DOCX:', error);
       alert('Error al descargar el archivo DOCX');
@@ -172,13 +179,20 @@ const HomePage: React.FC = () => {
   };
 
   const handleDownloadCSV = async () => {
-    // Usar selectedProcess si está disponible, sino el primer resultado de búsqueda
-    const processToDownload = selectedProcess || searchResults[0];
-    if (!processToDownload?.numeroRadicacion) return;
-    
     setIsDownloadingCSV(true);
     try {
-      await judicialPortalService.downloadCSV(processToDownload.numeroRadicacion, searchType === 'recent');
+      // Si estamos en la vista de detalles con idProceso, usar API con idProceso
+      if (selectedProcess?.idProceso) {
+        await judicialPortalService.downloadCSVByIdProceso(selectedProcess.idProceso);
+      } else {
+        // Si estamos en la vista de listado, usar API con numeroRadicacion
+        const processToDownload = searchResults[0];
+        if (!processToDownload?.numeroRadicacion) {
+          alert('No hay proceso disponible para descargar');
+          return;
+        }
+        await judicialPortalService.downloadCSV(processToDownload.numeroRadicacion, searchType === 'recent');
+      }
     } catch (error) {
       console.error('Error descargando CSV:', error);
       alert('Error al descargar el archivo CSV');

@@ -584,6 +584,90 @@ class JudicialPortalService {
       throw new Error('No se pudo descargar el archivo CSV. Por favor, intente nuevamente.');
     }
   }
+
+  /**
+   * Descargar proceso en formato DOCX usando idProceso
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Descarga/DOCX/Proceso/{idProceso}
+   */
+  async downloadDOCXByIdProceso(idProceso: number): Promise<void> {
+    try {
+      const url = `https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Descarga/DOCX/Proceso/${idProceso}`;
+      
+      console.log(`Descargando DOCX del proceso ID: ${idProceso}`);
+      
+      // Usar fetch para descargar el archivo
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al descargar el archivo DOCX');
+      }
+
+      // Obtener el blob del archivo
+      const blob = await response.blob();
+      
+      // Crear un enlace temporal para descargar el archivo
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `Proceso_${idProceso}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error descargando archivo DOCX por ID:', error);
+      throw new Error('No se pudo descargar el archivo DOCX. Por favor, intente nuevamente.');
+    }
+  }
+
+  /**
+   * Descargar detalles del proceso en formato CSV usando idProceso
+   * API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Descarga/CSV/Detalle/{idProceso}
+   */
+  async downloadCSVByIdProceso(idProceso: number): Promise<void> {
+    try {
+      const url = `https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Descarga/CSV/Detalle/${idProceso}`;
+      
+      console.log(`Descargando CSV del proceso ID: ${idProceso}`);
+      
+      // Usar fetch para descargar el archivo
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/csv'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al descargar el archivo CSV');
+      }
+
+      // Obtener el blob del archivo
+      const blob = await response.blob();
+      
+      // Crear un enlace temporal para descargar el archivo
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `Proceso_Detalle_${idProceso}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error descargando archivo CSV por ID:', error);
+      throw new Error('No se pudo descargar el archivo CSV. Por favor, intente nuevamente.');
+    }
+  }
 }
 
 // Crear y exportar instancia singleton
