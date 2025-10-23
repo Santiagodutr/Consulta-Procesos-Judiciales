@@ -471,7 +471,7 @@ export const directJudicialAPI = {
   }): Promise<ApiResponse> => {
     try {
       const response = await apiService.post('/judicial/processes/favorites', processData);
-      return response.data;
+      return response;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Error al guardar proceso favorito');
     }
@@ -483,7 +483,7 @@ export const directJudicialAPI = {
   removeFavoriteProcess: async (numeroRadicacion: string): Promise<ApiResponse> => {
     try {
       const response = await apiService.delete(`/judicial/processes/favorites/${numeroRadicacion}`);
-      return response.data;
+      return response;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Error al remover proceso favorito');
     }
@@ -495,7 +495,7 @@ export const directJudicialAPI = {
   getFavoriteProcesses: async (): Promise<ApiResponse> => {
     try {
       const response = await apiService.get('/judicial/processes/favorites');
-      return response.data;
+      return response;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Error al obtener procesos favoritos');
     }
@@ -507,7 +507,7 @@ export const directJudicialAPI = {
   checkIfFavorite: async (numeroRadicacion: string): Promise<boolean> => {
     try {
       const response = await apiService.get(`/judicial/processes/favorites/check/${numeroRadicacion}`);
-      return response.data.data?.isFavorite || false;
+      return response.data?.isFavorite || false;
     } catch (error: any) {
       return false;
     }
