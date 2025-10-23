@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, FileDown, ArrowLeft, LogOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, FileDown, ArrowLeft, LogOut, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument, PaginationInfo } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
@@ -42,6 +42,10 @@ const HomePage: React.FC = () => {
   // Estados para descargas
   const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
+  
+  // Estados para favoritos
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -93,6 +97,17 @@ const HomePage: React.FC = () => {
   const handleSelectProcess = async (process: JudicialProcessData) => {
     setSelectedProcess(process);
     setActiveTab('datos');
+    
+    // Verificar si el proceso es favorito
+    if (process.numeroRadicacion) {
+      try {
+        const esFavorito = await directJudicialAPI.checkIfFavorite(process.numeroRadicacion);
+        setIsFavorite(esFavorito);
+      } catch (error) {
+        console.error('Error verificando favorito:', error);
+        setIsFavorite(false);
+      }
+    }
     
     if (process.idProceso) {
       setIsLoadingTab(true);
@@ -324,6 +339,38 @@ const HomePage: React.FC = () => {
     setSelectedActuacion(null);
   };
 
+  // Manejar agregar/quitar favorito
+  const handleToggleFavorite = async () => {
+    if (!selectedProcess) return;
+    
+    setIsSavingFavorite(true);
+    try {
+      if (isFavorite) {
+        // Quitar de favoritos
+        await directJudicialAPI.removeFavoriteProcess(selectedProcess.numeroRadicacion);
+        setIsFavorite(false);
+        alert('Proceso removido de favoritos');
+      } else {
+        // Agregar a favoritos
+        await directJudicialAPI.saveFavoriteProcess({
+          numero_radicacion: selectedProcess.numeroRadicacion,
+          despacho: selectedProcess.despacho,
+          demandante: selectedProcess.demandante || '',
+          demandado: selectedProcess.demandado || '',
+          tipo_proceso: selectedProcess.tipoProceso || '',
+          fecha_radicacion: selectedProcess.fechaProceso || new Date().toISOString()
+        });
+        setIsFavorite(true);
+        alert('Proceso agregado a favoritos');
+      }
+    } catch (error) {
+      console.error('Error al guardar favorito:', error);
+      alert('Error al actualizar favoritos');
+    } finally {
+      setIsSavingFavorite(false);
+    }
+  };
+
   // ==================== VISTA DE DETALLES CON PESTAÑAS ====================
   if (selectedProcess) {
     return (
@@ -396,6 +443,30 @@ const HomePage: React.FC = () => {
                 <p className="text-lg text-blue-600 font-mono">{selectedProcess.numeroRadicacion}</p>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isSavingFavorite}
+                  className={`${
+                    isFavorite 
+                      ? 'bg-yellow-500 hover:bg-yellow-600' 
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  } disabled:opacity-50 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2`}
+                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                >
+                  {isSavingFavorite ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span className="text-gray-700">Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Star className={`h-5 w-5 ${isFavorite ? 'fill-white' : 'text-gray-600'}`} />
+                      <span className={isFavorite ? 'text-white' : 'text-gray-700'}>
+                        {isFavorite ? 'Favorito' : 'Guardar'}
+                      </span>
+                    </>
+                  )}
+                </button>
                 <button
                   onClick={handleDownloadDOCX}
                   disabled={isDownloadingDOCX}

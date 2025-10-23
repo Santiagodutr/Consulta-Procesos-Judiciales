@@ -2,6 +2,7 @@ com\judicial\processes\dto\AuthDTO$UserDTO.class
 com\judicial\processes\dto\ProcessDocument.class
 com\judicial\processes\dto\ProcessConsultRequest.class
 com\judicial\processes\controller\AuthController.class
+com\judicial\processes\entity\FavoriteProcess.class
 com\judicial\processes\service\EmailService.class
 com\judicial\processes\service\EmailService$WeeklySummaryData.class
 com\judicial\processes\dto\ApiResponse.class
@@ -17,8 +18,10 @@ com\judicial\processes\dto\AuthDTO$AuthResponse.class
 com\judicial\processes\config\SecurityConfig.class
 com\judicial\processes\dto\AuthDTO$RegisterRequest.class
 com\judicial\processes\dto\ProcessData.class
+com\judicial\processes\repository\FavoriteProcessRepository.class
 com\judicial\processes\dto\AuthDTO$ResetPasswordRequest.class
 com\judicial\processes\dto\AuthDTO.class
+com\judicial\processes\controller\FavoriteProcessController.class
 com\judicial\processes\dto\ProcessActivity.class
 com\judicial\processes\service\JudicialService.class
 com\judicial\processes\dto\ProcessMonitorRequest.class

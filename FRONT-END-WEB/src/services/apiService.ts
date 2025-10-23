@@ -456,6 +456,61 @@ export const directJudicialAPI = {
    */
   getPortalUrl: (numeroRadicacion: string): string => {
     return judicialPortalService.getPortalUrl(numeroRadicacion);
+  },
+
+  /**
+   * Guardar proceso como favorito
+   */
+  saveFavoriteProcess: async (processData: {
+    numero_radicacion: string;
+    despacho: string;
+    demandante: string;
+    demandado: string;
+    tipo_proceso: string;
+    fecha_radicacion: string;
+  }): Promise<ApiResponse> => {
+    try {
+      const response = await apiService.post('/judicial/processes/favorites', processData);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Error al guardar proceso favorito');
+    }
+  },
+
+  /**
+   * Remover proceso de favoritos
+   */
+  removeFavoriteProcess: async (numeroRadicacion: string): Promise<ApiResponse> => {
+    try {
+      const response = await apiService.delete(`/judicial/processes/favorites/${numeroRadicacion}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Error al remover proceso favorito');
+    }
+  },
+
+  /**
+   * Obtener lista de procesos favoritos
+   */
+  getFavoriteProcesses: async (): Promise<ApiResponse> => {
+    try {
+      const response = await apiService.get('/judicial/processes/favorites');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Error al obtener procesos favoritos');
+    }
+  },
+
+  /**
+   * Verificar si un proceso es favorito
+   */
+  checkIfFavorite: async (numeroRadicacion: string): Promise<boolean> => {
+    try {
+      const response = await apiService.get(`/judicial/processes/favorites/check/${numeroRadicacion}`);
+      return response.data.data?.isFavorite || false;
+    } catch (error: any) {
+      return false;
+    }
   }
 };
 
