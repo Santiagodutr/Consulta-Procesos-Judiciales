@@ -8,6 +8,7 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage.tsx';
 import { SimpleDashboard } from './pages/SimpleDashboard.tsx';
 import { ProcessDetailsPage } from './pages/ProcessDetailsPage.tsx';
 import MyProcessesPage from './pages/MyProcessesPage.tsx';
+import AnalyticsPage from './pages/AnalyticsPage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
 
@@ -232,12 +233,7 @@ function App() {
         path="/analytics" 
         element={
           <ProtectedRoute>
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Análisis</h1>
-                <p className="text-gray-600">Esta página está en desarrollo.</p>
-              </div>
-            </div>
+            <AnalyticsPage />
           </ProtectedRoute>
         } 
       />
