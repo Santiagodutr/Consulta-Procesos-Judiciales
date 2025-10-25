@@ -94,7 +94,7 @@ export const LoginPage: React.FC = () => {
         {/* Header */}
         <div>
           <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-100">
-            <span className="text-blue-600 text-2xl">🏛️</span>
+            <img src="/usuario.png" alt="Icono de usuario" className="h-10 w-10 object-contain" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
             Iniciar Sesión
