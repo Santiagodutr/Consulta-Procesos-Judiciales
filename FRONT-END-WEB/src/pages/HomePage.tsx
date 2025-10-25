@@ -4,6 +4,7 @@ import { Download, FileDown, ArrowLeft, X, ChevronLeft, ChevronRight, Star } fro
 import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument, PaginationInfo } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { PublicFooter } from '../components/PublicFooter.tsx';
 
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
 
@@ -1103,12 +1104,13 @@ const HomePage: React.FC = () => {
 
   // ==================== PANTALLA INICIAL DE BÚSQUEDA ====================
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {renderNavbar()}
 
       {/* Contenido principal - Consulta por Número de Radicación */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="flex-1">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex items-center justify-center mb-8">
             <div className="text-center">
               <div className="inline-block bg-blue-100 p-4 rounded-full mb-4">
@@ -1200,6 +1202,9 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
+
+      <PublicFooter />
     </div>
   );
 };

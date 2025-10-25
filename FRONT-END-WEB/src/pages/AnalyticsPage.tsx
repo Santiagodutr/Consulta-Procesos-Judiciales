@@ -28,6 +28,7 @@ import { TooltipProps } from 'recharts/types/component/Tooltip';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { ProcessActivity, judicialPortalService } from '../services/judicialPortalService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { PublicFooter } from '../components/PublicFooter.tsx';
 import {
 	Activity as ActivityIcon,
 	BarChart3,
@@ -703,10 +704,10 @@ const AnalyticsPage: React.FC = () => {
 	);
 
 	return (
-		<div className="min-h-screen bg-slate-50">
+		<div className="min-h-screen bg-slate-50 flex flex-col">
 			{renderHeader()}
 
-			<main className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+			<main className="flex-1 mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
 				<div className="mb-8">
 					<h1 className="text-3xl font-bold text-slate-900">Analítica de Procesos Favoritos</h1>
 					<p className="mt-2 text-sm text-slate-600">
@@ -1001,6 +1002,8 @@ const AnalyticsPage: React.FC = () => {
 					</section>
 				)}
 			</main>
+
+			<PublicFooter />
 		</div>
 	);
 };

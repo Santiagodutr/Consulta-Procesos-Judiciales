@@ -11,40 +11,25 @@ import MyProcessesPage from './pages/MyProcessesPage.tsx';
 import AnalyticsPage from './pages/AnalyticsPage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
+import { PublicFooter } from './components/PublicFooter.tsx';
 
 // Página de bienvenida pública
 const WelcomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header oficial */}
-      <div className="bg-white shadow-sm border-b">
+      <header className="bg-primary-700 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                <div className="h-14 w-14 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">🏛️</span>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-blue-800">
-                  CONSULTA DE PROCESOS
-                </h1>
-                <h2 className="text-xl font-semibold text-blue-700">
-                  NACIONAL UNIFICADA
-                </h2>
-              </div>
+          <div className="flex h-20 items-center justify-between">
+            <div className="flex items-center">
+              <img src="/logo_justitrack.png" alt="JustiTrack" className="h-14 w-auto" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                <div className="h-14 w-14 bg-yellow-400 rounded-full flex items-center justify-center">
-                  <span className="text-blue-800 font-bold text-lg">🇨🇴</span>
-                </div>
-              </div>
+            <div className="hidden sm:flex items-center rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/90">
+              Plataforma de gestión y consulta de procesos judiciales
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Contenido principal */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -84,8 +69,8 @@ const WelcomePage: React.FC = () => {
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🔍</span>
+            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <img src="/consultar.png" alt="Consultas" className="h-10 w-10 object-contain" />
             </div>
             <h4 className="text-lg font-semibold text-gray-900 mb-2">Consultas Directas</h4>
             <p className="text-gray-600">
@@ -94,8 +79,8 @@ const WelcomePage: React.FC = () => {
           </div>
           
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📊</span>
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <img src="/analyitics.png" alt="Analíticas" className="h-10 w-10 object-contain" />
             </div>
             <h4 className="text-lg font-semibold text-gray-900 mb-2">Historial Completo</h4>
             <p className="text-gray-600">
@@ -104,8 +89,8 @@ const WelcomePage: React.FC = () => {
           </div>
           
           <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🔒</span>
+            <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <img src="/lock.png" alt="Seguridad" className="h-10 w-10 object-contain" />
             </div>
             <h4 className="text-lg font-semibold text-gray-900 mb-2">Seguro y Confiable</h4>
             <p className="text-gray-600">
@@ -116,20 +101,7 @@ const WelcomePage: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-slate-800 text-white py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3">
-            <div className="flex justify-center items-center space-x-4 mb-4">
-              <span className="text-2xl">🏛️</span>
-              <span className="font-semibold">Rama Judicial del Poder Público</span>
-              <span className="text-2xl">🇨🇴</span>
-            </div>
-            <p className="text-sm">
-              Sistema desarrollado para consulta de procesos del sistema judicial colombiano
-            </p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 };

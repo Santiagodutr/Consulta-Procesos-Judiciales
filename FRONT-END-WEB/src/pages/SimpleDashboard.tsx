@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { judicialAPI } from '../services/apiService.ts';
+import { PublicFooter } from '../components/PublicFooter.tsx';
 
 interface ConsultationHistoryItem {
   consultation_id: string;
@@ -83,7 +84,7 @@ export const SimpleDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-brand-neutral">
+    <div className="min-h-screen bg-brand-neutral flex flex-col">
       {/* Header */}
       <div className="bg-primary-700 text-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -120,7 +121,8 @@ export const SimpleDashboard: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="flex-1">
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 sm:px-0 mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             Bienvenido, {user?.first_name || 'Usuario'}!
@@ -361,7 +363,10 @@ export const SimpleDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
+
+      <PublicFooter />
     </div>
   );
 };
