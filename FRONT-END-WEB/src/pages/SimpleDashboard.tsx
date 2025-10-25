@@ -276,7 +276,7 @@ export const SimpleDashboard: React.FC = () => {
                 </p>
                 <Link
                   to="/"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-700 hover:bg-primary-600"
                 >
                   Consultar Procesos
                 </Link>
@@ -317,7 +317,7 @@ export const SimpleDashboard: React.FC = () => {
                           </span>
                           <button
                             onClick={() => navigate(`/process/${item.numero_radicacion}`)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-primary-700 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600"
                           >
                             Ver Detalles
                           </button>

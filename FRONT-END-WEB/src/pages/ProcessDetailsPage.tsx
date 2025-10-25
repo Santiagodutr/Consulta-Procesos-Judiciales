@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { directJudicialAPI } from '../services/apiService.ts';
@@ -16,7 +16,6 @@ import {
   Star,
   Download,
   FileDown,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   X,
@@ -51,12 +50,33 @@ export const ProcessDetailsPage: React.FC = () => {
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const navLinks = [
+    { label: 'Dashboard', onClick: () => navigate('/dashboard') },
+    { label: 'Reportes', onClick: () => navigate('/analytics') },
+    { label: 'Servicios', onClick: () => navigate('/notifications') },
+  ];
+
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
   useEffect(() => {
     if (numeroRadicacion) {
       loadProcessDetails(numeroRadicacion);
     }
   }, [numeroRadicacion]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadProcessDetails = async (radicacion: string) => {
     try {
@@ -341,6 +361,10 @@ export const ProcessDetailsPage: React.FC = () => {
     }
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) {
       return 'N/A';
@@ -362,45 +386,97 @@ export const ProcessDetailsPage: React.FC = () => {
   };
 
   const renderHeader = () => (
-    <div className="bg-blue-700 text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-blue-600 transition-colors"
-            title="Regresar"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-bold">Detalle del Proceso</h1>
-            <p className="text-sm text-blue-100">{numeroRadicacion}</p>
+    <header className="bg-primary-700 text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="rounded-full p-2 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              title="Regresar"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+            >
+              <img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
+            </button>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-            title="Ir al dashboard"
-          >
-            <span>📊</span>
-            <span className="hidden md:inline text-sm font-medium">Dashboard</span>
-          </button>
-          <div className="hidden md:flex items-center gap-2 bg-blue-600 px-3 py-2 rounded-lg">
-            <span>👤</span>
-            <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
+
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <button
+                key={link.label}
+                type="button"
+                onClick={link.onClick}
+                className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
+              >
+                {link.label}
+              </button>
+            ))}
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"
-            title="Cerrar sesión"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="hidden md:inline text-sm font-semibold">Cerrar Sesión</span>
-          </button>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
+                <span className="hidden sm:inline">{displayName}</span>
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
+                  <div className="py-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
+                    >
+                      Perfil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/profile?section=configuracion');
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
+                    >
+                      Configuración
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </header>
   );
 
   if (loading) {
@@ -516,16 +592,6 @@ export const ProcessDetailsPage: React.FC = () => {
           <div className="text-sm text-gray-600 space-y-1 mt-4">
             <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
             <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
-            {processData.portalUrl && (
-              <a
-                href={processData.portalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline"
-              >
-                Ver en el portal judicial
-              </a>
-            )}
           </div>
         </div>
 
