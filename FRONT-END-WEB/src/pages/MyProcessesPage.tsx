@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { directJudicialAPI } from '../services/apiService.ts';
+import { PublicFooter } from '../components/PublicFooter.tsx';
 import {
   judicialPortalService,
   JudicialProcessData,
@@ -536,16 +537,17 @@ const MyProcessesPage: React.FC = () => {
     const detailsSource = processDetails || selectedProcess;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
         {renderHeader(true)}
 
-        {isLoadingDetails ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600">Cargando detalles del proceso...</span>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto px-4 py-6">
+        <main className="flex-1">
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Cargando detalles del proceso...</span>
+            </div>
+          ) : (
+            <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -892,7 +894,10 @@ const MyProcessesPage: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+          )}
+        </main>
+
+        <PublicFooter />
 
         {showDocumentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -950,23 +955,25 @@ const MyProcessesPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         {renderHeader(false)}
-        <div className="flex items-center justify-center py-24">
+        <div className="flex-1 flex items-center justify-center py-24">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando procesos favoritos...</p>
           </div>
         </div>
+
+        <PublicFooter />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         {renderHeader(false)}
-        <div className="flex items-center justify-center p-4">
+        <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
             <div className="flex items-center justify-center mb-4">
               <AlertCircle className="h-12 w-12 text-red-500" />
@@ -981,15 +988,18 @@ const MyProcessesPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <PublicFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {renderHeader(false)}
 
-      <div className="max-w-7xl mx-auto py-8 px-4">
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto py-8 px-4">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center gap-3">
             <Star className="h-8 w-8 text-yellow-500 fill-yellow-500" />
@@ -1076,6 +1086,9 @@ const MyProcessesPage: React.FC = () => {
           </div>
         )}
       </div>
+      </main>
+
+      <PublicFooter />
     </div>
   );
 };

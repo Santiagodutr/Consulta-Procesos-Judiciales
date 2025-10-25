@@ -11,6 +11,7 @@ import {
   ActuacionDocument,
   PaginationInfo,
 } from '../services/judicialPortalService.ts';
+import { PublicFooter } from '../components/PublicFooter.tsx';
 import {
   ArrowLeft,
   Star,
@@ -481,23 +482,25 @@ export const ProcessDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
         {renderHeader()}
-        <div className="flex items-center justify-center py-24">
+        <div className="flex-1 flex items-center justify-center py-24">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando información del proceso...</p>
           </div>
         </div>
+
+        <PublicFooter />
       </div>
     );
   }
 
   if (error || !processData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
         {renderHeader()}
-        <div className="flex items-center justify-center py-24 px-4">
+        <div className="flex-1 flex items-center justify-center py-24 px-4">
           <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
             <span className="text-5xl mb-4 block">❌</span>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error</h2>
@@ -510,6 +513,8 @@ export const ProcessDetailsPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <PublicFooter />
       </div>
     );
   }
@@ -517,11 +522,12 @@ export const ProcessDetailsPage: React.FC = () => {
   const detailsSource = processDetails || processData;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {renderHeader()}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
+      <main className="flex-1 pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">DETALLE DEL PROCESO</h2>
@@ -532,7 +538,7 @@ export const ProcessDetailsPage: React.FC = () => {
               <button
                 onClick={handleToggleFavorite}
                 disabled={isSavingFavorite}
-                className={`${
+                className={`$
                   isFavorite
                     ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                     : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
@@ -593,9 +599,9 @@ export const ProcessDetailsPage: React.FC = () => {
             <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
             <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
           </div>
-        </div>
+          </div>
 
-        <div className="bg-white shadow-sm rounded-lg">
+          <div className="bg-white shadow-sm rounded-lg">
           <div className="border-b">
             <div className="flex flex-wrap">
               <button
@@ -867,7 +873,10 @@ export const ProcessDetailsPage: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      </main>
+
+      <PublicFooter />
 
       {showDocumentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
