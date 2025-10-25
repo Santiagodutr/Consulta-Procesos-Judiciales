@@ -79,29 +79,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = localStorage.getItem('access_token');
       const userData = localStorage.getItem('user');
       
-      if (token && userData) {
-        // Set the token in API service
+      if (token) {
         apiService.setAuthToken(token);
-        
+
+        let parsedUser: AuthUser | null = null;
+
+        if (userData) {
+          try {
+            parsedUser = JSON.parse(userData);
+            if (parsedUser) {
+              console.log('AuthContext: User loaded from localStorage:', parsedUser.email);
+              setUser(parsedUser);
+            }
+          } catch (parseError) {
+            console.error('Error parsing user data:', parseError);
+            localStorage.removeItem('user');
+          }
+        }
+
         try {
-          // Parse user data from localStorage
-          const user = JSON.parse(userData);
-          console.log('AuthContext: User loaded from localStorage:', user.email);
-          setUser(user);
-          
-          // Optionally verify token with server (commented out for now to avoid issues)
-          // const response = await apiService.get('/auth/profile');
-          // if (response.success) {
-          //   setUser(response.data);
-          // } else {
-          //   throw new Error('Invalid token');
-          // }
-        } catch (parseError) {
-          console.error('Error parsing user data:', parseError);
-          // Clear invalid data
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
+          const profileResponse = await apiService.get<AuthUser>('/auth/profile');
+          if (profileResponse.success && profileResponse.data) {
+            console.log('AuthContext: User refreshed from /auth/profile');
+            setUser(profileResponse.data);
+            localStorage.setItem('user', JSON.stringify(profileResponse.data));
+          }
+        } catch (profileError) {
+          console.warn('AuthContext: Unable to refresh profile on load:', profileError);
         }
       }
     } catch (error) {
@@ -144,37 +148,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Si no hay datos de usuario en la respuesta, crear un usuario básico o obtenerlo del server
         if (authData.user) {
           localStorage.setItem('user', JSON.stringify(authData.user));
-          setUser(authData.user);
+          setUser(authData.user as AuthUser);
           console.log('AuthContext: User data stored from login response');
         } else {
-          console.log('AuthContext: No user data in login response, creating basic user');
-          // Crear un usuario básico con el email del login
-          const basicUser = {
-            id: 'temp-id',
-            email: email, // Usamos el email del login
-            first_name: 'Usuario',
-            last_name: 'Temporal',
-            document_number: '',
-            document_type: 'CC',
-            user_type: 'natural' as const,
-            is_active: true,
-            email_verified: true,
-            notification_preferences: {
-              email_enabled: true,
-              sms_enabled: false,
-              in_app_enabled: true,
-              sound_enabled: true,
-              process_updates: true,
-              hearing_reminders: true,
-              document_alerts: true,
-              weekly_summary: false,
-            },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          
-          localStorage.setItem('user', JSON.stringify(basicUser));
-          setUser(basicUser);
+          console.log('AuthContext: No user data in login response, fetching profile');
+          const profileResponse = await apiService.get<AuthUser>('/auth/profile');
+          if (profileResponse.success && profileResponse.data) {
+            localStorage.setItem('user', JSON.stringify(profileResponse.data));
+            setUser(profileResponse.data);
+            console.log('AuthContext: User data loaded from /auth/profile');
+          } else {
+            console.warn('AuthContext: Profile endpoint did not return user data, using placeholder');
+            const fallbackUser: AuthUser = {
+              id: 'temp-id',
+              email,
+              first_name: 'Usuario',
+              last_name: 'Temporal',
+              document_number: '',
+              document_type: 'CC',
+              user_type: 'natural',
+              is_active: true,
+              email_verified: true,
+              notification_preferences: {
+                email_enabled: true,
+                sms_enabled: false,
+                in_app_enabled: true,
+                sound_enabled: true,
+                process_updates: true,
+                hearing_reminders: true,
+                document_alerts: true,
+                weekly_summary: false,
+              },
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            localStorage.setItem('user', JSON.stringify(fallbackUser));
+            setUser(fallbackUser);
+          }
         }
         
         console.log('AuthContext: User state updated successfully');
@@ -231,13 +241,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await apiService.put('/auth/profile', updateData);
       
-      if (response.data.success) {
-        setUser({
+      if (response.success && response.data) {
+        const updatedUser = {
           ...user,
-          ...response.data.data,
-        });
+          ...response.data,
+        } as AuthUser;
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
       } else {
-        throw new Error(response.data.message || 'Profile update failed');
+        throw new Error(response.message || 'Profile update failed');
       }
     } catch (error: any) {
       throw new Error(error.response?.data?.message || error.message || 'Profile update failed');
@@ -248,9 +260,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
 
     try {
-      const response = await apiService.get('/auth/profile');
-      if (response.data.success) {
-        setUser(response.data.data);
+      const response = await apiService.get<AuthUser>('/auth/profile');
+      if (response.success && response.data) {
+        setUser(response.data);
+        localStorage.setItem('user', JSON.stringify(response.data));
       }
     } catch (error) {
       console.error('Error refreshing user:', error);

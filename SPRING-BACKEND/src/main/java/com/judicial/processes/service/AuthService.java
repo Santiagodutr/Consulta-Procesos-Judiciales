@@ -1,6 +1,7 @@
 package com.judicial.processes.service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -431,43 +432,76 @@ public class AuthService {
      * Helper method to convert JsonNode to UserDTO
      */
     private UserDTO convertJsonToUserDTO(JsonNode userNode) {
+        if (userNode == null || userNode.isNull()) {
+            return null;
+        }
+
         try {
+            // Supabase puede devolver arreglos; tomar primer elemento
+            if (userNode.isArray() && userNode.size() > 0) {
+                userNode = userNode.get(0);
+            }
+
             UserDTO user = new UserDTO();
-            user.setId(userNode.get("id").asText());
-            user.setEmail(userNode.get("email").asText());
-            user.setFirstName(userNode.get("first_name").asText());
-            user.setLastName(userNode.get("last_name").asText());
-            user.setDocumentNumber(userNode.get("document_number").asText());
-            user.setDocumentType(userNode.get("document_type").asText());
-            user.setUserType(userNode.get("user_type").asText());
-            
-            if (userNode.has("phone_number") && !userNode.get("phone_number").isNull()) {
-                user.setPhoneNumber(userNode.get("phone_number").asText());
+            user.setId(getTextValue(userNode, "id"));
+            user.setEmail(getTextValue(userNode, "email"));
+            user.setFirstName(getTextValue(userNode, "first_name"));
+            user.setLastName(getTextValue(userNode, "last_name"));
+            user.setDocumentNumber(getTextValue(userNode, "document_number"));
+            user.setDocumentType(getTextValue(userNode, "document_type"));
+            user.setUserType(getTextValue(userNode, "user_type"));
+
+            String phoneNumber = getTextValue(userNode, "phone_number");
+            if (!phoneNumber.isEmpty()) {
+                user.setPhoneNumber(phoneNumber);
             }
-            if (userNode.has("company_id") && !userNode.get("company_id").isNull()) {
-                user.setCompanyId(userNode.get("company_id").asText());
+
+            String companyId = getTextValue(userNode, "company_id");
+            if (!companyId.isEmpty()) {
+                user.setCompanyId(companyId);
             }
-            
-            user.setActive(userNode.get("is_active").asBoolean());
-            user.setEmailVerified(userNode.get("email_verified").asBoolean());
-            
-            if (userNode.has("notification_preferences")) {
-                Map<String, Object> notifPrefs = objectMapper.convertValue(
-                    userNode.get("notification_preferences"), Map.class);
+
+            user.setActive(userNode.path("is_active").asBoolean(true));
+            user.setEmailVerified(userNode.path("email_verified").asBoolean(false));
+
+            JsonNode notifNode = userNode.get("notification_preferences");
+            if (notifNode != null && !notifNode.isNull()) {
+                Map<String, Object> notifPrefs = objectMapper.convertValue(notifNode, Map.class);
                 user.setNotificationPreferences(notifPrefs);
+            } else {
+                user.setNotificationPreferences(new HashMap<>());
             }
-            
-            if (userNode.has("created_at")) {
-                user.setCreatedAt(LocalDateTime.parse(userNode.get("created_at").asText()));
+
+            String createdAt = getTextValue(userNode, "created_at");
+            if (!createdAt.isEmpty()) {
+                try {
+                    user.setCreatedAt(LocalDateTime.parse(createdAt));
+                } catch (DateTimeParseException ex) {
+                    logger.debug("Unable to parse created_at value: {}", createdAt, ex);
+                }
             }
-            if (userNode.has("updated_at")) {
-                user.setUpdatedAt(LocalDateTime.parse(userNode.get("updated_at").asText()));
+
+            String updatedAt = getTextValue(userNode, "updated_at");
+            if (!updatedAt.isEmpty()) {
+                try {
+                    user.setUpdatedAt(LocalDateTime.parse(updatedAt));
+                } catch (DateTimeParseException ex) {
+                    logger.debug("Unable to parse updated_at value: {}", updatedAt, ex);
+                }
             }
-            
+
             return user;
         } catch (Exception e) {
             logger.error("Error converting JsonNode to UserDTO", e);
             return null;
         }
+    }
+
+    private String getTextValue(JsonNode node, String fieldName) {
+        JsonNode valueNode = node.get(fieldName);
+        if (valueNode == null || valueNode.isNull()) {
+            return "";
+        }
+        return valueNode.asText("");
     }
 }
