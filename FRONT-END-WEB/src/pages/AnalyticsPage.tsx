@@ -393,7 +393,7 @@ const AnalyticsPage: React.FC = () => {
 
 	const navLinks = useMemo(
 		() => [
-			{ label: 'Dashboard', onClick: () => navigate('/dashboard') },
+			{ label: 'Inicio', onClick: () => navigate('/dashboard') },
 			{ label: 'Reportes', onClick: () => navigate('/analytics') },
 			{ label: 'Servicios', onClick: () => navigate('/notifications') },
 		],

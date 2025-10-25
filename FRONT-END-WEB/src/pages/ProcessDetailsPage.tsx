@@ -55,7 +55,7 @@ export const ProcessDetailsPage: React.FC = () => {
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const navLinks = [
-    { label: 'Dashboard', onClick: () => navigate('/dashboard') },
+    { label: 'Inicio', onClick: () => navigate('/dashboard') },
     { label: 'Reportes', onClick: () => navigate('/analytics') },
     { label: 'Servicios', onClick: () => navigate('/notifications') },
   ];

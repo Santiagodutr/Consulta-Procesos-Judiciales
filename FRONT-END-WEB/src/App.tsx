@@ -9,6 +9,7 @@ import { SimpleDashboard } from './pages/SimpleDashboard.tsx';
 import { ProcessDetailsPage } from './pages/ProcessDetailsPage.tsx';
 import MyProcessesPage from './pages/MyProcessesPage.tsx';
 import AnalyticsPage from './pages/AnalyticsPage.tsx';
+import { ProfilePage } from './pages/ProfilePage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
 import { PublicFooter } from './components/PublicFooter.tsx';
@@ -214,12 +215,7 @@ function App() {
         path="/profile" 
         element={
           <ProtectedRoute>
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Perfil</h1>
-                <p className="text-gray-600">Esta página está en desarrollo.</p>
-              </div>
-            </div>
+            <ProfilePage />
           </ProtectedRoute>
         } 
       />

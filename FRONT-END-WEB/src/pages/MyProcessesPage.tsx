@@ -70,7 +70,7 @@ const MyProcessesPage: React.FC = () => {
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
   const navLinks = [
-    { label: 'Dashboard', onClick: () => navigate('/dashboard') },
+    { label: 'Inicio', onClick: () => navigate('/dashboard') },
     { label: 'Reportes', onClick: () => navigate('/analytics') },
     { label: 'Servicios', onClick: () => navigate('/notifications') },
   ];
