@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { directJudicialAPI } from '../services/apiService.ts';
 import {
@@ -19,7 +19,6 @@ import {
   Download,
   FileDown,
   ArrowLeft,
-  LogOut,
   X,
   ChevronLeft,
   ChevronRight,
@@ -42,6 +41,8 @@ const REGISTROS_POR_PAGINA = 30;
 const MyProcessesPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,8 +68,27 @@ const MyProcessesPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(true);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
+  const navLinks = [
+    { label: 'Dashboard', onClick: () => navigate('/dashboard') },
+    { label: 'Reportes', onClick: () => navigate('/analytics') },
+    { label: 'Servicios', onClick: () => navigate('/notifications') },
+  ];
+
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
+
   useEffect(() => {
     loadFavorites();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadFavorites = async () => {
@@ -99,10 +119,6 @@ const MyProcessesPage: React.FC = () => {
     }
   };
 
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
-
   const handleHeaderBack = () => {
     setSelectedProcess(null);
     setProcessDetails(null);
@@ -114,6 +130,10 @@ const MyProcessesPage: React.FC = () => {
     setActuacionesPaginacion(null);
     setActiveTab('datos');
     setIsFavorite(true);
+  };
+
+  const handleLogoClick = () => {
+    navigate('/');
   };
 
   const handleTabChange = (tab: TabType) => {
@@ -417,52 +437,99 @@ const MyProcessesPage: React.FC = () => {
   };
 
   const renderHeader = (showBack: boolean) => (
-    <div className="bg-blue-700 text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          {showBack && (
-            <button
-              onClick={handleHeaderBack}
-              className="p-2 rounded-full hover:bg-blue-600 transition-colors"
-              title="Regresar al listado"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-          )}
+    <header className="bg-primary-700 text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-              <span className="text-blue-700 font-bold">🏛️</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">Mis Procesos</h1>
-              <p className="text-sm text-blue-100">Procesos guardados como favoritos</p>
+            {showBack && (
+              <button
+                type="button"
+                onClick={handleHeaderBack}
+                className="rounded-full p-2 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                title="Regresar al listado"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+            >
+              <img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
+            </button>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <button
+                key={link.label}
+                type="button"
+                onClick={link.onClick}
+                className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
+                <span className="hidden sm:inline">{displayName}</span>
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
+                  <div className="py-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
+                    >
+                      Perfil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/profile?section=configuracion');
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
+                    >
+                      Configuración
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleBackToDashboard}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-            title="Ir al dashboard"
-          >
-            <span>📊</span>
-            <span className="hidden md:inline text-sm font-medium">Dashboard</span>
-          </button>
-          <div className="hidden md:flex items-center gap-2 bg-blue-600 px-3 py-2 rounded-lg">
-            <span>👤</span>
-            <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"
-            title="Cerrar sesión"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="hidden md:inline text-sm font-semibold">Cerrar Sesión</span>
-          </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 
   if (selectedProcess) {

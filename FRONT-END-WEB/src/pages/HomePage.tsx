@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, FileDown, ArrowLeft, LogOut, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Download, FileDown, ArrowLeft, X, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument, PaginationInfo } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
@@ -46,6 +46,114 @@ const HomePage: React.FC = () => {
   // Estados para favoritos
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
+
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const navLinks = [
+    { label: 'Dashboard', onClick: () => navigate('/dashboard') },
+    { label: 'Reportes', onClick: () => navigate('/analytics') },
+    { label: 'Servicios', onClick: () => navigate('/notifications') },
+  ];
+
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const renderNavbar = () => (
+    <header className="bg-primary-700 text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={handleNewSearch}
+              className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
+            >
+              <img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
+            </button>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <button
+                key={link.label}
+                type="button"
+                onClick={link.onClick}
+                className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
+                <span className="hidden sm:inline">{displayName}</span>
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
+                  <div className="py-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
+                    >
+                      Perfil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/profile?section=configuracion');
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
+                    >
+                      Configuración
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
 
   const handleLogout = async () => {
     try {
@@ -375,67 +483,34 @@ const HomePage: React.FC = () => {
   if (selectedProcess) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        {/* Header azul */}
-        <div className="bg-blue-700 text-white shadow-md">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center px-6 py-4">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleBack}
-                  className="p-2 hover:bg-blue-600 rounded-full transition-colors"
-                  title="Regresar"
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-                    <span className="text-blue-700 font-bold">🏛️</span>
-                  </div>
-                  <div>
-                    <h1 className="text-lg font-bold">CONSULTA DE PROCESOS</h1>
-                    <h2 className="text-sm">NACIONAL UNIFICADA</h2>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Botones de navegación */}
-              <div className="hidden md:flex items-center space-x-6">
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👁️</span>
-                  <span className="text-sm font-medium">Visión</span>
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center space-x-1 hover:text-blue-200 transition-colors"
-                >
-                  <span>📊</span>
-                  <span className="text-sm font-medium">Dashboard</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👤</span>
-                  <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>⚙️</span>
-                  <span className="text-sm font-medium">Servicios</span>
-                </button>
-              </div>
-
-              {/* Botón cerrar sesión */}
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="hidden md:inline text-sm font-medium">Cerrar Sesión</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        {renderNavbar()}
 
         {/* Contenido */}
         <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBack}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:bg-gray-100"
+                title="Regresar"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <p className="text-sm text-gray-600">Detalle del proceso</p>
+                <p className="text-lg font-semibold text-gray-900">{selectedProcess.numeroRadicacion}</p>
+                <p className="text-xs text-gray-500">{selectedProcess.despacho}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+            >
+              Ir al dashboard
+            </button>
+          </div>
+
           <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <div>
@@ -885,66 +960,19 @@ const HomePage: React.FC = () => {
   if (searchResults.length > 0) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        {/* Header azul */}
-        <div className="bg-blue-700 text-white shadow-md">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center px-6 py-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-blue-700 font-bold">🏛️</span>
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold">CONSULTA DE PROCESOS</h1>
-                  <h2 className="text-sm">NACIONAL UNIFICADA</h2>
-                </div>
-              </div>
-              
-              {/* Botones de navegación */}
-              <div className="hidden md:flex items-center space-x-6">
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👁️</span>
-                  <span className="text-sm font-medium">Visión</span>
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center space-x-1 hover:text-blue-200 transition-colors"
-                >
-                  <span>📊</span>
-                  <span className="text-sm font-medium">Dashboard</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>👤</span>
-                  <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-                </button>
-                <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                  <span>⚙️</span>
-                  <span className="text-sm font-medium">Servicios</span>
-                </button>
-              </div>
-
-              {/* Botón cerrar sesión */}
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="hidden md:inline text-sm font-medium">Cerrar Sesión</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        {renderNavbar()}
 
         {/* Contenido */}
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">← Regresar a opciones de Consulta</h2>
               <button
+                type="button"
                 onClick={handleNewSearch}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                className="flex items-center gap-2 text-lg font-semibold text-gray-900 transition hover:text-primary-600"
               >
-                LIMPIAR
+                <span className="text-xl">←</span>
+                <span>Regresar a opciones de Consulta</span>
               </button>
             </div>
             
@@ -1076,62 +1104,7 @@ const HomePage: React.FC = () => {
   // ==================== PANTALLA INICIAL DE BÚSQUEDA ====================
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Header azul similar a la foto */}
-      <div className="bg-blue-700 text-white shadow-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center px-6 py-4">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center">
-                <span className="text-blue-700 font-bold">🏛️</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold">CONSULTA DE PROCESOS</h1>
-                <h2 className="text-sm">NACIONAL UNIFICADA</h2>
-              </div>
-            </div>
-            
-            {/* Botones de navegación */}
-            <div className="hidden md:flex items-center space-x-6">
-              <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                <span>👁️</span>
-                <span className="text-sm font-medium">Visión</span>
-              </button>
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center space-x-1 hover:text-blue-200 transition-colors"
-              >
-                <span>📊</span>
-                <span className="text-sm font-medium">Dashboard</span>
-              </button>
-              <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                <span>👤</span>
-                <span className="text-sm font-medium">Hola, {user?.first_name || 'Usuario'}</span>
-              </button>
-              <button className="flex items-center space-x-1 hover:text-blue-200 transition-colors">
-                <span>⚙️</span>
-                <span className="text-sm font-medium">Servicios</span>
-              </button>
-            </div>
-
-            {/* Botón cerrar sesión */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors"
-              title="Cerrar sesión"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="hidden md:inline text-sm font-medium">Cerrar Sesión</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-6 py-3">
-        <button className="text-gray-600 hover:text-gray-900 text-sm flex items-center">
-          <span>← Regresar a opciones de Consulta</span>
-        </button>
-      </div>
+      {renderNavbar()}
 
       {/* Contenido principal - Consulta por Número de Radicación */}
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -1139,9 +1112,7 @@ const HomePage: React.FC = () => {
           <div className="flex items-center justify-center mb-8">
             <div className="text-center">
               <div className="inline-block bg-blue-100 p-4 rounded-full mb-4">
-                <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <img src="/consultar.png" alt="Icono consultar" className="w-12 h-12 object-contain" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">
                 Consulta por Número de Radicación

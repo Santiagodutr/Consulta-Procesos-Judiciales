@@ -51,71 +51,68 @@ export const SimpleDashboard: React.FC = () => {
     {
       title: 'Consultar Procesos',
       description: 'Buscar procesos judiciales por número de radicación',
-      icon: '�',
+      iconSrc: '/consultar.png',
+      iconAlt: 'Consultar procesos',
       href: '/consulta',
-      color: 'bg-blue-500',
+      iconBg: 'bg-blue-300 border border-blue-500',
     },
     {
       title: 'Mis Procesos',
       description: 'Ver procesos guardados',
-      icon: '📊',
+      iconSrc: '/misProcesos.png',
+      iconAlt: 'Mis procesos',
       href: '/processes',
-      color: 'bg-green-500',
+      iconBg: 'bg-yellow-100 border border-yellow-300',
     },
     {
       title: 'Análisis',
       description: 'Ver estadísticas y reportes',
-      icon: '📈',
+      iconSrc: '/analyitics.png',
+      iconAlt: 'Analíticas',
       href: '/analytics',
-      color: 'bg-purple-500',
+      iconBg: 'bg-purple-300 border border-purple-500',
     },
     {
       title: 'Configuración',
       description: 'Gestionar perfil y notificaciones',
-      icon: '⚙️',
+      iconSrc: '/config.png',
+      iconAlt: 'Configuración',
       href: '/profile',
-      color: 'bg-orange-500',
+      iconBg: 'bg-orange-300 border border-orange-500',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-neutral">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-primary-700 text-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Bienvenido, {user?.first_name || 'Usuario'}!
-              </h1>
-              <p className="text-gray-600">
-                Aquí tienes un resumen de tus procesos judiciales.
-              </p>
-            </div>
+            <img src="/logo_justitrack.png" alt="JustiTrack" className="h-14 w-auto" />
             
             <div className="flex items-center space-x-4">
               <Link
                 to="/notifications"
-                className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100"
+                className="p-2 text-white/90 hover:text-white rounded-full hover:bg-white/20"
                 title="Notificaciones"
               >
-                <span className="text-xl">🔔</span>
+                <img src="/notificaciones.png" alt="Notificaciones" className="h-6 w-6" />
               </Link>
               
               <Link
                 to="/profile"
-                className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100"
+                className="p-2 text-white/90 hover:text-white rounded-full hover:bg-white/20"
                 title="Perfil"
               >
-                <span className="text-xl">👤</span>
+                <img src="/usuario.png" alt="Perfil" className="h-6 w-6" />
               </Link>
               
               <button
                 onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100"
+                className="p-2 text-white/90 hover:text-white rounded-full hover:bg-white/20"
                 title="Cerrar sesión"
               >
-                <span className="text-xl">🚪</span>
+                <img src="/log-out.png" alt="Cerrar sesión" className="h-6 w-6" />
               </button>
             </div>
           </div>
@@ -124,6 +121,15 @@ export const SimpleDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-0 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Bienvenido, {user?.first_name || 'Usuario'}!
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Aquí tienes un resumen actualizado de tus procesos judiciales.
+          </p>
+        </div>
+
         {/* Quick Actions */}
         <div className="px-4 py-6 sm:px-0">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -135,10 +141,10 @@ export const SimpleDashboard: React.FC = () => {
               <Link
                 key={index}
                 to={action.href}
-                className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 hover:shadow-md transition-all duration-200 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                className="relative rounded-lg border border-brand-accent bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-brand-primary hover:shadow-md transition-all duration-200 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-brand-primary"
               >
-                <div className={`flex-shrink-0 rounded-lg ${action.color} p-3`}>
-                  <span className="text-white text-xl">{action.icon}</span>
+                <div className={`flex-shrink-0 rounded-lg ${action.iconBg} p-3 flex items-center justify-center`}> 
+                  <img src={action.iconSrc} alt={action.iconAlt} className="h-8 w-8 object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">
@@ -164,7 +170,7 @@ export const SimpleDashboard: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <span className="text-2xl">📄</span>
+                    <img src="/totalConsult.png" alt="Total consultas" className="h-10 w-10 object-contain" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -184,7 +190,7 @@ export const SimpleDashboard: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <span className="text-2xl">📊</span>
+                    <img src="/procesosActivos.png" alt="Procesos activos" className="h-10 w-10 object-contain" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -204,7 +210,7 @@ export const SimpleDashboard: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <span className="text-2xl">🔔</span>
+                    <img src="/notificaciones.png" alt="Notificaciones" className="h-10 w-10 object-contain" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -224,7 +230,7 @@ export const SimpleDashboard: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <span className="text-2xl">📅</span>
+                    <img src="/calendar.png" alt="Última consulta" className="h-10 w-10 object-contain" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -256,12 +262,12 @@ export const SimpleDashboard: React.FC = () => {
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             {loading ? (
               <div className="text-center py-12">
-                <span className="text-4xl mb-4 block">⏳</span>
+                <img src="/process.png" alt="Cargando historial" className="h-16 w-16 mx-auto mb-4 object-contain" />
                 <p className="text-gray-500">Cargando historial...</p>
               </div>
             ) : consultationHistory.length === 0 ? (
               <div className="text-center py-12">
-                <span className="text-4xl mb-4 block">📋</span>
+                <img src="/process.png" alt="Sin consultas" className="h-20 w-20 mx-auto mb-4 object-contain" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No hay consultas recientes
                 </h3>
@@ -270,7 +276,7 @@ export const SimpleDashboard: React.FC = () => {
                 </p>
                 <Link
                   to="/"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary"
                 >
                   Consultar Procesos
                 </Link>
@@ -285,7 +291,7 @@ export const SimpleDashboard: React.FC = () => {
                           <div className="flex items-center space-x-3">
                             <span className="text-2xl">⚖️</span>
                             <div>
-                              <p className="text-sm font-medium text-blue-600 truncate">
+                              <p className="text-sm font-medium text-brand-primary truncate">
                                 {item.numero_radicacion}
                               </p>
                               <p className="text-sm text-gray-500 truncate">
@@ -311,7 +317,7 @@ export const SimpleDashboard: React.FC = () => {
                           </span>
                           <button
                             onClick={() => navigate(`/process/${item.numero_radicacion}`)}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-brand-primary hover:bg-brand-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
                           >
                             Ver Detalles
                           </button>
