@@ -130,59 +130,54 @@ public class AuthService {
     public AuthResponse login(String email, String password) {
         try {
             logger.info("Attempting login for email: {}", email);
-            
-            // Direct database lookup for user
-            JsonNode users = supabaseService.select("users", Map.of("email", email));
-            
-            if (users == null || users.size() == 0) {
-                logger.warn("No user found with email: {}", email);
+
+            JsonNode authResult = supabaseService.signIn(email, password);
+            if (authResult == null || !authResult.has("access_token")) {
+                logger.warn("Supabase login failed or returned no token for email: {}", email);
                 return null;
             }
-            
-            JsonNode user = users.get(0);
-            
-            // Check if user is active
-            if (!user.get("is_active").asBoolean()) {
+
+            if (!authResult.has("user") || authResult.get("user") == null) {
+                logger.warn("Supabase login response is missing user object for email: {}", email);
+                return null;
+            }
+
+            JsonNode userNode = authResult.get("user");
+            String userId = userNode.has("id") ? userNode.get("id").asText(null) : null;
+
+            if (userId == null) {
+                logger.warn("Supabase login response user is missing id for email: {}", email);
+                return null;
+            }
+
+            JsonNode userProfile = supabaseService.select("users", Map.of("id", userId));
+            if (userProfile == null || userProfile.size() == 0) {
+                logger.warn("No local profile found for Supabase user id: {}", userId);
+                return null;
+            }
+
+            JsonNode user = userProfile.get(0);
+            if (user.has("is_active") && !user.get("is_active").asBoolean()) {
                 logger.warn("User account is deactivated: {}", email);
                 return null;
             }
-            
-            // For this simplified version, we'll skip password verification
-            // In a real implementation, you'd verify the password hash here
-            // Since the user was already created through Supabase Auth during registration,
-            // we'll trust that the frontend is sending valid credentials
-            
-            String userId = user.get("id").asText();
-            logger.info("User found: {}, generating tokens...", userId);
-            
-            // Generate simple tokens
-            String accessToken = generateSimpleToken(userId);
-            String refreshToken = generateSimpleToken(userId + "_refresh");
-            
-            // Skip update for now - will implement later
-            logger.info("Skipping last login update for user: {}", userId);
-            
+
+            String accessToken = authResult.has("access_token") ? authResult.get("access_token").asText(null) : null;
+            String refreshToken = authResult.has("refresh_token") ? authResult.get("refresh_token").asText(null) : null;
+
+            if (accessToken == null || refreshToken == null) {
+                logger.warn("Supabase login response missing tokens for email: {}", email);
+                return null;
+            }
+
             UserDTO userDTO = convertJsonToUserDTO(user);
-            
+
             logger.info("Login successful for user: {}", email);
             return new AuthResponse(userDTO, accessToken, refreshToken, jwtExpiration);
-            
+
         } catch (Exception e) {
             logger.error("Login error for email: " + email, e);
             return null;
-        }
-    }
-    
-    /**
-     * Generate a simple JWT token (temporary solution)
-     */
-    private String generateSimpleToken(String subject) {
-        try {
-            // Use JWT library to create a proper token
-            return "temp_token_" + subject + "_" + System.currentTimeMillis();
-        } catch (Exception e) {
-            logger.error("Error generating token", e);
-            return "temp_token_" + subject;
         }
     }
     

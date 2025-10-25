@@ -49,6 +49,7 @@ public class SupabaseService {
     private HttpHeaders createAuthHeaders(String userToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("apikey", supabaseProperties.getServiceRoleKey());
         headers.set("Authorization", "Bearer " + userToken);
         return headers;
     }
@@ -92,13 +93,12 @@ public class SupabaseService {
     public JsonNode signIn(String email, String password) {
         try {
             // Use the correct Supabase Auth REST API endpoint for password login
-            String url = supabaseProperties.getAuthUrl() + "/token";
+            String url = supabaseProperties.getAuthUrl() + "/token?grant_type=password";
             logger.info("Attempting login to URL: {}", url);
             
             Map<String, String> requestBody = Map.of(
                 "email", email,
-                "password", password,
-                "grant_type", "password"
+                "password", password
             );
             logger.info("Login request body: {}", requestBody);
             

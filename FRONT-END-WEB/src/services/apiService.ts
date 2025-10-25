@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+/// <reference types="node" />
+import axios, { AxiosInstance, AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios';
 import { toast } from 'react-hot-toast';
 import { judicialPortalService, JudicialProcessData } from './judicialPortalService.ts';
 
@@ -17,10 +18,12 @@ interface ApiResponse<T = any> {
 
 class ApiService {
   private client: AxiosInstance;
+  private isRefreshing = false;
+  private refreshSubscribers: Array<(token: string | null) => void> = [];
 
   constructor() {
     // Configurar la URL base del backend desde variables de entorno
-    const apiBaseURL = process.env.REACT_APP_API_URL;
+  const apiBaseURL = process.env.REACT_APP_API_URL;
     
     this.client = axios.create({
       baseURL: apiBaseURL,
@@ -38,8 +41,10 @@ class ApiService {
     this.client.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('access_token');
-        if (token) {
+        if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
+        } else if (config.headers) {
+          delete config.headers.Authorization;
         }
         return config;
       },
@@ -53,11 +58,95 @@ class ApiService {
       (response: AxiosResponse<ApiResponse>) => {
         return response;
       },
-      (error: AxiosError<ApiResponse>) => {
+      async (error: AxiosError<ApiResponse>) => {
+        const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined;
+        const status = error.response?.status;
+        const requestUrl = originalRequest?.url || '';
+
+        if (status === 401 && originalRequest && requestUrl !== '/auth/login' && !requestUrl?.includes('/auth/refresh-token')) {
+          if (originalRequest._retry) {
+            this.handleUnauthorized();
+            return Promise.reject(error);
+          }
+
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (!refreshToken) {
+            this.handleUnauthorized();
+            return Promise.reject(error);
+          }
+
+          if (this.isRefreshing) {
+            return new Promise((resolve, reject) => {
+              this.subscribeTokenRefresh((token) => {
+                if (!token) {
+                  reject(error);
+                  return;
+                }
+                if (!originalRequest.headers) {
+                  originalRequest.headers = {};
+                }
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                originalRequest._retry = true;
+                resolve(this.client(originalRequest));
+              });
+            });
+          }
+
+          originalRequest._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const refreshed = await this.refreshToken();
+            if (refreshed) {
+              const newToken = localStorage.getItem('access_token');
+              this.onTokenRefreshed(newToken);
+              if (!originalRequest.headers) {
+                originalRequest.headers = {};
+              }
+              if (newToken) {
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              }
+              return this.client(originalRequest);
+            }
+
+            this.handleUnauthorized();
+          } catch (refreshError) {
+            this.handleUnauthorized();
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
+
+          return Promise.reject(error);
+        }
+
         this.handleError(error);
         return Promise.reject(error);
       }
     );
+  }
+
+  private subscribeTokenRefresh(callback: (token: string | null) => void) {
+    this.refreshSubscribers.push(callback);
+  }
+
+  private onTokenRefreshed(token: string | null) {
+    this.refreshSubscribers.forEach(callback => callback(token));
+    this.refreshSubscribers = [];
+  }
+
+  private handleUnauthorized() {
+    if (this.refreshSubscribers.length > 0) {
+      this.onTokenRefreshed(null);
+    }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    delete this.client.defaults.headers.Authorization;
+    if (window.location.pathname !== '/login') {
+      toast.error('Tu sesión expiró. Por favor inicia sesión nuevamente.');
+      window.location.replace('/login');
+    }
   }
 
   private handleError(error: AxiosError<ApiResponse>) {
@@ -69,11 +158,6 @@ class ApiService {
 
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          window.location.href = '/login';
-          toast.error('Session expired. Please login again.');
           break;
 
         case 403:
