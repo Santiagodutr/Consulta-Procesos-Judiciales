@@ -83,3 +83,11 @@ management:
   health:
     mail:
       enabled: false
+
+# Monitoring Configuration
+monitoring:
+  enabled: ${MONITORING_ENABLED:true}
+  interval:
+    millis: ${MONITORING_INTERVAL_MILLIS:600000}
+  initial-delay:
+    millis: ${MONITORING_INITIAL_DELAY_MILLIS:60000}

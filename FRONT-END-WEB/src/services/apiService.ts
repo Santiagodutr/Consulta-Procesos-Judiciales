@@ -382,15 +382,15 @@ export const processAPI = {
 export const notificationAPI = {
   getNotifications: (params?: any) =>
     apiService.get('/notifications', params),
-  
+
+  getUnreadNotifications: (limit?: number) =>
+    apiService.get('/notifications/unread', limit ? { limit } : undefined),
+
   markAsRead: (notificationId: string) =>
-    apiService.patch(`/notifications/${notificationId}/read`),
-  
+    apiService.post(`/notifications/${notificationId}/read`),
+
   markAllAsRead: () =>
-    apiService.patch('/notifications/mark-all-read'),
-  
-  getUnreadCount: () =>
-    apiService.get('/notifications/unread-count'),
+    apiService.post('/notifications/read-all'),
 };
 
 export const analyticsAPI = {

@@ -153,6 +153,30 @@ public class SupabaseService {
             return null;
         }
     }
+
+    /**
+     * Retrieve a user profile by id using service role key.
+     */
+    public JsonNode getAuthUserById(String userId) {
+        try {
+            String url = supabaseProperties.getAuthUrl() + "/admin/users/" + userId;
+
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return objectMapper.readTree(response.getBody());
+            }
+
+            logger.error("Supabase admin user fetch failed with status: {}", response.getStatusCode());
+            return null;
+        } catch (Exception e) {
+            logger.error("Supabase getAuthUserById error", e);
+            return null;
+        }
+    }
     
     /**
      * Sign out user

@@ -237,6 +237,17 @@ CREATE TABLE notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Process snapshots table
+CREATE TABLE process_snapshots (
+    process_number VARCHAR(50) PRIMARY KEY,
+    process_id VARCHAR(100),
+    last_activity_date VARCHAR(50),
+    last_decision_date VARCHAR(50),
+    last_status VARCHAR(100),
+    summary TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Scraping jobs table
 CREATE TABLE scraping_jobs (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -325,6 +336,7 @@ CREATE INDEX idx_consultation_history_process_id ON consultation_history(process
 CREATE INDEX idx_consultation_history_created_at ON consultation_history(created_at);
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX idx_process_snapshots_last_activity_date ON process_snapshots(last_activity_date);
 CREATE INDEX idx_scraping_jobs_status ON scraping_jobs(status);
 CREATE INDEX idx_scraping_jobs_process_id ON scraping_jobs(process_id);
 
@@ -354,6 +366,7 @@ ALTER TABLE process_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE process_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE consultation_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE process_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scraping_jobs ENABLE ROW LEVEL SECURITY;
 
 -- Users can read/update their own profile
@@ -387,6 +400,9 @@ USING (user_id = auth.uid());
 
 CREATE POLICY "Users can update their notifications" ON notifications FOR UPDATE 
 USING (user_id = auth.uid());
+
+-- Service role policies for process snapshots (accessed via backend)
+CREATE POLICY "Allow backend access" ON process_snapshots FOR ALL USING (auth.role() = 'service_role');
 
 -- PUBLIC ACCESS POLICIES (for judicial consultation system)
 -- Allow public read access to non-private processes

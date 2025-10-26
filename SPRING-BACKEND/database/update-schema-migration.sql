@@ -68,6 +68,16 @@ CREATE TABLE IF NOT EXISTS pagination_info (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS process_snapshots (
+    process_number VARCHAR(50) PRIMARY KEY,
+    process_id VARCHAR(100),
+    last_activity_date VARCHAR(50),
+    last_decision_date VARCHAR(50),
+    last_status VARCHAR(100),
+    summary TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- PASO 7: Crear nuevos índices
 CREATE INDEX IF NOT EXISTS idx_judicial_processes_id_proceso ON judicial_processes(id_proceso);
 CREATE INDEX IF NOT EXISTS idx_judicial_processes_estado ON judicial_processes(estado);
@@ -77,6 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_judicial_processes_es_privado ON judicial_process
 CREATE INDEX IF NOT EXISTS idx_consultation_parameters_numero ON consultation_parameters(numero);
 CREATE INDEX IF NOT EXISTS idx_consultation_parameters_nombre ON consultation_parameters(nombre);
 CREATE INDEX IF NOT EXISTS idx_pagination_info_consultation_id ON pagination_info(consultation_id);
+CREATE INDEX IF NOT EXISTS idx_process_snapshots_last_activity_date ON process_snapshots(last_activity_date);
 
 -- PASO 8: Eliminar índices antiguos que ya no aplican
 DROP INDEX IF EXISTS idx_judicial_processes_status;

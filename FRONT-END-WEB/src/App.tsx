@@ -13,6 +13,7 @@ import { ProfilePage } from './pages/ProfilePage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
 import { PublicFooter } from './components/PublicFooter.tsx';
+import NotificationsPage from './pages/NotificationsPage.tsx';
 
 // Página de bienvenida pública
 const WelcomePage: React.FC = () => {
@@ -224,12 +225,7 @@ function App() {
         path="/notifications" 
         element={
           <ProtectedRoute>
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Notificaciones</h1>
-                <p className="text-gray-600">Esta página está en desarrollo.</p>
-              </div>
-            </div>
+            <NotificationsPage />
           </ProtectedRoute>
         } 
       />

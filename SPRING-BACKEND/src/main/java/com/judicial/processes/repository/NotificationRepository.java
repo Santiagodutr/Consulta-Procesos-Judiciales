@@ -2,7 +2,7 @@ package com.judicial.processes.repository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,23 +19,23 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.judicial.processes.config.SupabaseProperties;
-import com.judicial.processes.entity.FavoriteProcess;
+import com.judicial.processes.entity.NotificationRecord;
 
 @Repository
-public class FavoriteProcessRepository {
-    
-    private static final Logger logger = LoggerFactory.getLogger(FavoriteProcessRepository.class);
-    private static final String TABLE_NAME = "favorite_processes";
-    
+public class NotificationRepository {
+
+    private static final Logger logger = LoggerFactory.getLogger(NotificationRepository.class);
+    private static final String TABLE_NAME = "notifications";
+
     @Autowired
     private SupabaseProperties supabaseProperties;
-    
+
     @Autowired
     private RestTemplate restTemplate;
-    
+
     @Autowired
     private ObjectMapper objectMapper;
-    
+
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -44,73 +44,48 @@ public class FavoriteProcessRepository {
         headers.set("Prefer", "return=representation");
         return headers;
     }
-    
-    public FavoriteProcess save(FavoriteProcess favoriteProcess) {
+
+    public NotificationRecord save(NotificationRecord notification) {
         try {
             String url = supabaseProperties.getRestUrl() + "/" + TABLE_NAME;
-            
+
+            if (notification.getType() == null) {
+                notification.setType("in_app");
+            }
+
             HttpHeaders headers = createHeaders();
-            HttpEntity<FavoriteProcess> request = new HttpEntity<>(favoriteProcess, headers);
-            
+            HttpEntity<NotificationRecord> request = new HttpEntity<>(notification, headers);
+
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
                 if (jsonNode.isArray() && jsonNode.size() > 0) {
-                    return objectMapper.treeToValue(jsonNode.get(0), FavoriteProcess.class);
+                    return objectMapper.treeToValue(jsonNode.get(0), NotificationRecord.class);
                 }
             }
-            
-            return favoriteProcess;
+
+            return notification;
         } catch (Exception e) {
-            logger.error("Error saving favorite process", e);
-            throw new RuntimeException("Error saving favorite process", e);
+            logger.error("Error saving notification", e);
+            throw new RuntimeException("Error saving notification", e);
         }
     }
-    
-    public List<FavoriteProcess> findByUserId(String userId) {
+
+    public List<NotificationRecord> findUnreadByUser(String userId, int limit) {
         try {
-            String url = UriComponentsBuilder
+            UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(supabaseProperties.getRestUrl() + "/" + TABLE_NAME)
                 .queryParam("user_id", "eq." + userId)
+                .queryParam("is_read", "eq.false")
                 .queryParam("select", "*")
-                .queryParam("order", "created_at.desc")
-                .build()
-                .toUriString();
-            
-            HttpHeaders headers = createHeaders();
-            HttpEntity<Void> request = new HttpEntity<>(headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                JsonNode jsonNode = objectMapper.readTree(response.getBody());
-                List<FavoriteProcess> favorites = new ArrayList<>();
-                
-                if (jsonNode.isArray()) {
-                    for (JsonNode node : jsonNode) {
-                        FavoriteProcess favorite = objectMapper.treeToValue(node, FavoriteProcess.class);
-                        favorites.add(favorite);
-                    }
-                }
-                
-                return favorites;
+                .queryParam("order", "created_at.desc");
+
+            if (limit > 0) {
+                builder.queryParam("limit", limit);
             }
-            
-            return new ArrayList<>();
-        } catch (Exception e) {
-            logger.error("Error finding favorites by user ID", e);
-            throw new RuntimeException("Error finding favorites", e);
-        }
-    }
 
-    public List<FavoriteProcess> findAll() {
-        try {
-            String url = UriComponentsBuilder
-                .fromHttpUrl(supabaseProperties.getRestUrl() + "/" + TABLE_NAME)
-                .queryParam("select", "*")
-                .build()
-                .toUriString();
+            String url = builder.build().toUriString();
 
             HttpHeaders headers = createHeaders();
             HttpEntity<Void> request = new HttpEntity<>(headers);
@@ -119,73 +94,108 @@ public class FavoriteProcessRepository {
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
-                List<FavoriteProcess> favorites = new ArrayList<>();
+                List<NotificationRecord> notifications = new ArrayList<>();
 
                 if (jsonNode.isArray()) {
                     for (JsonNode node : jsonNode) {
-                        FavoriteProcess favorite = objectMapper.treeToValue(node, FavoriteProcess.class);
-                        favorites.add(favorite);
+                        notifications.add(objectMapper.treeToValue(node, NotificationRecord.class));
                     }
                 }
 
-                return favorites;
+                return notifications;
             }
 
             return new ArrayList<>();
         } catch (Exception e) {
-            logger.error("Error retrieving all favorite processes", e);
-            throw new RuntimeException("Error retrieving favorites", e);
+            logger.error("Error fetching unread notifications", e);
+            throw new RuntimeException("Error fetching notifications", e);
         }
     }
-    
-    public Optional<FavoriteProcess> findByUserIdAndNumeroRadicacion(String userId, String numeroRadicacion) {
+
+    public List<NotificationRecord> findByUser(String userId, int limit, int offset) {
         try {
-            String url = UriComponentsBuilder
+            UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl(supabaseProperties.getRestUrl() + "/" + TABLE_NAME)
                 .queryParam("user_id", "eq." + userId)
-                .queryParam("numero_radicacion", "eq." + numeroRadicacion)
                 .queryParam("select", "*")
-                .build()
-                .toUriString();
-            
+                .queryParam("order", "created_at.desc");
+
+            if (limit > 0) {
+                builder.queryParam("limit", limit);
+            }
+
+            if (offset > 0) {
+                builder.queryParam("offset", offset);
+            }
+
+            String url = builder.build().toUriString();
+
             HttpHeaders headers = createHeaders();
             HttpEntity<Void> request = new HttpEntity<>(headers);
-            
+
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
-            
+
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode jsonNode = objectMapper.readTree(response.getBody());
-                
-                if (jsonNode.isArray() && jsonNode.size() > 0) {
-                    FavoriteProcess favorite = objectMapper.treeToValue(jsonNode.get(0), FavoriteProcess.class);
-                    return Optional.of(favorite);
+                List<NotificationRecord> notifications = new ArrayList<>();
+
+                if (jsonNode.isArray()) {
+                    for (JsonNode node : jsonNode) {
+                        notifications.add(objectMapper.treeToValue(node, NotificationRecord.class));
+                    }
                 }
+
+                return notifications;
             }
-            
-            return Optional.empty();
+
+            return new ArrayList<>();
         } catch (Exception e) {
-            logger.error("Error finding favorite by user ID and numero radicacion", e);
-            return Optional.empty();
+            logger.error("Error fetching notifications", e);
+            throw new RuntimeException("Error fetching notifications", e);
         }
     }
-    
-    public void deleteByUserIdAndNumeroRadicacion(String userId, String numeroRadicacion) {
+
+    public void markAsRead(String notificationId) {
+        try {
+            String url = supabaseProperties.getRestUrl() + "/" + TABLE_NAME + "?id=eq." + notificationId;
+
+            HttpHeaders headers = createHeaders();
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(
+                Map.of(
+                    "is_read", true,
+                    "read_at", java.time.OffsetDateTime.now().toString()
+                ),
+                headers
+            );
+
+            restTemplate.exchange(url, HttpMethod.PATCH, request, String.class);
+        } catch (Exception e) {
+            logger.error("Error marking notification as read", e);
+            throw new RuntimeException("Error updating notification", e);
+        }
+    }
+
+    public void markAllAsRead(String userId) {
         try {
             String url = UriComponentsBuilder
                 .fromHttpUrl(supabaseProperties.getRestUrl() + "/" + TABLE_NAME)
                 .queryParam("user_id", "eq." + userId)
-                .queryParam("numero_radicacion", "eq." + numeroRadicacion)
                 .build()
                 .toUriString();
-            
+
             HttpHeaders headers = createHeaders();
-            HttpEntity<Void> request = new HttpEntity<>(headers);
-            
-            restTemplate.exchange(url, HttpMethod.DELETE, request, String.class);
-            
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(
+                Map.of(
+                    "is_read", true,
+                    "read_at", java.time.OffsetDateTime.now().toString()
+                ),
+                headers
+            );
+
+            restTemplate.exchange(url, HttpMethod.PATCH, request, String.class);
         } catch (Exception e) {
-            logger.error("Error deleting favorite process", e);
-            throw new RuntimeException("Error deleting favorite process", e);
+            logger.error("Error marking notifications as read", e);
+            throw new RuntimeException("Error updating notifications", e);
         }
     }
 }

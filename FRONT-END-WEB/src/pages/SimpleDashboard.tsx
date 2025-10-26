@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
-import { judicialAPI } from '../services/apiService.ts';
+import { judicialAPI, notificationAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 
 interface ConsultationHistoryItem {
@@ -19,9 +19,11 @@ export const SimpleDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
   const [consultationHistory, setConsultationHistory] = useState<ConsultationHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     loadConsultationHistory();
+    loadUnreadNotifications();
   }, []);
 
   const loadConsultationHistory = async () => {
@@ -35,6 +37,17 @@ export const SimpleDashboard: React.FC = () => {
       console.error('Error loading consultation history:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUnreadNotifications = async () => {
+    try {
+      const response = await notificationAPI.getUnreadNotifications(50);
+      if (response?.success && Array.isArray(response.data)) {
+        setUnreadNotifications(response.data.length);
+      }
+    } catch (error) {
+      console.error('Error loading unread notifications:', error);
     }
   };
 
@@ -74,12 +87,12 @@ export const SimpleDashboard: React.FC = () => {
       iconBg: 'bg-purple-300 border border-purple-500',
     },
     {
-      title: 'Configuración',
-      description: 'Gestionar perfil y notificaciones',
-      iconSrc: '/config.png',
-      iconAlt: 'Configuración',
-      href: '/profile',
-      iconBg: 'bg-orange-300 border border-orange-500',
+      title: 'Notificaciones',
+      description: 'Revisa alertas recientes',
+      iconSrc: '/notificaciones.png',
+      iconAlt: 'Notificaciones',
+      href: '/notifications',
+      iconBg: 'bg-green-100 border border-green-300',
     },
   ];
 
@@ -220,7 +233,7 @@ export const SimpleDashboard: React.FC = () => {
                         Notificaciones
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {unreadNotifications}
                       </dd>
                     </dl>
                   </div>
