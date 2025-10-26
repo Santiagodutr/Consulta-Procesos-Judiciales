@@ -528,77 +528,76 @@ export const ProcessDetailsPage: React.FC = () => {
       <main className="flex-1 pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">DETALLE DEL PROCESO</h2>
-              <p className="text-lg text-blue-600 font-mono">{processData.numeroRadicacion}</p>
-              <p className="text-sm text-gray-500 mt-1">Despacho: {processData.despacho}</p>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">DETALLE DEL PROCESO</h2>
+                <p className="text-lg text-blue-600 font-mono">{processData.numeroRadicacion}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isSavingFavorite}
+                  className={`${
+                    isFavorite
+                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  } disabled:opacity-50 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2`}
+                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                >
+                  {isSavingFavorite ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span className="text-gray-700">Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Star className={`h-5 w-5 ${isFavorite ? 'fill-white' : 'text-gray-600'}`} />
+                      <span className={isFavorite ? 'text-white' : 'text-gray-700'}>
+                        {isFavorite ? 'Favorito' : 'Guardar'}
+                      </span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDownloadDOCX}
+                  disabled={isDownloadingDOCX}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                >
+                  {isDownloadingDOCX ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Descargando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="h-5 w-5" />
+                      <span>Descargar DOC</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDownloadCSV}
+                  disabled={isDownloadingCSV}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                >
+                  {isDownloadingCSV ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Descargando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-5 w-5" />
+                      <span>Descargar CSV</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleToggleFavorite}
-                disabled={isSavingFavorite}
-                className={`$
-                  isFavorite
-                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                } disabled:opacity-50 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2`}
-                title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-              >
-                {isSavingFavorite ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span className={isFavorite ? 'text-white' : 'text-gray-700'}>Guardando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Star className={`h-5 w-5 ${isFavorite ? 'fill-white' : 'text-gray-600'}`} />
-                    <span className={isFavorite ? 'text-white' : 'text-gray-700'}>
-                      {isFavorite ? 'Favorito' : 'Guardar'}
-                    </span>
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleDownloadDOCX}
-                disabled={isDownloadingDOCX}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-              >
-                {isDownloadingDOCX ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Descargando...</span>
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="h-5 w-5" />
-                    <span>Descargar DOC</span>
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleDownloadCSV}
-                disabled={isDownloadingCSV}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-              >
-                {isDownloadingCSV ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Descargando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-5 w-5" />
-                    <span>Descargar CSV</span>
-                  </>
-                )}
-              </button>
+            <div className="text-sm text-gray-600 space-y-1 mt-4">
+              <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
+              <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
             </div>
-          </div>
-          <div className="text-sm text-gray-600 space-y-1 mt-4">
-            <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
-            <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
-          </div>
           </div>
 
           <div className="bg-white shadow-sm rounded-lg">
