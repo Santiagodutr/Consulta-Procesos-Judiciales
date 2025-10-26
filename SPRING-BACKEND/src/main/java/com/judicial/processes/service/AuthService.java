@@ -1,6 +1,7 @@
 package com.judicial.processes.service;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
@@ -472,7 +473,11 @@ public class AuthService {
                 try {
                     user.setCreatedAt(LocalDateTime.parse(createdAt));
                 } catch (DateTimeParseException ex) {
-                    logger.debug("Unable to parse created_at value: {}", createdAt, ex);
+                    try {
+                        user.setCreatedAt(OffsetDateTime.parse(createdAt).toLocalDateTime());
+                    } catch (DateTimeParseException offsetEx) {
+                        logger.debug("Unable to parse created_at value: {}", createdAt, offsetEx);
+                    }
                 }
             }
 
@@ -481,7 +486,11 @@ public class AuthService {
                 try {
                     user.setUpdatedAt(LocalDateTime.parse(updatedAt));
                 } catch (DateTimeParseException ex) {
-                    logger.debug("Unable to parse updated_at value: {}", updatedAt, ex);
+                    try {
+                        user.setUpdatedAt(OffsetDateTime.parse(updatedAt).toLocalDateTime());
+                    } catch (DateTimeParseException offsetEx) {
+                        logger.debug("Unable to parse updated_at value: {}", updatedAt, offsetEx);
+                    }
                 }
             }
 

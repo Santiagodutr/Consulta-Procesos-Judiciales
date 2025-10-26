@@ -86,6 +86,8 @@ export const ProfilePage: React.FC = () => {
 	];
 
 	const notificationPreferences = user?.notification_preferences;
+	const createdAt = user?.created_at || (user && (user as any).createdAt);
+	const updatedAt = user?.updated_at || (user && (user as any).updatedAt);
 	const notificationItems = [
 		{ key: 'process_updates', label: 'Actualizaciones de procesos', enabled: notificationPreferences?.process_updates },
 		{ key: 'hearing_reminders', label: 'Recordatorios de audiencias', enabled: notificationPreferences?.hearing_reminders },
@@ -302,8 +304,8 @@ export const ProfilePage: React.FC = () => {
 											<CalendarDays className="h-5 w-5 text-blue-500 mt-0.5" />
 											<div>
 												<span className="text-sm font-medium text-gray-500">Miembro desde</span>
-												<p className="text-base font-semibold text-gray-900">{formatDateTime(user.created_at)}</p>
-												<p className="text-sm text-gray-600 mt-1">Última actualización: {formatDateTime(user.updated_at)}</p>
+												<p className="text-base font-semibold text-gray-900">{formatDateTime(createdAt)}</p>
+												<p className="text-sm text-gray-600 mt-1">Última actualización: {formatDateTime(updatedAt)}</p>
 											</div>
 										</div>
 									</div>
