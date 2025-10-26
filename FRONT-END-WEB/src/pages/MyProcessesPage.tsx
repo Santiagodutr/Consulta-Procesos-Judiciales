@@ -1044,7 +1044,7 @@ const MyProcessesPage: React.FC = () => {
                         <p className="text-gray-600 mt-1">{process.despacho}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Tipo de Proceso:</span>
+                        <span className="font-medium text-gray-700">Departamento:</span>
                         <p className="text-gray-600 mt-1">{process.tipo_proceso || 'No especificado'}</p>
                       </div>
                       <div>
