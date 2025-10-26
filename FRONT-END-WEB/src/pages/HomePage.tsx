@@ -1171,7 +1171,7 @@ const HomePage: React.FC = () => {
               type="text"
               value={numeroRadicacion}
               onChange={(e) => setNumeroRadicacion(e.target.value)}
-              placeholder="Ingrese los 23 dígitos del número de radicación"
+              placeholder="Ej: 12345678901234567890123"
               maxLength={23}
               className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -1185,7 +1185,7 @@ const HomePage: React.FC = () => {
             <button
               onClick={handleSearch}
               disabled={isLoading}
-              className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-3">

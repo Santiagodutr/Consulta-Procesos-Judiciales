@@ -107,7 +107,6 @@ export const ProfilePage: React.FC = () => {
 						className="flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded"
 					>
 						<img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
-						<span className="hidden sm:inline text-lg font-semibold">Panel de Usuario</span>
 					</button>
 
 					<nav className="hidden md:flex items-center gap-6">
