@@ -150,7 +150,6 @@ export const RegisterPage: React.FC = () => {
                 <option value="">Seleccionar tipo</option>
                 <option value="natural">Persona Natural</option>
                 <option value="juridical">Persona Jurídica</option>
-                <option value="company">Empresa</option>
               </select>
               {errors.user_type && (
                 <p className="mt-1 text-sm text-red-600">{errors.user_type.message}</p>

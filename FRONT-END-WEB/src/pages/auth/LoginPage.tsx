@@ -224,7 +224,7 @@ export const LoginPage: React.FC = () => {
         {/* Demo credentials - remove in production */}
         <div className="mt-6 p-4 bg-blue-50 rounded-md">
           <p className="text-xs text-blue-600 text-center">
-            Demo: admin@example.com / password123
+            Demo: admin@judicial.com / 123456789
           </p>
         </div>
       </div>
