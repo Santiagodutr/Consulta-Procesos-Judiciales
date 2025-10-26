@@ -207,7 +207,6 @@ export const RegisterPage: React.FC = () => {
                   <option value="">Seleccionar</option>
                   <option value="CC">Cédula de Ciudadanía</option>
                   <option value="CE">Cédula de Extranjería</option>
-                  <option value="NIT">NIT</option>
                   <option value="passport">Pasaporte</option>
                 </select>
                 {errors.document_type && (
