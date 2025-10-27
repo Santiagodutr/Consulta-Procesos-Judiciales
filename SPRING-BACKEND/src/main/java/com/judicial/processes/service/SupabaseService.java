@@ -49,7 +49,9 @@ public class SupabaseService {
     private HttpHeaders createAuthHeaders(String userToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("apikey", supabaseProperties.getServiceRoleKey());
+        String anonKey = supabaseProperties.getAnonKey();
+        String apiKeyToUse = (anonKey != null && !anonKey.isBlank()) ? anonKey : supabaseProperties.getServiceRoleKey();
+        headers.set("apikey", apiKeyToUse);
         headers.set("Authorization", "Bearer " + userToken);
         return headers;
     }

@@ -23,7 +23,7 @@ class ApiService {
 
   constructor() {
     // Configurar la URL base del backend desde variables de entorno
-  const apiBaseURL = process.env.REACT_APP_API_URL;
+    const apiBaseURL = this.resolveBaseUrl();
     
     this.client = axios.create({
       baseURL: apiBaseURL,
@@ -34,6 +34,24 @@ class ApiService {
     });
 
     this.setupInterceptors();
+  }
+
+  private resolveBaseUrl(): string {
+    const envUrl = process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL;
+
+    const sanitize = (value: string) => value.replace(/\/$/, '');
+
+    if (envUrl && envUrl.trim().length > 0) {
+      return sanitize(envUrl.trim());
+    }
+
+    const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    if (isLocalhost) {
+      return 'http://localhost:8080/api';
+    }
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return origin ? `${sanitize(origin)}/api` : '/api';
   }
 
   private setupInterceptors() {
