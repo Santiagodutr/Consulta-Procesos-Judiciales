@@ -54,7 +54,7 @@ const HomePage: React.FC = () => {
   const navLinks = [
     { label: 'Inicio', onClick: () => navigate('/dashboard') },
     { label: 'Reportes', onClick: () => navigate('/analytics') },
-    { label: 'Servicios', onClick: () => navigate('/notifications') },
+    { label: 'Notificaciones', onClick: () => navigate('/notifications') },
   ];
 
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';

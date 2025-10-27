@@ -395,7 +395,7 @@ const AnalyticsPage: React.FC = () => {
 		() => [
 			{ label: 'Inicio', onClick: () => navigate('/dashboard') },
 			{ label: 'Reportes', onClick: () => navigate('/analytics') },
-			{ label: 'Servicios', onClick: () => navigate('/notifications') },
+			{ label: 'Notificaciones', onClick: () => navigate('/notifications') },
 		],
 		[navigate],
 	);
