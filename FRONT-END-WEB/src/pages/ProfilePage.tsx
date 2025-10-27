@@ -244,7 +244,7 @@ export const ProfilePage: React.FC = () => {
 	const navLinks = [
 		{ label: 'Inicio', onClick: () => navigate('/dashboard') },
 		{ label: 'Reportes', onClick: () => navigate('/analytics') },
-		{ label: 'Servicios', onClick: () => navigate('/notifications') },
+		{ label: 'Notificaciones', onClick: () => navigate('/notifications') },
 	];
 
 	const createdAt = user?.created_at || (user && (user as any).createdAt);

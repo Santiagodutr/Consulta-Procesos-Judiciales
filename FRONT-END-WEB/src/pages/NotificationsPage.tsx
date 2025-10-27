@@ -217,16 +217,7 @@ const NotificationsPage: React.FC = () => {
 										>
 											Perfil
 										</button>
-										<button
-											type="button"
-											onClick={() => {
-												setIsUserMenuOpen(false);
-												navigate('/profile?section=configuracion');
-											}}
-											className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
-										>
-											Configuración
-										</button>
+										
 									</div>
 									<div className="border-t border-gray-100">
 										<button
