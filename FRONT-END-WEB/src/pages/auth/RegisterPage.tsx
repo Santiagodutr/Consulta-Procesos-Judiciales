@@ -113,11 +113,11 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-indigo-100">
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
             <img src="/usuario.png" alt="Icono de usuario" className="h-8 w-8 object-contain" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -127,7 +127,7 @@ export const RegisterPage: React.FC = () => {
             O{' '}
             <Link
               to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
             >
               inicia sesión con tu cuenta existente
             </Link>
@@ -145,7 +145,7 @@ export const RegisterPage: React.FC = () => {
               <select
                 id="user_type"
                 {...register('user_type')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar tipo</option>
                 <option value="natural">Persona Natural</option>
@@ -166,7 +166,7 @@ export const RegisterPage: React.FC = () => {
                   id="first_name"
                   type="text"
                   {...register('first_name')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ingrese sus nombres"
                 />
                 {errors.first_name && (
@@ -182,7 +182,7 @@ export const RegisterPage: React.FC = () => {
                   id="last_name"
                   type="text"
                   {...register('last_name')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ingrese sus apellidos"
                 />
                 {errors.last_name && (
@@ -202,7 +202,7 @@ export const RegisterPage: React.FC = () => {
                 <select
                   id="document_type"
                   {...register('document_type')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Seleccionar</option>
                   <option value="CC">Cédula de Ciudadanía</option>
@@ -222,7 +222,7 @@ export const RegisterPage: React.FC = () => {
                   id="document_number"
                   type="text"
                   {...register('document_number')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Número sin puntos ni comas"
                 />
                 {errors.document_number && (
@@ -241,7 +241,7 @@ export const RegisterPage: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 {...register('email')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="correo@ejemplo.com"
               />
               {errors.email && (
@@ -258,7 +258,7 @@ export const RegisterPage: React.FC = () => {
                 id="phone_number"
                 type="tel"
                 {...register('phone_number')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Ej: 3001234567"
               />
               {errors.phone_number && (
@@ -277,7 +277,7 @@ export const RegisterPage: React.FC = () => {
                   type="password"
                   autoComplete="new-password"
                   {...register('password')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Mínimo 8 caracteres"
                 />
                 {errors.password && (
@@ -294,7 +294,7 @@ export const RegisterPage: React.FC = () => {
                   type="password"
                   autoComplete="new-password"
                   {...register('confirmPassword')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Repetir contraseña"
                 />
                 {errors.confirmPassword && (
@@ -309,15 +309,15 @@ export const RegisterPage: React.FC = () => {
                 id="acceptTerms"
                 type="checkbox"
                 {...register('acceptTerms')}
-                className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-700">
                 Acepto los{' '}
-                <Link to="/terms" className="text-indigo-600 hover:text-indigo-500">
+                <Link to="/terms" className="text-blue-600 hover:text-blue-500">
                   términos y condiciones
                 </Link>{' '}
                 y la{' '}
-                <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500">
+                <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
                   política de privacidad
                 </Link>
               </label>
@@ -332,7 +332,7 @@ export const RegisterPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

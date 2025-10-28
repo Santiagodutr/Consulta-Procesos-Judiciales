@@ -26,9 +26,7 @@ const WelcomePage: React.FC = () => {
             <div className="flex items-center">
               <img src="/logo_justitrack.png" alt="JustiTrack" className="h-14 w-auto" />
             </div>
-            <div className="hidden sm:flex items-center rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white/90">
-              Plataforma de gestión y consulta de procesos judiciales
-            </div>
+            
           </div>
         </div>
       </header>
