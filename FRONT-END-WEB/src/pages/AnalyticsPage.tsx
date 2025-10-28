@@ -36,6 +36,8 @@ import {
 	Loader2,
 	TrendingUp,
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface FavoriteProcess {
 	id?: number;
@@ -384,7 +386,9 @@ const AnalyticsPage: React.FC = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [processError, setProcessError] = useState<string | null>(null);
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+	const [exporting, setExporting] = useState(false);
 	const userMenuRef = useRef<HTMLDivElement | null>(null);
+	const exportContentRef = useRef<HTMLElement | null>(null);
 
 	const displayName = useMemo(() => {
 		const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ');
@@ -527,6 +531,48 @@ const AnalyticsPage: React.FC = () => {
 	const handleLogoClick = useCallback(() => {
 		navigate('/');
 	}, [navigate]);
+
+	const handleExportPdf = useCallback(async () => {
+		if (!exportContentRef.current) {
+			return;
+		}
+
+		try {
+			setExporting(true);
+			const canvas = await html2canvas(exportContentRef.current, {
+				scale: 2,
+				backgroundColor: '#ffffff',
+				ignoreElements: (element: Element) => element?.hasAttribute?.('data-html2canvas-ignore') ?? false,
+			});
+			const imageData = canvas.toDataURL('image/png');
+			const pdf = new jsPDF('p', 'mm', 'a4');
+			const pageWidth = pdf.internal.pageSize.getWidth();
+			const pageHeight = pdf.internal.pageSize.getHeight();
+			const imageWidth = pageWidth;
+			const imageHeight = (canvas.height * imageWidth) / canvas.width;
+			let heightLeft = imageHeight;
+			let position = 0;
+
+			pdf.addImage(imageData, 'PNG', 0, position, imageWidth, imageHeight, undefined, 'FAST');
+			heightLeft -= pageHeight;
+
+			while (heightLeft > 0) {
+				position = heightLeft - imageHeight;
+				pdf.addPage();
+				pdf.addImage(imageData, 'PNG', 0, position, imageWidth, imageHeight, undefined, 'FAST');
+				heightLeft -= pageHeight;
+			}
+
+			const filename = selectedProcess
+				? `analitica-proceso-${selectedProcess.replace(/\s+/g, '-')}.pdf`
+				: 'analitica-procesos.pdf';
+			pdf.save(filename);
+		} catch (exportError) {
+			console.error('Error al exportar el análisis a PDF', exportError);
+		} finally {
+			setExporting(false);
+		}
+	}, [selectedProcess]);
 
 	const selectedAnalytics = selectedProcess ? analyticsByProcess[selectedProcess] : undefined;
 
@@ -698,12 +744,33 @@ const AnalyticsPage: React.FC = () => {
 		<div className="min-h-screen bg-slate-50 flex flex-col">
 			{renderHeader()}
 
-			<main className="flex-1 mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
-				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-slate-900">Analítica de Procesos Favoritos</h1>
-					<p className="mt-2 text-sm text-slate-600">
-						Explora la frecuencia de actuaciones judiciales, identifica picos de actividad y detecta periodos de inactividad en tus procesos guardados.
-					</p>
+			<main
+				ref={exportContentRef}
+				className="flex-1 mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8"
+			>
+				<div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+					<div>
+						<h1 className="text-3xl font-bold text-slate-900">Analítica de Procesos Favoritos</h1>
+						<p className="mt-2 text-sm text-slate-600">
+							Explora la frecuencia de actuaciones judiciales, identifica picos de actividad y detecta periodos de inactividad en tus procesos guardados.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={handleExportPdf}
+						disabled={exporting || loadingProcess || loadingFavorites}
+						data-html2canvas-ignore="true"
+						className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:bg-primary-400"
+					>
+						{exporting ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								Generando PDF...
+							</>
+						) : (
+							'Exportar análisis en PDF'
+						)}
+					</button>
 				</div>
 
 				<section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
