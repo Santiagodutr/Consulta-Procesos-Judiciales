@@ -1,235 +1,145 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
-import { apiService } from '../services/apiService';
+import { Alert } from 'react-native';
+import apiService, { authAPI } from '../services/apiService';
 
-interface AuthUser extends User {
-  first_name?: string;
-  last_name?: string;
-  document_number?: string;
-  document_type?: string;
-  user_type?: 'natural' | 'juridical' | 'company';
-  phone_number?: string;
-  company_id?: string;
-  is_active?: boolean;
-  email_verified?: boolean;
-  notification_preferences?: any;
+type User = any | null;
+
+interface AuthContextValue {
+	user: User;
+	loading: boolean;
+	signIn: (email: string, password: string) => Promise<void>;
+	signOut: () => Promise<void>;
+	refreshSession: () => Promise<boolean>;
 }
 
-interface AuthContextType {
-  user: AuthUser | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (data: SignUpData) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (data: Partial<AuthUser>) => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-
-interface SignUpData {
-  email: string;
-  password: string;
-  first_name: string;
-  last_name: string;
-  document_number: string;
-  document_type: string;
-  user_type: 'natural' | 'juridical' | 'company';
-  phone_number?: string;
-  company_id?: string;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Secure storage utilities for mobile
-const setSecureItem = async (key: string, value: string) => {
-  try {
-    await SecureStore.setItemAsync(key, value);
-  } catch (error) {
-    console.error('Error storing secure item:', error);
-  }
-};
-
-const getSecureItem = async (key: string): Promise<string | null> => {
-  try {
-    return await SecureStore.getItemAsync(key);
-  } catch (error) {
-    console.error('Error retrieving secure item:', error);
-    return null;
-  }
-};
-
-const deleteSecureItem = async (key: string) => {
-  try {
-    await SecureStore.deleteItemAsync(key);
-  } catch (error) {
-    console.error('Error deleting secure item:', error);
-  }
-};
-
-const supabase: SupabaseClient = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      storage: {
-        getItem: (key: string) => getSecureItem(key),
-        setItem: (key: string, value: string) => setSecureItem(key, value),
-        removeItem: (key: string) => deleteSecureItem(key),
-      },
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-    },
-  }
-);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+	const [user, setUser] = useState<User>(null);
+	const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadUserProfile(session.user);
-      } else {
-        setLoading(false);
-      }
-    });
+	useEffect(() => {
+		// Initialize auth state from secure storage
+		(async () => {
+			try {
+				const token = await SecureStore.getItemAsync('access_token');
+				const refresh = await SecureStore.getItemAsync('refresh_token');
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await loadUserProfile(session.user);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
+				if (token) {
+					// set token on api client
+					apiService.setAuthToken(token);
 
-    return () => subscription.unsubscribe();
-  }, []);
+					// try getting profile
+					const profileRes = await authAPI.getProfile();
+					if (profileRes && profileRes.success && profileRes.data) {
+						setUser(profileRes.data);
+					} else {
+						// try refresh if profile failed but refresh token available
+						if (refresh) {
+							const refreshed = await refreshSession();
+							if (!refreshed) {
+								await signOut();
+							}
+						} else {
+							await signOut();
+						}
+					}
+				}
+			} catch (err) {
+				// ignore and treat as not authenticated
+				console.debug('Auth init error', err);
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, []);
 
-  const loadUserProfile = async (authUser: User) => {
-    try {
-      const profile = await apiService.get(`/users/${authUser.id}`);
-      setUser({
-        ...authUser,
-        ...profile.data,
-      });
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      setUser(authUser as AuthUser);
-    } finally {
-      setLoading(false);
-    }
-  };
+	const signIn = async (email: string, password: string) => {
+		setLoading(true);
+		try {
+			const res = await authAPI.login(email, password);
+			if (res && res.success && res.data) {
+				const access = (res.data as any).access_token || (res.data as any).accessToken;
+				const refresh = (res.data as any).refresh_token || (res.data as any).refreshToken;
+				let userData = (res.data as any).user || (res.data as any).userDTO || null;
 
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+				if (!access) {
+					throw new Error(res.message || 'No access token returned');
+				}
 
-      if (error) throw error;
+				await SecureStore.setItemAsync('access_token', access);
+				if (refresh) await SecureStore.setItemAsync('refresh_token', refresh);
+				apiService.setAuthToken(access);
 
-      if (data.user) {
-        await loadUserProfile(data.user);
-        
-        // Store access token securely for API calls
-        if (data.session?.access_token) {
-          await setSecureItem('access_token', data.session.access_token);
-          apiService.setAuthToken(data.session.access_token);
-        }
-      }
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-  };
+				// Try to get profile if not returned
+				if (!userData) {
+					const profileRes = await authAPI.getProfile();
+					if (profileRes && profileRes.success) userData = profileRes.data;
+				}
 
-  const signUp = async (signUpData: SignUpData) => {
-    setLoading(true);
-    try {
-      // Use your API endpoint for registration
-      const response = await apiService.post('/auth/register', signUpData);
-      
-      if (response.data.success) {
-        // The user will need to verify their email
-        setLoading(false);
-      }
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-  };
+				setUser(userData || null);
+			} else {
+				throw new Error(res?.message || 'Login failed');
+			}
+		} catch (error: any) {
+			console.error('Login error', error);
+			Alert.alert('Login failed', error?.message || 'Unable to login');
+			throw error;
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  const signOut = async () => {
-    setLoading(true);
-    try {
-      await apiService.post('/auth/logout');
-      await supabase.auth.signOut();
-      await deleteSecureItem('access_token');
-      apiService.clearAuthToken();
-      setUser(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+	const signOut = async () => {
+		setLoading(true);
+		try {
+			// call backend logout (best-effort)
+			try {
+				await authAPI.logout();
+			} catch (e) {
+				// ignore
+			}
 
-  const updateProfile = async (updateData: Partial<AuthUser>) => {
-    if (!user) return;
+			await SecureStore.deleteItemAsync('access_token');
+			await SecureStore.deleteItemAsync('refresh_token');
+			await apiService.clearAuthToken();
+			setUser(null);
+		} catch (err) {
+			console.error('Sign out error', err);
+		} finally {
+			setLoading(false);
+		}
+	};
 
-    try {
-      const response = await apiService.put('/auth/profile', updateData);
-      
-      if (response.data.success) {
-        setUser({
-          ...user,
-          ...response.data.data,
-        });
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
-    }
-  };
+	const refreshSession = async (): Promise<boolean> => {
+		try {
+			const refreshed = await apiService.refreshToken();
+			if (refreshed) {
+				const newToken = await SecureStore.getItemAsync('access_token');
+				if (newToken) apiService.setAuthToken(newToken);
+				// update user profile
+				const profileRes = await authAPI.getProfile();
+				if (profileRes && profileRes.success) setUser(profileRes.data);
+			}
+			return refreshed;
+		} catch (err) {
+			console.error('Refresh session error', err);
+			return false;
+		}
+	};
 
-  const refreshUser = async () => {
-    if (!user) return;
-
-    try {
-      await loadUserProfile(user);
-    } catch (error) {
-      console.error('Error refreshing user:', error);
-    }
-  };
-
-  const value = {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    updateProfile,
-    refreshUser,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+	return (
+		<AuthContext.Provider value={{ user, loading, signIn, signOut, refreshSession }}>
+			{children}
+		</AuthContext.Provider>
+	);
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+	const ctx = useContext(AuthContext);
+	if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+	return ctx;
 };
 
-export { supabase };
+export default AuthContext;
