@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { judicialAPI } from '../services/apiService';
+import { judicialAPI, judicialPortalAPI } from '../services/apiService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
@@ -35,6 +35,8 @@ const MyProcessesScreen: React.FC = () => {
   const [actuaciones, setActuaciones] = useState<any[]>([]);
   const [todasActuaciones, setTodasActuaciones] = useState<any[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
+  const [loadingTab, setLoadingTab] = useState(false);
+  const [idProceso, setIdProceso] = useState<number | null>(null);
 
   useEffect(() => {
     loadFavorites();
@@ -95,16 +97,34 @@ const MyProcessesScreen: React.FC = () => {
     setLoadingDetails(true);
     setActiveTab('datos');
     setPaginaActual(1);
+    setSujetos([]);
+    setDocumentos([]);
+    setActuaciones([]);
+    setTodasActuaciones([]);
     
     try {
+      // Paso 1: Consultar backend para obtener idProceso
       const res = await judicialAPI.consultProcess(favorite.numero_radicacion, false, true);
       if (res && res.success && res.data) {
-        setProcessDetails(res.data);
-        setSujetos(res.data.sujetos || []);
-        setDocumentos(res.data.documentos || []);
-        const acts = res.data.actuaciones || [];
-        setTodasActuaciones(acts);
-        setActuaciones(acts.slice(0, REGISTROS_POR_PAGINA));
+        const processData = res.data;
+        setProcessDetails(processData);
+        
+        // Extraer idProceso
+        const id = processData.idProceso;
+        if (id) {
+          setIdProceso(id);
+          // Paso 2: Cargar datos básicos del portal usando idProceso
+          try {
+            const portalRes = await judicialPortalAPI.getProcessByIdProceso(id);
+            if (portalRes && portalRes.success && portalRes.data) {
+              setProcessDetails((prev: any) => ({ ...prev, ...portalRes.data }));
+            }
+          } catch (portalErr) {
+            console.error('Error loading from portal:', portalErr);
+          }
+        } else {
+          console.warn('No idProceso found');
+        }
       }
     } catch (err) {
       console.error('Error loading process details', err);
@@ -121,6 +141,57 @@ const MyProcessesScreen: React.FC = () => {
     setDocumentos([]);
     setActuaciones([]);
     setTodasActuaciones([]);
+    setIdProceso(null);
+    setLoadingTab(false);
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    loadTabData(tab);
+  };
+
+  const loadTabData = async (tab: TabType) => {
+    if (tab === 'datos' || !idProceso) return;
+    
+    setLoadingTab(true);
+    try {
+      switch (tab) {
+        case 'sujetos':
+          if (sujetos.length === 0) {
+            const res = await judicialPortalAPI.getSujetosByIdProceso(idProceso);
+            if (res && res.success) {
+              setSujetos(res.data || []);
+            }
+          }
+          break;
+        
+        case 'documentos':
+          if (documentos.length === 0) {
+            const res = await judicialPortalAPI.getDocumentosByIdProceso(idProceso);
+            if (res && res.success) {
+              setDocumentos(res.data || []);
+            }
+          }
+          break;
+        
+        case 'actuaciones':
+          if (actuaciones.length === 0 && todasActuaciones.length === 0) {
+            const res = await judicialPortalAPI.getAllActuaciones(idProceso);
+            if (res && res.success) {
+              const acts = res.data || [];
+              setTodasActuaciones(acts);
+              setActuaciones(acts.slice(0, REGISTROS_POR_PAGINA));
+              setPaginaActual(1);
+            }
+          }
+          break;
+      }
+    } catch (err) {
+      console.error('Error loading tab data:', err);
+      Alert.alert('Error', 'No se pudo cargar la información de esta pestaña');
+    } finally {
+      setLoadingTab(false);
+    }
   };
 
   const cambiarPagina = (nuevaPagina: number) => {
@@ -268,25 +339,25 @@ const MyProcessesScreen: React.FC = () => {
 
         <View style={styles.tabsRow}>
           <TouchableOpacity
-            onPress={() => setActiveTab('datos')}
+            onPress={() => handleTabChange('datos')}
             style={[styles.tab, activeTab === 'datos' && styles.tabActive]}
           >
             <Text style={activeTab === 'datos' ? styles.tabTextActive : styles.tabText}>Datos</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setActiveTab('sujetos')}
+            onPress={() => handleTabChange('sujetos')}
             style={[styles.tab, activeTab === 'sujetos' && styles.tabActive]}
           >
             <Text style={activeTab === 'sujetos' ? styles.tabTextActive : styles.tabText}>Sujetos</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setActiveTab('documentos')}
+            onPress={() => handleTabChange('documentos')}
             style={[styles.tab, activeTab === 'documentos' && styles.tabActive]}
           >
             <Text style={activeTab === 'documentos' ? styles.tabTextActive : styles.tabText}>Documentos</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setActiveTab('actuaciones')}
+            onPress={() => handleTabChange('actuaciones')}
             style={[styles.tab, activeTab === 'actuaciones' && styles.tabActive]}
           >
             <Text style={activeTab === 'actuaciones' ? styles.tabTextActive : styles.tabText}>Actuaciones</Text>
@@ -300,6 +371,11 @@ const MyProcessesScreen: React.FC = () => {
           </View>
         ) : (
           <ScrollView style={styles.content}>
+            {loadingTab && (
+              <View style={styles.loadingTabOverlay}>
+                <ActivityIndicator size="large" color="#1f6feb" />
+              </View>
+            )}
             {activeTab === 'datos' && (
               <View style={styles.datosContainer}>
                 <View style={styles.dataRow}>
@@ -602,6 +678,17 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 12,
+  },
+  loadingTabOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   datosContainer: {
     backgroundColor: '#fff',

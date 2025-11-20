@@ -8,11 +8,10 @@ import {
   FlatList,
   Alert,
   ScrollView,
-  Modal,
   RefreshControl,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { judicialAPI } from '../services/apiService';
+import { judicialAPI, judicialPortalAPI } from '../services/apiService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
@@ -40,14 +39,9 @@ const ProcessDetailsScreen: React.FC = () => {
   const [todasActuaciones, setTodasActuaciones] = useState<any[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [process, setProcess] = useState<any>(params.processData || { numeroRadicacion: params.numeroRadicacion });
+  const [idProceso, setIdProceso] = useState<number | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [savingFavorite, setSavingFavorite] = useState(false);
-
-  // Modal state
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [actuacionDocuments, setActuacionDocuments] = useState<any[]>([]);
-  const [loadingDocuments, setLoadingDocuments] = useState(false);
-  const [selectedActuacion, setSelectedActuacion] = useState<any>(null);
 
   useEffect(() => {
     loadFullProcess();
@@ -70,18 +64,21 @@ const ProcessDetailsScreen: React.FC = () => {
     if (!params.numeroRadicacion) return;
     setLoading(true);
     try {
+      // Paso 1: Consultar backend para obtener idProceso
       const res = await judicialAPI.consultProcess(params.numeroRadicacion, false, true);
       if (res && res.success && res.data) {
-        setProcess(res.data);
-        setSujetos(res.data.sujetos || []);
-        setDocumentos(res.data.documentos || []);
-        const acts = res.data.actuaciones || [];
-        setTodasActuaciones(acts);
+        const processData = res.data;
+        setProcess(processData);
         
-        // Paginar actuaciones
-        if (acts.length > 0) {
-          const primeraPagina = acts.slice(0, REGISTROS_POR_PAGINA);
-          setActuaciones(primeraPagina);
+        // Extraer idProceso
+        const id = processData.idProceso;
+        if (id) {
+          setIdProceso(id);
+          // Paso 2: Cargar datos básicos del portal usando idProceso
+          await loadProcessFromPortal(id);
+        } else {
+          console.warn('No idProceso found in response');
+          Alert.alert('Advertencia', 'No se pudo obtener el ID del proceso');
         }
       }
     } catch (err) {
@@ -92,37 +89,71 @@ const ProcessDetailsScreen: React.FC = () => {
     }
   };
 
+  const loadProcessFromPortal = async (id: number) => {
+    try {
+      // Consultar datos básicos del proceso desde el portal
+      const portalRes = await judicialPortalAPI.getProcessByIdProceso(id);
+      if (portalRes && portalRes.success && portalRes.data) {
+        setProcess((prev: any) => ({ ...prev, ...portalRes.data }));
+      }
+    } catch (err) {
+      console.error('Error loading process from portal', err);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
+    // Limpiar datos existentes
+    setSujetos([]);
+    setDocumentos([]);
+    setActuaciones([]);
+    setTodasActuaciones([]);
+    setPaginaActual(1);
     await loadFullProcess();
     setRefreshing(false);
   };
 
   const loadTabData = async (tab: TabType) => {
-    if (tab === 'datos') return;
+    if (tab === 'datos' || !idProceso) return;
     
     setLoadingTab(true);
     try {
       switch (tab) {
         case 'sujetos':
-          if (sujetos.length === 0 && params.numeroRadicacion) {
-            const res = await judicialAPI.getProcessSubjects(params.numeroRadicacion);
-            if (res && res.success) setSujetos(res.data || []);
+          if (sujetos.length === 0) {
+            const res = await judicialPortalAPI.getSujetosByIdProceso(idProceso);
+            if (res && res.success) {
+              setSujetos(res.data || []);
+            }
           }
           break;
+        
+        case 'documentos':
+          if (documentos.length === 0) {
+            const res = await judicialPortalAPI.getDocumentosByIdProceso(idProceso);
+            if (res && res.success) {
+              setDocumentos(res.data || []);
+            }
+          }
+          break;
+        
         case 'actuaciones':
-          if (actuaciones.length === 0 && todasActuaciones.length === 0 && params.numeroRadicacion) {
-            const res = await judicialAPI.getProcessActivities(params.numeroRadicacion);
+          if (actuaciones.length === 0 && todasActuaciones.length === 0) {
+            // Cargar todas las páginas de actuaciones
+            const res = await judicialPortalAPI.getAllActuaciones(idProceso);
             if (res && res.success) {
               const acts = res.data || [];
               setTodasActuaciones(acts);
+              // Mostrar primera página
               setActuaciones(acts.slice(0, REGISTROS_POR_PAGINA));
+              setPaginaActual(1);
             }
           }
           break;
       }
     } catch (err) {
       console.error('Error loading tab data', err);
+      Alert.alert('Error', 'No se pudo cargar la información de esta pestaña');
     } finally {
       setLoadingTab(false);
     }
@@ -144,7 +175,7 @@ const ProcessDetailsScreen: React.FC = () => {
   };
 
   const handleToggleFavorite = async () => {
-    if (!process) return;
+    if (!process || !process.numeroRadicacion) return;
     
     setSavingFavorite(true);
     try {
@@ -155,11 +186,11 @@ const ProcessDetailsScreen: React.FC = () => {
       } else {
         await judicialAPI.saveFavoriteProcess({
           numero_radicacion: process.numeroRadicacion,
-          despacho: process.despacho || '',
-          demandante: process.demandante || '',
-          demandado: process.demandado || '',
-          tipo_proceso: process.tipoProceso || process.departamento || '',
-          fecha_radicacion: process.fechaProceso || process.fechaRadicacion || new Date().toISOString(),
+          despacho: process.despacho || process.lsDespacho || '',
+          demandante: process.demandante || process.demandantes || '-',
+          demandado: process.demandado || process.demandados || '-',
+          tipo_proceso: process.tipoProceso || process.lsTipoProceso || process.departamento || '',
+          fecha_radicacion: process.fechaProceso || process.fechaRadicacion || process.lsFechaRadicacion || new Date().toISOString(),
         });
         setIsFavorite(true);
         Alert.alert('Éxito', 'Proceso agregado a favoritos');
@@ -201,19 +232,19 @@ const ProcessDetailsScreen: React.FC = () => {
 
   const renderSujeto = ({ item }: { item: any }) => (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>{item.nombreRazonSocial || item.lsNombreSujeto || '-'}</Text>
+      <Text style={styles.cardTitle}>{item.nombre || item.nombreRazonSocial || item.lsNombreSujeto || '-'}</Text>
       <View style={styles.cardRow}>
         <Text style={styles.cardLabel}>Tipo:</Text>
-        <Text style={styles.cardValue}>{item.tipoSujeto || item.lsTipoSujeto || '-'}</Text>
+        <Text style={styles.cardValue}>{item.tipo || item.tipoSujeto || item.lsTipoSujeto || '-'}</Text>
       </View>
       <View style={styles.cardRow}>
         <Text style={styles.cardLabel}>Identificación:</Text>
         <Text style={styles.cardValue}>{item.identificacion || item.lsIdentificacion || '-'}</Text>
       </View>
-      {item.lsApoderado && (
+      {(item.apoderado || item.lsApoderado) && (
         <View style={styles.cardRow}>
           <Text style={styles.cardLabel}>Apoderado:</Text>
-          <Text style={styles.cardValue}>{item.lsApoderado}</Text>
+          <Text style={styles.cardValue}>{item.apoderado || item.lsApoderado}</Text>
         </View>
       )}
     </View>
@@ -223,15 +254,15 @@ const ProcessDetailsScreen: React.FC = () => {
     <View style={styles.card}>
       <View style={styles.docHeader}>
         <Icon name="file-document" size={20} color="#2563eb" />
-        <Text style={styles.cardTitle}>{item.lsNombreArchivo || 'Documento'}</Text>
+        <Text style={styles.cardTitle}>{item.nombreArchivo || item.lsNombreArchivo || 'Documento'}</Text>
       </View>
-      {item.lsTipoDocumento && (
-        <Text style={styles.small}>{item.lsTipoDocumento}</Text>
+      {(item.tipoDocumento || item.lsTipoDocumento) && (
+        <Text style={styles.small}>{item.tipoDocumento || item.lsTipoDocumento}</Text>
       )}
-      {item.lsExtensionArchivo && (
+      {(item.extensionArchivo || item.lsExtensionArchivo) && (
         <Text style={styles.small}>
-          {item.lsExtensionArchivo.toUpperCase()}
-          {item.lnTamanoArchivo && ` • ${(item.lnTamanoArchivo / 1024).toFixed(1)} KB`}
+          {(item.extensionArchivo || item.lsExtensionArchivo).toUpperCase()}
+          {(item.tamanoArchivo || item.lnTamanoArchivo) && ` • ${((item.tamanoArchivo || item.lnTamanoArchivo) / 1024).toFixed(1)} KB`}
         </Text>
       )}
     </View>
@@ -241,10 +272,10 @@ const ProcessDetailsScreen: React.FC = () => {
     <View style={styles.card}>
       <View style={styles.actuacionRow}>
         <View style={styles.flex1}>
-          <Text style={styles.actuacionFecha}>{formatDate(item.fechaActuacion)}</Text>
-          <Text style={styles.actuacionTitle}>{item.actuacion}</Text>
-          {item.anotacion && (
-            <Text style={styles.small}>{item.anotacion}</Text>
+          <Text style={styles.actuacionFecha}>{formatDate(item.fechaActuacion || item.fecha)}</Text>
+          <Text style={styles.actuacionTitle}>{item.actuacion || item.descripcion || '-'}</Text>
+          {(item.anotacion || item.observacion) && (
+            <Text style={styles.small}>{item.anotacion || item.observacion}</Text>
           )}
           {item.conDocumentos && (
             <TouchableOpacity
@@ -344,12 +375,16 @@ const ProcessDetailsScreen: React.FC = () => {
               {activeTab === 'datos' && (
                 <View style={styles.datosContainer}>
                   <View style={styles.dataRow}>
+                    <Text style={styles.dataLabel}>Número de Radicación:</Text>
+                    <Text style={styles.dataValue}>{process?.numeroRadicacion || process?.lsIdProceso || '-'}</Text>
+                  </View>
+                  <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Fecha de Radicación:</Text>
-                    <Text style={styles.dataValue}>{formatDate(process?.fechaRadicacion)}</Text>
+                    <Text style={styles.dataValue}>{formatDate(process?.fechaRadicacion || process?.lsFechaRadicacion)}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Despacho:</Text>
-                    <Text style={styles.dataValue}>{process?.despacho || '-'}</Text>
+                    <Text style={styles.dataValue}>{process?.despacho || process?.lsDespacho || '-'}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Ponente:</Text>
@@ -357,27 +392,35 @@ const ProcessDetailsScreen: React.FC = () => {
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Ubicación del Expediente:</Text>
-                    <Text style={styles.dataValue}>{process?.ubicacionExpediente || 'ARCHIVO'}</Text>
+                    <Text style={styles.dataValue}>{process?.ubicacionExpediente || process?.lsUbicacionExpediente || 'ARCHIVO'}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Tipo de Proceso:</Text>
-                    <Text style={styles.dataValue}>{process?.tipoProceso || process?.departamento || 'N/A'}</Text>
+                    <Text style={styles.dataValue}>{process?.tipoProceso || process?.lsTipoProceso || process?.departamento || 'N/A'}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Clase de Proceso:</Text>
-                    <Text style={styles.dataValue}>{process?.claseProceso || 'N/A'}</Text>
+                    <Text style={styles.dataValue}>{process?.claseProceso || process?.lsClaseProceso || 'N/A'}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Subclase de Proceso:</Text>
-                    <Text style={styles.dataValue}>{process?.subclaseProceso || 'SIN SUBCLASE'}</Text>
+                    <Text style={styles.dataValue}>{process?.subclaseProceso || process?.lsSubClaseProceso || 'SIN SUBCLASE'}</Text>
+                  </View>
+                  <View style={styles.dataRow}>
+                    <Text style={styles.dataLabel}>Recurso:</Text>
+                    <Text style={styles.dataValue}>{process?.recurso || process?.lsRecurso || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.dataRow}>
+                    <Text style={styles.dataLabel}>Contenido de la Decisión:</Text>
+                    <Text style={styles.dataValue}>{process?.contenidoDecision || process?.lsContenidoDecision || 'N/A'}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Demandante:</Text>
-                    <Text style={styles.dataValue}>{process?.demandante || '-'}</Text>
+                    <Text style={styles.dataValue}>{process?.demandante || process?.demandantes || '-'}</Text>
                   </View>
                   <View style={styles.dataRow}>
                     <Text style={styles.dataLabel}>Demandado:</Text>
-                    <Text style={styles.dataValue}>{process?.demandado || '-'}</Text>
+                    <Text style={styles.dataValue}>{process?.demandado || process?.demandados || '-'}</Text>
                   </View>
                 </View>
               )}

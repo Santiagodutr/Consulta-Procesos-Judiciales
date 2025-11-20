@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
-import { judicialAPI } from '../services/apiService';
+import { judicialAPI, judicialPortalAPI } from '../services/apiService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -57,13 +57,27 @@ const AnalyticsScreen: React.FC = () => {
       const favs = res.data;
       setFavorites(favs);
 
-      // Cargar detalles de cada proceso para obtener actuaciones
+      // Cargar detalles de cada proceso para obtener idProceso
       const allProcessDetails: any[] = [];
       for (const fav of favs) {
         try {
+          // Paso 1: Obtener idProceso del backend
           const detailRes = await judicialAPI.consultProcess(fav.numero_radicacion, false, false);
-          if (detailRes && detailRes.success && detailRes.data) {
-            allProcessDetails.push(detailRes.data);
+          if (detailRes && detailRes.success && detailRes.data && detailRes.data.idProceso) {
+            const idProceso = detailRes.data.idProceso;
+            
+            // Paso 2: Obtener TODAS las actuaciones del portal usando idProceso
+            const actuacionesRes = await judicialPortalAPI.getAllActuaciones(idProceso);
+            if (actuacionesRes && actuacionesRes.success && actuacionesRes.data) {
+              allProcessDetails.push({
+                ...detailRes.data,
+                actuaciones: actuacionesRes.data,
+                numeroRadicacion: fav.numero_radicacion,
+              });
+            } else {
+              // Si falla portal, usar datos del backend como fallback
+              allProcessDetails.push(detailRes.data);
+            }
           }
         } catch (err) {
           console.error(`Error loading process ${fav.numero_radicacion}`, err);
@@ -369,6 +383,8 @@ const AnalyticsScreen: React.FC = () => {
               data={getBarChartData()}
               width={screenWidth - 40}
               height={220}
+              yAxisLabel=""
+              yAxisSuffix=""
               chartConfig={chartConfig}
               style={styles.chart}
               showValuesOnTopOfBars

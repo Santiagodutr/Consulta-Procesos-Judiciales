@@ -383,4 +383,118 @@ export const judicialAPI = {
     apiService.get(`/judicial/processes/favorites/check/${numeroRadicacion}`),
 };
 
+// Portal Judicial API - Consultas directas al portal oficial
+// Estos métodos consultan directamente al portal judicial, NO a la base de datos
+const PORTAL_BASE_URL = 'https://consultaprocesos.ramajudicial.gov.co:448/api/v2';
+
+const portalClient = axios.create({
+  baseURL: PORTAL_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+export const judicialPortalAPI = {
+  // Obtener detalles de un proceso por idProceso
+  getProcessByIdProceso: async (idProceso: number) => {
+    try {
+      const response = await portalClient.get(`/Procesos/Consulta/Proceso/${idProceso}`);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      console.error('Error fetching process from portal:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error al consultar el proceso',
+        data: null 
+      };
+    }
+  },
+
+  // Obtener sujetos procesales por idProceso
+  getSujetosByIdProceso: async (idProceso: number) => {
+    try {
+      const response = await portalClient.get(`/Procesos/Consulta/SujetosProcesales/${idProceso}`);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      console.error('Error fetching subjects from portal:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error al consultar los sujetos',
+        data: [] 
+      };
+    }
+  },
+
+  // Obtener actuaciones por idProceso con paginación
+  getActuacionesByIdProceso: async (idProceso: number, pagina: number = 1) => {
+    try {
+      const response = await portalClient.get(
+        `/Procesos/Consulta/Actuaciones/${idProceso}?pagina=${pagina}`
+      );
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      console.error('Error fetching activities from portal:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error al consultar las actuaciones',
+        data: { actuaciones: [], paginacion: null } 
+      };
+    }
+  },
+
+  // Obtener documentos por idProceso
+  getDocumentosByIdProceso: async (idProceso: number) => {
+    try {
+      const response = await portalClient.get(`/Procesos/Consulta/Documentos/${idProceso}`);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      console.error('Error fetching documents from portal:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error al consultar los documentos',
+        data: [] 
+      };
+    }
+  },
+
+  // Cargar todas las páginas de actuaciones (para análisis completo)
+  getAllActuaciones: async (idProceso: number) => {
+    try {
+      const todasActuaciones: any[] = [];
+      let pagina = 1;
+      let tieneMasPaginas = true;
+
+      while (tieneMasPaginas) {
+        const result = await judicialPortalAPI.getActuacionesByIdProceso(idProceso, pagina);
+        
+        if (!result.success || !result.data) {
+          break;
+        }
+
+        const { actuaciones, paginacion } = result.data;
+        
+        if (actuaciones && actuaciones.length > 0) {
+          todasActuaciones.push(...actuaciones);
+        }
+
+        if (paginacion && pagina < paginacion.cantidadPaginas) {
+          pagina++;
+        } else {
+          tieneMasPaginas = false;
+        }
+      }
+
+      return { success: true, data: todasActuaciones };
+    } catch (error: any) {
+      console.error('Error fetching all activities from portal:', error);
+      return { 
+        success: false, 
+        message: 'Error al cargar todas las actuaciones',
+        data: [] 
+      };
+    }
+  },
+};
+
 export default apiService;
