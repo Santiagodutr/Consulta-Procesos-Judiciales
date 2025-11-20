@@ -317,17 +317,22 @@ export const processAPI = {
 };
 
 export const notificationAPI = {
-  getNotifications: (params?: any) =>
-    apiService.get('/notifications', params),
-  
-  markAsRead: (notificationId: string) =>
-    apiService.patch(`/notifications/${notificationId}/read`),
-  
-  markAllAsRead: () =>
-    apiService.patch('/notifications/mark-all-read'),
-  
-  getUnreadCount: () =>
-    apiService.get('/notifications/unread-count'),
+  // Temporarily stubbed to avoid backend calls while notifications are removed from mobile
+  getNotifications: async (params?: any) => {
+    return { success: true, data: [] } as any;
+  },
+
+  markAsRead: async (notificationId: string) => {
+    return { success: true } as any;
+  },
+
+  markAllAsRead: async () => {
+    return { success: true } as any;
+  },
+
+  getUnreadCount: async () => {
+    return { success: true, data: 0 } as any;
+  },
 };
 
 export const analyticsAPI = {
@@ -339,6 +344,43 @@ export const analyticsAPI = {
   
   getProcessTypeChart: () =>
     apiService.get('/analytics/process-type-chart'),
+};
+
+// Judicial endpoints (proxy through backend to portal when needed)
+export const judicialAPI = {
+  consultProcess: (numeroRadicacion: string, soloActivos?: boolean, refresh?: boolean) =>
+    apiService.post('/judicial/consult' + (refresh ? '?refresh=true' : ''), { numeroRadicacion, soloActivos }),
+
+  searchProcesses: (query: string, params?: any) =>
+    apiService.get('/judicial/search', { q: query, ...params }),
+
+  getProcessActivities: (numeroRadicacion: string, params?: any) =>
+    apiService.get(`/judicial/${numeroRadicacion}/activities`, params),
+
+  getProcessSubjects: (numeroRadicacion: string, params?: any) =>
+    apiService.get(`/judicial/${numeroRadicacion}/subjects`, params),
+
+  getConsultationHistory: (limit?: number) =>
+    apiService.get('/judicial/consultation-history', { limit: limit || 10 }),
+
+  getMonitoredProcesses: (params?: any) =>
+    apiService.get('/judicial/monitored', params),
+
+  monitorProcess: (numeroRadicacion: string) =>
+    apiService.post('/judicial/monitor', { numeroRadicacion }),
+
+  // Favorites
+  saveFavoriteProcess: (processData: any) =>
+    apiService.post('/judicial/processes/favorites', processData),
+
+  removeFavoriteProcess: (numeroRadicacion: string) =>
+    apiService.delete(`/judicial/processes/favorites/${numeroRadicacion}`),
+
+  getFavoriteProcesses: () =>
+    apiService.get('/judicial/processes/favorites'),
+
+  checkIfFavorite: (numeroRadicacion: string) =>
+    apiService.get(`/judicial/processes/favorites/check/${numeroRadicacion}`),
 };
 
 export default apiService;

@@ -47,6 +47,36 @@ public class JudicialScrapingService {
     
     @Autowired
     private ObjectMapper objectMapper;
+
+    /**
+     * Add headers that mimic the browser/frontend requests as closely as possible.
+     */
+    private void applyBrowserHeaders(HttpHeaders headers, String referer, String cookies, boolean includeHostWithPort) {
+        if (headers == null) return;
+        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        headers.set("Accept", "application/json, text/plain, */*");
+        headers.set("Accept-Language", "es-ES,es;q=0.9,en;q=0.8");
+        if (referer != null) headers.set("Referer", referer);
+        headers.set("Origin", BASE_URL);
+        headers.set("Connection", "keep-alive");
+        headers.set("Sec-Fetch-Dest", "empty");
+        headers.set("Sec-Fetch-Mode", "cors");
+        headers.set("Sec-Fetch-Site", "same-site");
+        headers.set("X-Requested-With", "XMLHttpRequest");
+        headers.set("Accept-Encoding", "gzip, deflate, br");
+
+        // Client hints (may help bypass checks)
+        headers.set("Sec-CH-UA", "\"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\", \"Not:A-Brand\";v=\"99\"");
+        headers.set("Sec-CH-UA-Mobile", "?0");
+        headers.set("Sec-CH-UA-Platform", "\"Windows\"");
+
+        if (cookies != null) headers.set("Cookie", cookies);
+
+        if (includeHostWithPort) {
+            // When calling explicit :448 endpoints, set Host header to include port
+            headers.set("Host", "consultaprocesos.ramajudicial.gov.co:448");
+        }
+    }
     
     /**
      * Main method to scrape process data from Colombian judicial portal
@@ -55,6 +85,40 @@ public class JudicialScrapingService {
         return scrapeProcessData(numeroRadicacion, false);
     }
     
+    /**
+     * Perform an initial GET to the portal page to collect cookies and return a Cookie header value.
+     */
+    private String fetchPortalCookies(String numeroRadicacion) {
+        try {
+            String url = BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion.trim();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            headers.set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            headers.set("Accept-Language", "es-ES,es;q=0.9");
+            headers.set("Referer", BASE_URL);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+            List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+            if (setCookies != null && !setCookies.isEmpty()) {
+                StringBuilder cookieBuilder = new StringBuilder();
+                for (String c : setCookies) {
+                    int idx = c.indexOf(';');
+                    String part = idx > 0 ? c.substring(0, idx) : c;
+                    if (cookieBuilder.length() > 0) cookieBuilder.append("; ");
+                    cookieBuilder.append(part);
+                }
+                logger.debug("Fetched portal cookies: {}", cookieBuilder.toString());
+                return cookieBuilder.toString();
+            }
+        } catch (Exception e) {
+            logger.debug("Could not fetch portal cookies: {}", e.getMessage());
+        }
+        return null;
+    }
+
     public ProcessData scrapeProcessData(String numeroRadicacion, Boolean soloActivos) {
         try {
             logger.info("Starting API consultation for process: {} (soloActivos: {})", numeroRadicacion, soloActivos);
@@ -108,18 +172,11 @@ public class JudicialScrapingService {
                 .queryParam("SoloActivos", soloActivos != null ? soloActivos : false)
                 .queryParam("pagina", 1);
             
-            // Set headers to mimic browser request
+            // Set headers to mimic browser request exactly as frontend
+            String portalCookies = fetchPortalCookies(numeroRadicacion);
             HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            headers.set("Accept", "application/json, text/plain, */*");
-            headers.set("Accept-Language", "es-ES,es;q=0.9,en;q=0.8");
-            headers.set("Referer", "https://consultaprocesos.ramajudicial.gov.co/");
-            headers.set("Origin", "https://consultaprocesos.ramajudicial.gov.co");
-            headers.set("Connection", "keep-alive");
-            headers.set("Sec-Fetch-Dest", "empty");
-            headers.set("Sec-Fetch-Mode", "cors");
-            headers.set("Sec-Fetch-Site", "same-site");
-            
+            applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, portalCookies, true);
+
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
             logger.debug("Making request to portal API: {}", uriBuilder.toUriString());
@@ -223,23 +280,22 @@ public class JudicialScrapingService {
      * Get process activities/actuaciones using real API
      */
     private List<ProcessActivity> getProcessActivities(String numeroRadicacion) {
+        String portalCookies = null;
         try {
+            // Try to obtain cookies by visiting the portal page first (helps bypass simple anti-bot checks)
+            portalCookies = fetchPortalCookies(numeroRadicacion);
+
             // Build the request URL
             UriComponentsBuilder uriBuilder = UriComponentsBuilder
                 .fromHttpUrl(ACTIVITIES_API_URL)
                 .queryParam("numero", numeroRadicacion.trim())
                 .queryParam("pagina", 1);
             
-            // Set headers to mimic browser request
+            // Set headers to mimic frontend browser request more closely
             HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            headers.set("Accept", "application/json, text/plain, */*");
-            headers.set("Accept-Language", "es-ES,es;q=0.9,en;q=0.8");
-            headers.set("Referer", "https://consultaprocesos.ramajudicial.gov.co/");
-            headers.set("Origin", "https://consultaprocesos.ramajudicial.gov.co");
-            
+            applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, portalCookies, true);
             HttpEntity<String> entity = new HttpEntity<>(headers);
-            
+
             ResponseEntity<String> response = restTemplate.exchange(
                 uriBuilder.toUriString(),
                 HttpMethod.GET,
@@ -274,9 +330,59 @@ public class JudicialScrapingService {
                 }
             }
             
+            // log non-OK responses for debugging
+            logger.warn("Activities request returned status {} with body: {}", response.getStatusCode().value(), response.getBody());
             return new ArrayList<>();
         } catch (Exception error) {
             logger.error("Error getting activities for {}: {}", numeroRadicacion, error.getMessage());
+            // If initial attempt fails, try alternate URL without explicit :448 (some endpoints differ)
+            logger.warn("Initial activities request failed for {}. Trying alternate host without :448.", numeroRadicacion);
+                try {
+                String altUrl = BASE_URL + "/api/v2/Proceso/Actuaciones";
+                UriComponentsBuilder altBuilder = UriComponentsBuilder.fromHttpUrl(altUrl)
+                    .queryParam("numero", numeroRadicacion.trim())
+                    .queryParam("pagina", 1);
+
+                HttpHeaders altHeaders = new HttpHeaders();
+                applyBrowserHeaders(altHeaders, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, portalCookies, false);
+                HttpEntity<String> altEntity = new HttpEntity<>(altHeaders);
+
+                ResponseEntity<String> altResponse = restTemplate.exchange(
+                    altBuilder.toUriString(),
+                    HttpMethod.GET,
+                    altEntity,
+                    String.class
+                );
+
+                if (altResponse.getStatusCode() == HttpStatus.OK && altResponse.getBody() != null) {
+                    JsonNode responseJson = objectMapper.readTree(altResponse.getBody());
+                    if (responseJson.has("actuaciones") && responseJson.get("actuaciones").isArray()) {
+                        List<ProcessActivity> activities = new ArrayList<>();
+                        for (JsonNode actNode : responseJson.get("actuaciones")) {
+                            ProcessActivity activity = new ProcessActivity();
+
+                            activity.setIdActuacion(actNode.has("idActuacion") ? actNode.get("idActuacion").asLong() : null);
+                            activity.setConsActuacion(actNode.has("consActuacion") ? actNode.get("consActuacion").asLong() : null);
+                            activity.setFechaActuacion(actNode.has("fechaActuacion") ? actNode.get("fechaActuacion").asText() : null);
+                            activity.setActuacion(actNode.has("actuacion") ? actNode.get("actuacion").asText() : null);
+                            activity.setAnotacion(actNode.has("anotacion") ? actNode.get("anotacion").asText() : null);
+                            activity.setFechaInicioTermino(actNode.has("fechaInicioTermino") ? actNode.get("fechaInicioTermino").asText() : null);
+                            activity.setFechaFinalizaTermino(actNode.has("fechaFinalizaTermino") ? actNode.get("fechaFinalizaTermino").asText() : null);
+                            activity.setCodigoRegla(actNode.has("codigoRegla") ? actNode.get("codigoRegla").asText() : null);
+                            activity.setConDocumentos(actNode.has("conDocumentos") && actNode.get("conDocumentos").asBoolean());
+                            activity.setCantFolios(actNode.has("cantFolios") ? actNode.get("cantFolios").asInt() : 0);
+
+                            activities.add(activity);
+                        }
+                        return activities;
+                    }
+                } else {
+                    logger.warn("Alternate activities request returned status {} body: {}", altResponse.getStatusCode().value(), altResponse.getBody());
+                }
+            } catch (Exception ex) {
+                logger.error("Alternate activities request failed for {}: {}", numeroRadicacion, ex.getMessage());
+            }
+
             return new ArrayList<>();
         }
     }
@@ -285,32 +391,30 @@ public class JudicialScrapingService {
      * Get process subjects/sujetos procesales
      */
     private List<ProcessSubject> getProcessSubjects(String numeroRadicacion) {
+        String portalCookies = null;
         try {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("lsNroRadicacion", numeroRadicacion.trim());
+            portalCookies = fetchPortalCookies(numeroRadicacion);
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            headers.set("Accept", "application/json, text/plain, */*");
-            headers.set("Referer", BASE_URL);
-            headers.set("Origin", BASE_URL);
-            
+            applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, portalCookies, false);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            
+
             ResponseEntity<String> response = restTemplate.exchange(
                 API_BASE + "/v1/Process/GetSujetosProcesales",
                 HttpMethod.POST,
                 entity,
                 String.class
             );
-            
+
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 JsonNode responseJson = objectMapper.readTree(response.getBody());
-                
+
                 if (responseJson.has("isSuccess") && responseJson.get("isSuccess").asBoolean() 
                     && responseJson.has("lsData") && responseJson.get("lsData").isArray()) {
-                    
+
                     List<ProcessSubject> subjects = new ArrayList<>();
                     
                     for (JsonNode subjectNode : responseJson.get("lsData")) {
@@ -329,11 +433,61 @@ public class JudicialScrapingService {
                     
                     return subjects;
                 }
+            } else {
+                logger.warn("Subjects request returned status {} with body: {}", response.getStatusCode().value(), response.getBody());
             }
             
             return new ArrayList<>();
         } catch (Exception error) {
             logger.error("Error getting subjects for {}: {}", numeroRadicacion, error.getMessage());
+            // Try alternate host with :448 if initial POST fails
+            try {
+                String altUrl = "https://consultaprocesos.ramajudicial.gov.co:448/api/v1/Process/GetSujetosProcesales";
+                HttpHeaders altHeaders = new HttpHeaders();
+                altHeaders.setContentType(MediaType.APPLICATION_JSON);
+                applyBrowserHeaders(altHeaders, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, portalCookies, true);
+
+                Map<String, Object> altRequestBody = new HashMap<>();
+                altRequestBody.put("lsNroRadicacion", numeroRadicacion.trim());
+                if (portalCookies != null) {
+                    altHeaders.set("Cookie", portalCookies);
+                }
+                HttpEntity<Map<String, Object>> altEntity = new HttpEntity<>(altRequestBody, altHeaders);
+
+                ResponseEntity<String> altResponse = restTemplate.exchange(
+                        altUrl,
+                        HttpMethod.POST,
+                        altEntity,
+                        String.class
+                );
+
+                if (altResponse.getStatusCode() == HttpStatus.OK && altResponse.getBody() != null) {
+                    JsonNode responseJson = objectMapper.readTree(altResponse.getBody());
+                    if (responseJson.has("isSuccess") && responseJson.get("isSuccess").asBoolean()
+                            && responseJson.has("lsData") && responseJson.get("lsData").isArray()) {
+
+                        List<ProcessSubject> subjects = new ArrayList<>();
+                        for (JsonNode subjectNode : responseJson.get("lsData")) {
+                            ProcessSubject subject = new ProcessSubject();
+
+                            subject.setIdSujetoProceso(subjectNode.has("lnIdSujetoProceso") ? subjectNode.get("lnIdSujetoProceso").asLong() : null);
+                            subject.setNombreSujeto(subjectNode.has("lsNombreSujeto") ? subjectNode.get("lsNombreSujeto").asText() : null);
+                            subject.setTipoSujeto(subjectNode.has("lsTipoSujeto") ? subjectNode.get("lsTipoSujeto").asText() : null);
+                            subject.setIdentificacion(subjectNode.has("lsIdentificacion") ? subjectNode.get("lsIdentificacion").asText() : null);
+                            subject.setTipoIdentificacion(subjectNode.has("lsTipoIdentificacion") ? subjectNode.get("lsTipoIdentificacion").asText() : null);
+                            subject.setApoderado(subjectNode.has("lsApoderado") ? subjectNode.get("lsApoderado").asText() : null);
+                            subject.setTieneApoderado(subjectNode.has("lbTieneApoderado") && "S".equals(subjectNode.get("lbTieneApoderado").asText()));
+
+                            subjects.add(subject);
+                        }
+
+                        return subjects;
+                    }
+                }
+            } catch (Exception ex) {
+                logger.error("Alternate subjects request failed for {}: {}", numeroRadicacion, ex.getMessage());
+            }
+
             return new ArrayList<>();
         }
     }
@@ -367,14 +521,11 @@ public class JudicialScrapingService {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("lsNroRadicacion", numeroRadicacion.trim());
             requestBody.put("lnIdActuacion", idActuacion);
-            
+            String portalCookies = fetchPortalCookies(numeroRadicacion);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            headers.set("Accept", "application/json, text/plain, */*");
-            headers.set("Referer", BASE_URL);
-            headers.set("Origin", BASE_URL);
-            
+            applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, portalCookies, false);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
             
             ResponseEntity<String> response = restTemplate.exchange(
@@ -516,6 +667,115 @@ public class JudicialScrapingService {
             logger.error("Error in saveProcessData: {}", error.getMessage(), error);
             return null;
         }
+    }
+
+    /**
+     * Fetch raw activities JSON from the portal (returns parsed JsonNode or null)
+     */
+    public JsonNode fetchActivitiesRaw(String numeroRadicacion) {
+        try {
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromHttpUrl(ACTIVITIES_API_URL)
+                .queryParam("numero", numeroRadicacion.trim())
+                .queryParam("pagina", 1);
+
+            String cookies = fetchPortalCookies(numeroRadicacion);
+            HttpHeaders headers = new HttpHeaders();
+            applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, cookies, true);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                return objectMapper.readTree(response.getBody());
+            }
+
+            logger.warn("fetchActivitiesRaw: portal returned {} for {}", response.getStatusCode().value(), numeroRadicacion);
+            return null;
+        } catch (Exception e) {
+            logger.error("fetchActivitiesRaw error for {}: {}", numeroRadicacion, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Fetch raw subjects JSON from the portal (returns parsed JsonNode or null)
+     */
+    public JsonNode fetchSubjectsRaw(String numeroRadicacion) {
+        String cookies = fetchPortalCookies(numeroRadicacion);
+
+        // Build JSON payload
+        String payloadJson = null;
+        try {
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("lsNroRadicacion", numeroRadicacion.trim());
+            payloadJson = objectMapper.writeValueAsString(requestBody);
+        } catch (Exception ex) {
+            logger.debug("Failed to build JSON payload for subjects: {}", ex.getMessage());
+        }
+
+        // Try the known endpoints (without :448 and with :448)
+        String[] urls = new String[] {
+            API_BASE + "/v1/Process/GetSujetosProcesales",
+            "https://consultaprocesos.ramajudicial.gov.co:448/api/v1/Process/GetSujetosProcesales"
+        };
+
+        for (String url : urls) {
+            // Variant 1: POST application/json
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, cookies, url.contains(":448"));
+                HttpEntity<String> entity = new HttpEntity<>(payloadJson, headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+                if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                    logger.debug("fetchSubjectsRaw: successful (POST JSON) from {}", url);
+                    return objectMapper.readTree(response.getBody());
+                }
+                logger.warn("fetchSubjectsRaw (POST JSON) returned {} for {} (url={})", response.getStatusCode().value(), numeroRadicacion, url);
+            } catch (Exception e) {
+                logger.warn("fetchSubjectsRaw (POST JSON) failed for {} at {}: {}", numeroRadicacion, url, e.getMessage());
+            }
+
+            // Variant 2: POST application/x-www-form-urlencoded
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+                applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, cookies, url.contains(":448"));
+                String formBody = "lsNroRadicacion=" + java.net.URLEncoder.encode(numeroRadicacion.trim(), "UTF-8");
+                HttpEntity<String> entity = new HttpEntity<>(formBody, headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+                if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                    logger.debug("fetchSubjectsRaw: successful (POST form) from {}", url);
+                    return objectMapper.readTree(response.getBody());
+                }
+                logger.warn("fetchSubjectsRaw (POST form) returned {} for {} (url={})", response.getStatusCode().value(), numeroRadicacion, url);
+            } catch (Exception e) {
+                logger.warn("fetchSubjectsRaw (POST form) failed for {} at {}: {}", numeroRadicacion, url, e.getMessage());
+            }
+
+            // Variant 3: GET with query param
+            try {
+                UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+                    .queryParam("lsNroRadicacion", numeroRadicacion.trim());
+                HttpHeaders headers = new HttpHeaders();
+                applyBrowserHeaders(headers, BASE_URL + "/Procesos/NumeroRadicacion?numeroRadicacion=" + numeroRadicacion, cookies, url.contains(":448"));
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+                if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                    logger.debug("fetchSubjectsRaw: successful (GET) from {}", url);
+                    return objectMapper.readTree(response.getBody());
+                }
+                logger.warn("fetchSubjectsRaw (GET) returned {} for {} (url={})", response.getStatusCode().value(), numeroRadicacion, url);
+            } catch (Exception e) {
+                logger.warn("fetchSubjectsRaw (GET) failed for {} at {}: {}", numeroRadicacion, url, e.getMessage());
+            }
+        }
+
+        logger.error("fetchSubjectsRaw error for {}: all request variants failed (received 405/other).", numeroRadicacion);
+        return null;
     }
     
     /**

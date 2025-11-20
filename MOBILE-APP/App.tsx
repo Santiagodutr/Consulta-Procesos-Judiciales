@@ -11,7 +11,9 @@ import 'react-native-url-polyfill/auto';
 
 // Contexts
 import { AuthProvider } from './src/contexts/AuthContext';
-import { NotificationProvider } from './src/contexts/NotificationContext';
+
+// Screens
+import ProcessDetailsScreen from './src/screens/ProcessDetailsScreen';
 
 // Navigation
 import { AuthNavigator } from './src/navigation/AuthNavigator';
@@ -55,7 +57,10 @@ const AppContent: React.FC = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
+          <>
+            <Stack.Screen name="Main" component={MainNavigator} />
+            <Stack.Screen name="ProcessDetails" component={ProcessDetailsScreen} />
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
@@ -81,10 +86,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <PaperProvider theme={theme}>
         <AuthProvider>
-          <NotificationProvider>
             <AppContent />
             <StatusBar style="auto" />
-          </NotificationProvider>
         </AuthProvider>
       </PaperProvider>
     </QueryClientProvider>

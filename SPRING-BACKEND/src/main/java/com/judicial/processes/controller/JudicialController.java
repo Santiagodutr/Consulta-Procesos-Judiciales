@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.judicial.processes.dto.ProcessActivity;
 import com.judicial.processes.dto.ProcessConsultRequest;
 import com.judicial.processes.dto.ProcessData;
@@ -49,6 +51,8 @@ public class JudicialController {
     @Autowired
     private JudicialService judicialService;
     
+    @Autowired
+    private ObjectMapper objectMapper;
     // PUBLIC ROUTES - No authentication required
     
     /**
@@ -364,17 +368,51 @@ public class JudicialController {
             // Find process
             String processId = scrapingService.processExists(numeroRadicacion);
             if (processId == null) {
+                // Try scraping live if not in DB
+                logger.info("No DB record for {} - attempting live scrape for activities", numeroRadicacion);
+                ProcessData scraped = scrapingService.scrapeProcessData(numeroRadicacion);
+                if (scraped != null) {
+                    processId = scrapingService.saveProcessData(scraped);
+                }
+            }
+
+            if (processId == null) {
+                // last-resort: try fetching raw portal JSON and return it
+                JsonNode raw = scrapingService.fetchActivitiesRaw(numeroRadicacion);
+                List<Map<String, Object>> fallbackList = tryExtractArrayAsList(raw);
+                if (fallbackList != null && !fallbackList.isEmpty()) {
+                    return ResponseEntity.ok(Map.of("success", true, "data", fallbackList));
+                }
                 return ResponseEntity.status(404).body(Map.of("error", "Proceso no encontrado"));
             }
-            
-            // Get activities
+
+            // Get activities from DB
             List<ProcessActivity> activities = judicialService.getProcessActivities(processId);
-            
+
+            // If activities empty, attempt a forced live scrape and refresh DB
+            if ((activities == null || activities.isEmpty())) {
+                logger.info("No activities found in DB for {} - forcing live scrape", numeroRadicacion);
+                ProcessData scraped = scrapingService.scrapeProcessData(numeroRadicacion, false);
+                if (scraped != null) {
+                    scrapingService.saveProcessData(scraped);
+                    activities = judicialService.getProcessActivities(processId != null ? processId : scrapingService.processExists(numeroRadicacion));
+                }
+            }
+
+            // If still empty, return portal raw data as fallback
+            if (activities == null || activities.isEmpty()) {
+                JsonNode raw = scrapingService.fetchActivitiesRaw(numeroRadicacion);
+                List<Map<String, Object>> fallbackList = tryExtractArrayAsList(raw);
+                if (fallbackList != null) {
+                    return ResponseEntity.ok(Map.of("success", true, "data", fallbackList));
+                }
+            }
+
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", activities != null ? activities : new ArrayList<>()
             ));
-            
+
         } catch (Exception error) {
             logger.error("Get activities error:", error);
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
@@ -390,21 +428,76 @@ public class JudicialController {
             // Find process
             String processId = scrapingService.processExists(numeroRadicacion);
             if (processId == null) {
+                // Try scraping live if not in DB
+                logger.info("No DB record for {} - attempting live scrape for subjects", numeroRadicacion);
+                ProcessData scraped = scrapingService.scrapeProcessData(numeroRadicacion);
+                if (scraped != null) {
+                    processId = scrapingService.saveProcessData(scraped);
+                }
+            }
+
+            if (processId == null) {
+                // fallback: return raw portal subjects JSON
+                JsonNode raw = scrapingService.fetchSubjectsRaw(numeroRadicacion);
+                List<Map<String, Object>> fallbackList = tryExtractArrayAsList(raw);
+                if (fallbackList != null && !fallbackList.isEmpty()) {
+                    return ResponseEntity.ok(Map.of("success", true, "data", fallbackList));
+                }
                 return ResponseEntity.status(404).body(Map.of("error", "Proceso no encontrado"));
             }
-            
-            // Get subjects
+
+            // Get subjects from DB
             List<ProcessSubject> subjects = judicialService.getProcessSubjects(processId);
-            
+
+            // If subjects empty, attempt a forced live scrape and refresh DB
+            if ((subjects == null || subjects.isEmpty())) {
+                logger.info("No subjects found in DB for {} - forcing live scrape", numeroRadicacion);
+                ProcessData scraped = scrapingService.scrapeProcessData(numeroRadicacion, false);
+                if (scraped != null) {
+                    scrapingService.saveProcessData(scraped);
+                    subjects = judicialService.getProcessSubjects(processId != null ? processId : scrapingService.processExists(numeroRadicacion));
+                }
+            }
+
+            // fallback: return raw portal subjects JSON
+            if (subjects == null || subjects.isEmpty()) {
+                JsonNode raw = scrapingService.fetchSubjectsRaw(numeroRadicacion);
+                List<Map<String, Object>> fallbackList = tryExtractArrayAsList(raw);
+                if (fallbackList != null) {
+                    return ResponseEntity.ok(Map.of("success", true, "data", fallbackList));
+                }
+            }
+
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", subjects != null ? subjects : new ArrayList<>()
             ));
-            
+
         } catch (Exception error) {
             logger.error("Get subjects error:", error);
             return ResponseEntity.status(500).body(Map.of("error", "Error interno del servidor"));
         }
+    }
+
+    private List<Map<String, Object>> tryExtractArrayAsList(JsonNode raw) {
+        if (raw == null) return null;
+        JsonNode arr = null;
+        if (raw.isArray()) arr = raw;
+        else if (raw.has("lsData")) arr = raw.get("lsData");
+        else if (raw.has("actuaciones")) arr = raw.get("actuaciones");
+        else if (raw.has("sujetos")) arr = raw.get("sujetos");
+        else if (raw.has("lsSujetos")) arr = raw.get("lsSujetos");
+        else if (raw.has("data")) arr = raw.get("data");
+
+        if (arr != null && arr.isArray()) {
+            try {
+                return objectMapper.convertValue(arr, new TypeReference<List<Map<String, Object>>>(){});
+            } catch (Exception e) {
+                logger.warn("Failed to convert raw portal array to list: {}", e.getMessage());
+                return null;
+            }
+        }
+        return null;
     }
     
     // AUTHENTICATED ROUTES - Require authentication

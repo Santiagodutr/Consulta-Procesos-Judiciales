@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { judicialAPI, notificationAPI } from '../services/apiService';
+import { judicialAPI } from '../services/apiService';
 
 interface ConsultationHistoryItem {
   consultation_id: string;
@@ -16,15 +16,13 @@ interface ConsultationHistoryItem {
 
 const SimpleDashboardScreen: React.FC = () => {
   const { user, signOut } = useAuth();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   const [consultationHistory, setConsultationHistory] = useState<ConsultationHistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
 
   useEffect(() => {
     loadConsultationHistory();
-    loadUnreadNotifications();
   }, []);
 
   const loadConsultationHistory = async () => {
@@ -44,19 +42,6 @@ const SimpleDashboardScreen: React.FC = () => {
     }
   };
 
-  const loadUnreadNotifications = async () => {
-    try {
-      const res = await notificationAPI.getUnreadNotifications(50);
-      if (res && res.success && Array.isArray(res.data)) {
-        setUnreadNotifications(res.data.length);
-      } else if (res && res.success && typeof res.data === 'number') {
-        setUnreadNotifications(res.data);
-      }
-    } catch (err) {
-      console.error('Error loading notifications', err);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -68,10 +53,10 @@ const SimpleDashboardScreen: React.FC = () => {
   };
 
   const quickActions = [
-    { title: 'Consultar Procesos', description: 'Buscar procesos por número', action: () => navigation.navigate('Home' as any) },
+    { title: 'Consultar Procesos', description: 'Buscar procesos por número', action: () => navigation.navigate('Consulta' as any) },
     { title: 'Mis Procesos', description: 'Ver procesos guardados', action: () => navigation.navigate('Profile' as any) },
-    { title: 'Análisis', description: 'Ver estadísticas', action: () => Alert.alert('Analytics', 'Funcionalidad de analíticas no implementada aún') },
-    { title: 'Notificaciones', description: 'Revisa alertas recientes', action: () => Alert.alert('Notificaciones', 'Ir a notificaciones (no implementado)') },
+    { title: 'Análisis', description: 'Ver estadísticas', action: () => navigation.navigate('Home' as any) },
+    // Notifications temporarily removed from mobile UI
   ];
 
   const renderHistoryItem = ({ item }: { item: ConsultationHistoryItem }) => (
@@ -85,7 +70,10 @@ const SimpleDashboardScreen: React.FC = () => {
         <Text style={styles.small}>{new Date(item.consulted_at).toLocaleString()}</Text>
         <TouchableOpacity
           style={styles.detailsButton}
-          onPress={() => Alert.alert('Ver detalles', `Ir a detalles del proceso ${item.numero_radicacion}`)}
+          onPress={() => {
+            // Navigate to details in parent stack
+            navigation.getParent()?.navigate('ProcessDetails', { numeroRadicacion: item.numero_radicacion, processData: item });
+          }}
         >
           <Text style={styles.detailsButtonText}>Ver Detalles</Text>
         </TouchableOpacity>
@@ -93,8 +81,8 @@ const SimpleDashboardScreen: React.FC = () => {
     </View>
   );
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
+  const ListHeader = () => (
+    <View>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Bienvenido, {user?.first_name || 'Usuario'}!</Text>
@@ -139,53 +127,44 @@ const SimpleDashboardScreen: React.FC = () => {
         </View>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Notificaciones</Text>
-            <Text style={styles.statValue}>{unreadNotifications}</Text>
-          </View>
-          <View style={styles.statCard}>
             <Text style={styles.statLabel}>Última Consulta</Text>
             <Text style={styles.statValue}>{consultationHistory.length > 0 ? new Date(consultationHistory[0].consulted_at).toLocaleDateString() : 'N/A'}</Text>
           </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Procesos Activos</Text>
+            <Text style={styles.statValue}>{consultationHistory.length}</Text>
+          </View>
         </View>
       </View>
 
-      {/* Recent Activity */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historial de Consultas</Text>
-        {loading ? (
-          <ActivityIndicator />
-        ) : consultationHistory.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text>No hay consultas recientes</Text>
-            <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('Home' as any)}>
-              <Text style={styles.primaryButtonText}>Consultar Procesos</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={consultationHistory}
-            keyExtractor={(i) => i.consultation_id}
-            renderItem={renderHistoryItem}
-            scrollEnabled={false}
-          />
-        )}
       </View>
+    </View>
+  );
 
-      {/* User Info */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Información de Usuario</Text>
-        <View style={styles.userCard}>
-          <Text style={styles.userLabel}>Nombre completo</Text>
-          <Text style={styles.userValue}>{user?.first_name} {user?.last_name}</Text>
-
-          <Text style={styles.userLabel}>Email</Text>
-          <Text style={styles.userValue}>{user?.email}</Text>
-
-          <Text style={styles.userLabel}>Tipo de usuario</Text>
-          <Text style={styles.userValue}>{user?.user_type}</Text>
+  return (
+    <FlatList
+      data={consultationHistory}
+      keyExtractor={(i) => i.consultation_id}
+      renderItem={renderHistoryItem}
+      ListHeaderComponent={ListHeader}
+      ListEmptyComponent={() => (
+        <View style={{ padding: 16 }}>
+          {loading ? (
+            <ActivityIndicator />
+          ) : (
+            <View style={styles.emptyBox}>
+              <Text>No hay consultas recientes</Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('Consulta' as any)}>
+                <Text style={styles.primaryButtonText}>Consultar Procesos</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      </View>
-    </ScrollView>
+      )}
+      contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+    />
   );
 };
 
