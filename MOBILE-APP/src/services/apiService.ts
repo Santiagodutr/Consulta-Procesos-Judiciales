@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 interface ApiResponse<T = any> {
   success: boolean;
@@ -19,13 +19,30 @@ class ApiService {
   private client: AxiosInstance;
 
   constructor() {
+    const envUrl = process.env.EXPO_PUBLIC_API_URL;
+
+    // Default backend host/port used by Spring Boot
+    const backendHost = (() => {
+      // If user provided EXPO_PUBLIC_API_URL use it
+      if (envUrl && envUrl.trim().length > 0) return envUrl.replace(/\/$/, '');
+
+      // On Android emulator, localhost -> 10.0.2.2
+      if (Platform.OS === 'android') return 'http://10.0.2.2:8080/api';
+
+      // On iOS simulator / web, localhost works
+      return 'http://localhost:8080/api';
+    })();
+
     this.client = axios.create({
-      baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
+      baseURL: backendHost,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       },
     });
+
+    // Small debug hint
+    console.debug('[apiService] baseURL =', backendHost);
 
     this.setupInterceptors();
   }
@@ -102,6 +119,7 @@ class ApiService {
       }
     } else if (error.request) {
       // Network error
+      console.error('[apiService] Network error details:', error.message, error.config);
       Alert.alert('Network Error', 'Please check your internet connection.');
     } else {
       // Something else happened
@@ -109,28 +127,40 @@ class ApiService {
     }
   }
 
+  // Helper to override baseURL at runtime (useful for debugging on devices)
+  setBaseURL(url: string) {
+    if (!url) return;
+    this.client.defaults.baseURL = url.replace(/\/$/, '');
+    console.debug('[apiService] baseURL overridden ->', this.client.defaults.baseURL);
+  }
+
   // Generic HTTP methods
   async get<T = any>(url: string, params?: any): Promise<ApiResponse<T>> {
+    console.debug('[apiService] GET', url, params, '->', this.client.defaults.baseURL);
     const response = await this.client.get(url, { params });
     return response.data;
   }
 
   async post<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    console.debug('[apiService] POST', url, data, '->', this.client.defaults.baseURL);
     const response = await this.client.post(url, data);
     return response.data;
   }
 
   async put<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    console.debug('[apiService] PUT', url, data, '->', this.client.defaults.baseURL);
     const response = await this.client.put(url, data);
     return response.data;
   }
 
   async patch<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    console.debug('[apiService] PATCH', url, data, '->', this.client.defaults.baseURL);
     const response = await this.client.patch(url, data);
     return response.data;
   }
 
   async delete<T = any>(url: string): Promise<ApiResponse<T>> {
+    console.debug('[apiService] DELETE', url, '->', this.client.defaults.baseURL);
     const response = await this.client.delete(url);
     return response.data;
   }

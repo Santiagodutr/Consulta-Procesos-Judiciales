@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
+import { apiService } from './src/services/apiService';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
@@ -63,6 +65,18 @@ const AppContent: React.FC = () => {
 };
 
 export default function App() {
+  // In development, override baseURL to point to local backend for emulators/devices
+  if (__DEV__) {
+    try {
+      if (Platform.OS === 'android') {
+        apiService.setBaseURL('http://10.0.2.2:8080/api');
+      } else {
+        apiService.setBaseURL('http://localhost:8080/api');
+      }
+    } catch (e) {
+      console.debug('Failed to set dev baseURL', e);
+    }
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <PaperProvider theme={theme}>

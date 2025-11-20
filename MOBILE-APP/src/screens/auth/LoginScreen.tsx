@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, Title } from 'react-native-paper';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import LoadingIndicator from '../../components/LoadingIndicator';
 
 const LoginScreen: React.FC = () => {
@@ -9,6 +10,8 @@ const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const navigation = useNavigation();
 
   const onSubmit = async () => {
     setSubmitting(true);
@@ -43,6 +46,9 @@ const LoginScreen: React.FC = () => {
       />
       <Button mode="contained" onPress={onSubmit} loading={submitting} disabled={submitting} style={styles.button}>
         Entrar
+      </Button>
+      <Button mode="text" onPress={() => navigation.navigate('Register' as never)} style={styles.button}>
+        Registrarse
       </Button>
     </View>
   );
