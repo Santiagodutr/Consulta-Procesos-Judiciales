@@ -397,29 +397,30 @@ public class JudicialService {
         
         if (processData == null) return map;
         
-        map.put("id_proceso", processData.getIdProceso());
-        map.put("id_conexion", processData.getIdConexion());
-        map.put("numero_radicacion", processData.getNumeroRadicacion());
-        map.put("fecha_radicacion", processData.getFechaRadicacion());
-        map.put("fecha_proceso", processData.getFechaProceso());
-        map.put("fecha_ultima_actuacion", processData.getFechaUltimaActuacion());
+        // Use camelCase for JavaScript/Mobile compatibility
+        map.put("idProceso", processData.getIdProceso());
+        map.put("idConexion", processData.getIdConexion());
+        map.put("numeroRadicacion", processData.getNumeroRadicacion());
+        map.put("fechaRadicacion", processData.getFechaRadicacion());
+        map.put("fechaProceso", processData.getFechaProceso());
+        map.put("fechaUltimaActuacion", processData.getFechaUltimaActuacion());
         map.put("despacho", processData.getDespacho());
         map.put("departamento", processData.getDepartamento());
         map.put("ponente", processData.getPonente());
-        map.put("ubicacion_expediente", processData.getUbicacionExpediente());
-        map.put("tipo_proceso", processData.getTipoProceso());
-        map.put("clase_proceso", processData.getClaseProceso());
-        map.put("subclase_proceso", processData.getSubclaseProceso());
+        map.put("ubicacionExpediente", processData.getUbicacionExpediente());
+        map.put("tipoProceso", processData.getTipoProceso());
+        map.put("claseProceso", processData.getClaseProceso());
+        map.put("subclaseProceso", processData.getSubclaseProceso());
         map.put("demandante", processData.getDemandante());
         map.put("demandado", processData.getDemandado());
-        map.put("sujetos_procesales", processData.getSujetosProcesales());
-        map.put("apoderado_demandante", processData.getApoderadoDemandante());
-        map.put("apoderado_demandado", processData.getApoderadoDemandado());
-        map.put("cantidad_folios", processData.getCantidadFolios());
-        map.put("es_privado", processData.getEsPrivado());
+        map.put("sujetosProcesales", processData.getSujetosProcesales());
+        map.put("apoderadoDemandante", processData.getApoderadoDemandante());
+        map.put("apoderadoDemandado", processData.getApoderadoDemandado());
+        map.put("cantidadFolios", processData.getCantidadFolios());
+        map.put("esPrivado", processData.getEsPrivado());
         map.put("estado", processData.getEstado());
-        map.put("solo_activos", processData.getSoloActivos());
-        map.put("portal_url", processData.getPortalUrl());
+        map.put("soloActivos", processData.getSoloActivos());
+        map.put("portalUrl", processData.getPortalUrl());
         map.put("actuaciones", processData.getActuaciones());
         map.put("sujetos", processData.getSujetos());
         map.put("documentos", processData.getDocumentos());

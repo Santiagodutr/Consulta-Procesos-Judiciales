@@ -63,8 +63,9 @@ const AnalyticsScreen: React.FC = () => {
         try {
           // Paso 1: Obtener idProceso del backend
           const detailRes = await judicialAPI.consultProcess(fav.numero_radicacion, false, false);
-          if (detailRes && detailRes.success && detailRes.data && detailRes.data.idProceso) {
-            const idProceso = detailRes.data.idProceso;
+          const processData = detailRes?.data;
+          const idProceso = processData?.idProceso || processData?.id_proceso;
+          if (detailRes && detailRes.success && processData && idProceso) {
             
             // Paso 2: Obtener TODAS las actuaciones del portal usando idProceso
             const actuacionesRes = await judicialPortalAPI.getAllActuaciones(idProceso);

@@ -348,8 +348,17 @@ export const analyticsAPI = {
 
 // Judicial endpoints (proxy through backend to portal when needed)
 export const judicialAPI = {
-  consultProcess: (numeroRadicacion: string, soloActivos?: boolean, refresh?: boolean) =>
-    apiService.post('/judicial/consult' + (refresh ? '?refresh=true' : ''), { numeroRadicacion, soloActivos }),
+  consultProcess: async (numeroRadicacion: string, soloActivos?: boolean, refresh?: boolean) => {
+    console.log('🔍 [judicialAPI] consultProcess llamado:', { numeroRadicacion, soloActivos, refresh });
+    const result = await apiService.post('/judicial/consult' + (refresh ? '?refresh=true' : ''), { numeroRadicacion, soloActivos });
+    console.log('📦 [judicialAPI] consultProcess respuesta:', {
+      success: result?.success,
+      hasData: !!result?.data,
+      idProceso: result?.data?.idProceso,
+      dataKeys: result?.data ? Object.keys(result.data) : []
+    });
+    return result;
+  },
 
   searchProcesses: (query: string, params?: any) =>
     apiService.get('/judicial/search', { q: query, ...params }),
@@ -392,17 +401,22 @@ const portalClient = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json, text/plain, */*',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
   },
 });
 
 export const judicialPortalAPI = {
-  // Obtener detalles de un proceso por idProceso
+  // Obtener detalles del proceso por idProceso
+  // API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Detalle/{idProceso}
   getProcessByIdProceso: async (idProceso: number) => {
     try {
-      const response = await portalClient.get(`/Procesos/Consulta/Proceso/${idProceso}`);
+      console.log(`[Portal] Consultando detalles del proceso ID: ${idProceso}`);
+      const response = await portalClient.get(`/Proceso/Detalle/${idProceso}`);
+      console.log(`[Portal] Detalles recibidos:`, response.data);
       return { success: true, data: response.data };
     } catch (error: any) {
-      console.error('Error fetching process from portal:', error);
+      console.error('[Portal] Error fetching process details:', error);
       return { 
         success: false, 
         message: error.response?.data?.message || 'Error al consultar el proceso',
@@ -412,12 +426,28 @@ export const judicialPortalAPI = {
   },
 
   // Obtener sujetos procesales por idProceso
-  getSujetosByIdProceso: async (idProceso: number) => {
+  // API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Sujetos/{idProceso}?pagina=1
+  getSujetosByIdProceso: async (idProceso: number, pagina: number = 1) => {
     try {
-      const response = await portalClient.get(`/Procesos/Consulta/SujetosProcesales/${idProceso}`);
-      return { success: true, data: response.data };
+      console.log(`[Portal] Consultando sujetos del proceso ID: ${idProceso}, página: ${pagina}`);
+      const response = await portalClient.get(`/Proceso/Sujetos/${idProceso}`, {
+        params: { pagina }
+      });
+      console.log(`[Portal] Sujetos recibidos:`, response.data);
+      
+      // La API devuelve { sujetos: [...], paginacion: {...} }
+      if (response.data && Array.isArray(response.data.sujetos)) {
+        return { success: true, data: response.data.sujetos };
+      }
+      
+      // Si viene directamente el array
+      if (Array.isArray(response.data)) {
+        return { success: true, data: response.data };
+      }
+      
+      return { success: true, data: [] };
     } catch (error: any) {
-      console.error('Error fetching subjects from portal:', error);
+      console.error('[Portal] Error fetching subjects:', error);
       return { 
         success: false, 
         message: error.response?.data?.message || 'Error al consultar los sujetos',
@@ -427,14 +457,29 @@ export const judicialPortalAPI = {
   },
 
   // Obtener actuaciones por idProceso con paginación
+  // API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Actuaciones/{idProceso}?pagina=1
   getActuacionesByIdProceso: async (idProceso: number, pagina: number = 1) => {
     try {
-      const response = await portalClient.get(
-        `/Procesos/Consulta/Actuaciones/${idProceso}?pagina=${pagina}`
-      );
-      return { success: true, data: response.data };
+      console.log(`[Portal] Consultando actuaciones del proceso ID: ${idProceso}, página: ${pagina}`);
+      const response = await portalClient.get(`/Proceso/Actuaciones/${idProceso}`, {
+        params: { pagina }
+      });
+      console.log(`[Portal] Actuaciones recibidas:`, response.data);
+      
+      const data = response.data;
+      
+      // Extraer actuaciones de diferentes formatos de respuesta
+      if (data && Array.isArray(data.actuaciones)) {
+        return { success: true, data: data };
+      } else if (Array.isArray(data)) {
+        return { success: true, data: { actuaciones: data, paginacion: null } };
+      } else if (data && data.lsData && Array.isArray(data.lsData)) {
+        return { success: true, data: { actuaciones: data.lsData, paginacion: null } };
+      }
+      
+      return { success: true, data: { actuaciones: [], paginacion: null } };
     } catch (error: any) {
-      console.error('Error fetching activities from portal:', error);
+      console.error('[Portal] Error fetching activities:', error);
       return { 
         success: false, 
         message: error.response?.data?.message || 'Error al consultar las actuaciones',
@@ -444,12 +489,26 @@ export const judicialPortalAPI = {
   },
 
   // Obtener documentos por idProceso
+  // API: https://consultaprocesos.ramajudicial.gov.co:448/api/v2/Proceso/Documentos/{idProceso}
   getDocumentosByIdProceso: async (idProceso: number) => {
     try {
-      const response = await portalClient.get(`/Procesos/Consulta/Documentos/${idProceso}`);
-      return { success: true, data: response.data };
+      console.log(`[Portal] Consultando documentos del proceso ID: ${idProceso}`);
+      const response = await portalClient.get(`/Proceso/Documentos/${idProceso}`);
+      console.log(`[Portal] Documentos recibidos:`, response.data);
+      
+      // La API puede devolver { documentos: [...] }
+      if (response.data && Array.isArray(response.data.documentos)) {
+        return { success: true, data: response.data.documentos };
+      }
+      
+      // Si viene directamente el array
+      if (Array.isArray(response.data)) {
+        return { success: true, data: response.data };
+      }
+      
+      return { success: true, data: [] };
     } catch (error: any) {
-      console.error('Error fetching documents from portal:', error);
+      console.error('[Portal] Error fetching documents:', error);
       return { 
         success: false, 
         message: error.response?.data?.message || 'Error al consultar los documentos',

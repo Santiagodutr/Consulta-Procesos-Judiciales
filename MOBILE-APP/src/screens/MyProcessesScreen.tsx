@@ -104,30 +104,45 @@ const MyProcessesScreen: React.FC = () => {
     
     try {
       // Paso 1: Consultar backend para obtener idProceso
+      console.log('🔍 Consultando proceso:', favorite.numero_radicacion);
       const res = await judicialAPI.consultProcess(favorite.numero_radicacion, false, true);
+      console.log('📦 Respuesta backend:', JSON.stringify(res, null, 2));
+      
       if (res && res.success && res.data) {
         const processData = res.data;
+        console.log('✅ ProcessData recibido:', {
+          idProceso: processData.idProceso,
+          id_proceso: processData.id_proceso,
+          numeroRadicacion: processData.numeroRadicacion,
+          keys: Object.keys(processData)
+        });
         setProcessDetails(processData);
         
-        // Extraer idProceso
-        const id = processData.idProceso;
+        // Extraer idProceso (soporta ambos formatos: camelCase y snake_case)
+        const id = processData.idProceso || processData.id_proceso;
         if (id) {
+          console.log('✅ idProceso encontrado:', id);
           setIdProceso(id);
-          // Paso 2: Cargar datos básicos del portal usando idProceso
+          // Cargar datos completos desde el portal
           try {
             const portalRes = await judicialPortalAPI.getProcessByIdProceso(id);
             if (portalRes && portalRes.success && portalRes.data) {
               setProcessDetails((prev: any) => ({ ...prev, ...portalRes.data }));
+              console.log('✅ Datos del portal cargados');
             }
           } catch (portalErr) {
-            console.error('Error loading from portal:', portalErr);
+            console.error('❌ Error loading from portal:', portalErr);
           }
         } else {
-          console.warn('No idProceso found');
+          console.warn('⚠️ No idProceso found in processData:', processData);
+          Alert.alert('Advertencia', 'No se pudo obtener el ID del proceso. Verifique el número de radicación.');
         }
+      } else {
+        console.error('❌ Respuesta inválida del backend:', res);
+        Alert.alert('Error', 'No se encontró información del proceso');
       }
     } catch (err) {
-      console.error('Error loading process details', err);
+      console.error('❌ Error loading process details:', err);
       Alert.alert('Error', 'No se pudo cargar la información del proceso');
     } finally {
       setLoadingDetails(false);

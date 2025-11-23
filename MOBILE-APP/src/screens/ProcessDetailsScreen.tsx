@@ -65,24 +65,37 @@ const ProcessDetailsScreen: React.FC = () => {
     setLoading(true);
     try {
       // Paso 1: Consultar backend para obtener idProceso
+      console.log('🔍 ProcessDetailsScreen - Consultando proceso:', params.numeroRadicacion);
       const res = await judicialAPI.consultProcess(params.numeroRadicacion, false, true);
+      console.log('📦 ProcessDetailsScreen - Respuesta backend:', JSON.stringify(res, null, 2));
+      
       if (res && res.success && res.data) {
         const processData = res.data;
+        console.log('✅ ProcessDetailsScreen - ProcessData recibido:', {
+          idProceso: processData.idProceso,
+          id_proceso: processData.id_proceso,
+          numeroRadicacion: processData.numeroRadicacion,
+          keys: Object.keys(processData)
+        });
         setProcess(processData);
         
-        // Extraer idProceso
-        const id = processData.idProceso;
+        // Extraer idProceso (soporta ambos formatos: camelCase y snake_case)
+        const id = processData.idProceso || processData.id_proceso;
         if (id) {
+          console.log('✅ ProcessDetailsScreen - idProceso encontrado:', id);
           setIdProceso(id);
-          // Paso 2: Cargar datos básicos del portal usando idProceso
+          // Cargar datos completos desde el portal usando idProceso
           await loadProcessFromPortal(id);
         } else {
-          console.warn('No idProceso found in response');
+          console.warn('⚠️ ProcessDetailsScreen - No idProceso found in response:', processData);
           Alert.alert('Advertencia', 'No se pudo obtener el ID del proceso');
         }
+      } else {
+        console.error('❌ ProcessDetailsScreen - Respuesta inválida:', res);
+        Alert.alert('Error', 'No se encontró información del proceso');
       }
     } catch (err) {
-      console.error('Error loading full process data', err);
+      console.error('❌ ProcessDetailsScreen - Error loading full process data:', err);
       Alert.alert('Error', 'No se pudo cargar la información del proceso');
     } finally {
       setLoading(false);
@@ -91,13 +104,16 @@ const ProcessDetailsScreen: React.FC = () => {
 
   const loadProcessFromPortal = async (id: number) => {
     try {
-      // Consultar datos básicos del proceso desde el portal
+      console.log('🔍 Consultando detalles del portal con idProceso:', id);
       const portalRes = await judicialPortalAPI.getProcessByIdProceso(id);
       if (portalRes && portalRes.success && portalRes.data) {
+        console.log('✅ Datos del portal recibidos:', portalRes.data);
         setProcess((prev: any) => ({ ...prev, ...portalRes.data }));
+      } else {
+        console.warn('⚠️ No se pudieron obtener datos del portal');
       }
     } catch (err) {
-      console.error('Error loading process from portal', err);
+      console.error('❌ Error loading process from portal:', err);
     }
   };
 
