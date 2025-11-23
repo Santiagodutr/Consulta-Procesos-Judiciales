@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import './index.css';
 import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import { AccessibilityProvider } from './contexts/AccessibilityContext.tsx';
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
@@ -12,31 +13,33 @@ const root = createRoot(container!);
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
-              duration: 3000,
+      <AccessibilityProvider>
+        <AuthProvider>
+          <App />
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
               style: {
-                background: '#10b981',
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              duration: 5000,
-              style: {
-                background: '#ef4444',
+              success: {
+                duration: 3000,
+                style: {
+                  background: '#10b981',
+                },
               },
-            },
-          }}
-        />
-      </AuthProvider>
+              error: {
+                duration: 5000,
+                style: {
+                  background: '#ef4444',
+                },
+              },
+            }}
+          />
+        </AuthProvider>
+      </AccessibilityProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
