@@ -99,19 +99,6 @@ const SimpleDashboardScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
-        <View style={styles.quickGrid}>
-          {quickActions.map((a, i) => (
-            <TouchableOpacity key={i} style={styles.quickCard} onPress={a.action}>
-              <Text style={styles.quickTitle}>{a.title}</Text>
-              <Text style={styles.quickDesc}>{a.description}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
       {/* Stats */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Resumen General</Text>
