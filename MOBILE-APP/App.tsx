@@ -14,6 +14,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 
 // Screens
 import ProcessDetailsScreen from './src/screens/ProcessDetailsScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 
 // Navigation
 import { AuthNavigator } from './src/navigation/AuthNavigator';
@@ -60,6 +61,7 @@ const AppContent: React.FC = () => {
           <>
             <Stack.Screen name="Main" component={MainNavigator} />
             <Stack.Screen name="ProcessDetails" component={ProcessDetailsScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />

@@ -87,7 +87,7 @@ const SimpleDashboardScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Bienvenido, {user?.first_name || 'Usuario'}!</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => Alert.alert('Notificaciones', 'Ir a notificaciones (no implementado)')} style={styles.iconButton}>
+          <TouchableOpacity onPress={() => navigation.getParent()?.navigate('Notifications')} style={styles.iconButton}>
             <Text>🔔</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Profile' as any)} style={styles.iconButton}>
