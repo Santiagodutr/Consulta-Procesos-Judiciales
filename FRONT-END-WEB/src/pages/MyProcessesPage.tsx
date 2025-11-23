@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
+import { useTour } from '../hooks/useTour.ts';
+import { HelpButton } from '../components/HelpButton.tsx';
+import { myProcessesTourSteps } from '../tours/myProcessesTour.ts';
 import {
   judicialPortalService,
   JudicialProcessData,
@@ -44,6 +47,7 @@ const MyProcessesPage: React.FC = () => {
   const { user, signOut } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const { startTour, hasCompletedTour } = useTour(myProcessesTourSteps, 'myprocesses');
 
   const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -991,7 +995,7 @@ const MyProcessesPage: React.FC = () => {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto py-8 px-4">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6" data-tour="favorites-header">
           <div className="flex items-center gap-3">
             <Star className="h-8 w-8 text-yellow-500 fill-yellow-500" />
             <div>
@@ -1021,6 +1025,7 @@ const MyProcessesPage: React.FC = () => {
               <div
                 key={process.numero_radicacion}
                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
+                data-tour="process-card"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
                   <div className="flex-1">
@@ -1058,6 +1063,7 @@ const MyProcessesPage: React.FC = () => {
                       onClick={() => handleViewDetails(process.numero_radicacion)}
                       className="flex items-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
                       title="Ver detalles del proceso"
+                      data-tour="view-details-btn"
                     >
                       <Eye className="h-4 w-4" />
                       <span>Ver Detalles</span>
@@ -1066,6 +1072,7 @@ const MyProcessesPage: React.FC = () => {
                       onClick={() => handleRemoveFavorite(process.numero_radicacion)}
                       className="flex items-center gap-2 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap"
                       title="Quitar de favoritos"
+                      data-tour="remove-favorite-btn"
                     >
                       <Trash2 className="h-4 w-4" />
                       <span>Quitar</span>
@@ -1079,6 +1086,7 @@ const MyProcessesPage: React.FC = () => {
       </div>
       </main>
 
+      <HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />
       <PublicFooter />
     </div>
   );

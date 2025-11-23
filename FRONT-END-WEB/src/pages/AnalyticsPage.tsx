@@ -29,6 +29,9 @@ import { directJudicialAPI } from '../services/apiService.ts';
 import { ProcessActivity, judicialPortalService } from '../services/judicialPortalService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { PublicFooter } from '../components/PublicFooter.tsx';
+import { useTour } from '../hooks/useTour.ts';
+import { HelpButton } from '../components/HelpButton.tsx';
+import { analyticsTourSteps } from '../tours/analyticsTour.ts';
 import {
 	Activity as ActivityIcon,
 	BarChart3,
@@ -377,6 +380,7 @@ const formatNumber = (value: number) => new Intl.NumberFormat('es-CO').format(va
 const AnalyticsPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
+	const { startTour, hasCompletedTour } = useTour(analyticsTourSteps, 'analytics');
 
 	const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
 	const [selectedProcess, setSelectedProcess] = useState<string | null>(null);
@@ -748,7 +752,7 @@ const AnalyticsPage: React.FC = () => {
 				ref={exportContentRef}
 				className="flex-1 mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8"
 			>
-				<div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+				<div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" data-tour="analytics-header">
 					<div>
 						<h1 className="text-3xl font-bold text-slate-900">Analítica de Procesos Favoritos</h1>
 						<p className="mt-2 text-sm text-slate-600">
@@ -760,6 +764,7 @@ const AnalyticsPage: React.FC = () => {
 						onClick={handleExportPdf}
 						disabled={exporting || loadingProcess || loadingFavorites}
 						data-html2canvas-ignore="true"
+						data-tour="export-pdf-btn"
 						className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:bg-primary-400"
 					>
 						{exporting ? (
@@ -773,7 +778,7 @@ const AnalyticsPage: React.FC = () => {
 					</button>
 				</div>
 
-				<section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-tour="summary-cards">
 					<div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
 						<div className="flex items-center justify-between">
 							<div>
@@ -848,7 +853,7 @@ const AnalyticsPage: React.FC = () => {
 				)}
 
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-					<aside className="space-y-4 lg:col-span-1">
+					<aside className="space-y-4 lg:col-span-1" data-tour="process-list">
 						<div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
 							<div className="border-b border-slate-100 px-5 py-4">
 								<h2 className="text-lg font-semibold text-slate-900">Procesos favoritos</h2>
@@ -909,7 +914,7 @@ const AnalyticsPage: React.FC = () => {
 						</div>
 					</aside>
 
-					<section className="lg:col-span-3">
+					<section className="lg:col-span-3" data-tour="timeline-chart">
 						<div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
 							<div className="flex flex-col gap-2 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
 								<div>
@@ -999,7 +1004,7 @@ const AnalyticsPage: React.FC = () => {
 							</div>
 
 							{selectedAnalytics && (
-								<div className="grid grid-cols-1 gap-4 border-t border-slate-100 px-6 py-4 md:grid-cols-3">
+								<div className="grid grid-cols-1 gap-4 border-t border-slate-100 px-6 py-4 md:grid-cols-3" data-tour="activity-details">
 									<div>
 										<p className="text-xs uppercase tracking-wide text-slate-500">Pico de actividad</p>
 										<p className="mt-1 text-sm font-semibold text-slate-900">
@@ -1029,7 +1034,7 @@ const AnalyticsPage: React.FC = () => {
 				</div>
 
 				{globalSummary.chartData.length > 0 && (
-					<section className="mt-8 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
+					<section className="mt-8 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100" data-tour="consolidated-chart">
 						<div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 							<div>
 								<h3 className="text-lg font-semibold text-slate-900">Actividad consolidada de favoritos</h3>
@@ -1061,6 +1066,7 @@ const AnalyticsPage: React.FC = () => {
 				)}
 			</main>
 
+			<HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />
 			<PublicFooter />
 		</div>
 	);

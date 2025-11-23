@@ -5,12 +5,16 @@ import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSub
 import { directJudicialAPI } from '../services/apiService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { PublicFooter } from '../components/PublicFooter.tsx';
+import { useTour } from '../hooks/useTour.ts';
+import { HelpButton } from '../components/HelpButton.tsx';
+import { homePageTourSteps } from '../tours/homePageTour.ts';
 
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { startTour, hasCompletedTour } = useTour(homePageTourSteps, 'home');
   
   // Estados para búsqueda
   const [numeroRadicacion, setNumeroRadicacion] = useState('');
@@ -519,6 +523,7 @@ const HomePage: React.FC = () => {
                       : 'bg-gray-200 hover:bg-gray-300'
                   } disabled:opacity-50 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2`}
                   title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                  data-tour="favorite-button"
                 >
                   {isSavingFavorite ? (
                     <>
@@ -579,7 +584,7 @@ const HomePage: React.FC = () => {
 
           {/* Pestañas */}
           <div className="bg-white shadow-sm rounded-lg">
-            <div className="border-b">
+            <div className="border-b" data-tour="process-tabs">
               <div className="flex">
                 <button
                   onClick={() => handleTabChange('datos')}
@@ -992,7 +997,7 @@ const HomePage: React.FC = () => {
           </div>
 
           {/* Botones de descarga */}
-          <div className="flex justify-center gap-4 mb-6">
+          <div className="flex justify-center gap-4 mb-6" data-tour="download-buttons">
             <button
               onClick={handleDownloadDOCX}
               disabled={isDownloadingDOCX}
@@ -1030,7 +1035,7 @@ const HomePage: React.FC = () => {
           </div>
 
           {/* Tabla de resultados */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden" data-tour="search-results">
             <div className="px-6 py-3 bg-gray-50 border-b">
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked readOnly className="rounded" />
@@ -1121,7 +1126,7 @@ const HomePage: React.FC = () => {
           </div>
 
           {/* Tipo de consulta */}
-          <div className="mb-6">
+          <div className="mb-6" data-tour="search-type">
             <label className="block text-sm font-semibold text-gray-700 mb-3">Tipo de consulta:</label>
             <div className="space-y-3">
               <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
@@ -1154,7 +1159,7 @@ const HomePage: React.FC = () => {
           </div>
 
           {/* Campo de número de radicación */}
-          <div className="mb-6">
+          <div className="mb-6" data-tour="search-input">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Número de Radicación
             </label>
@@ -1177,6 +1182,7 @@ const HomePage: React.FC = () => {
               onClick={handleSearch}
               disabled={isLoading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg transition-colors"
+              data-tour="search-button"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-3">
@@ -1199,6 +1205,7 @@ const HomePage: React.FC = () => {
       </div>
     </div>
 
+      <HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />
       <PublicFooter />
     </div>
   );

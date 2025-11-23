@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { judicialAPI, notificationAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
+import { useTour } from '../hooks/useTour.ts';
+import { HelpButton } from '../components/HelpButton.tsx';
+import { dashboardTourSteps } from '../tours/dashboardTour.ts';
 
 interface ConsultationHistoryItem {
   consultation_id: string;
@@ -20,6 +23,7 @@ export const SimpleDashboard: React.FC = () => {
   const [consultationHistory, setConsultationHistory] = useState<ConsultationHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const { startTour, hasCompletedTour } = useTour(dashboardTourSteps, 'dashboard');
 
   useEffect(() => {
     loadConsultationHistory();
@@ -136,7 +140,7 @@ export const SimpleDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 sm:px-0 mb-8">
+        <div className="px-4 sm:px-0 mb-8" data-tour="welcome-section">
           <h1 className="text-3xl font-bold text-gray-900">
             Bienvenido, {user?.first_name || 'Usuario'}!
           </h1>
@@ -146,7 +150,7 @@ export const SimpleDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 py-6 sm:px-0" data-tour="quick-actions">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Acciones Rápidas
           </h2>
@@ -175,7 +179,7 @@ export const SimpleDashboard: React.FC = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 py-6 sm:px-0" data-tour="stats-overview">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Resumen General
           </h2>
@@ -269,7 +273,7 @@ export const SimpleDashboard: React.FC = () => {
         </div>
 
         {/* Recent Activity */}
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 py-6 sm:px-0" data-tour="consultation-history">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Historial de Consultas
           </h2>
@@ -347,7 +351,7 @@ export const SimpleDashboard: React.FC = () => {
         </div>
 
         {/* User Info Card */}
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 py-6 sm:px-0" data-tour="user-info">
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Información de Usuario
@@ -379,6 +383,7 @@ export const SimpleDashboard: React.FC = () => {
         </div>
       </div>
 
+      <HelpButton onClick={startTour} showNotification={!hasCompletedTour} />
       <PublicFooter />
     </div>
   );

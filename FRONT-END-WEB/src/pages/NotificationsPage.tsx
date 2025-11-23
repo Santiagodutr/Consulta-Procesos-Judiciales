@@ -5,6 +5,9 @@ import { notificationAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { ArrowLeft } from 'lucide-react';
+import { useTour } from '../hooks/useTour.ts';
+import { HelpButton } from '../components/HelpButton.tsx';
+import { notificationsTourSteps } from '../tours/notificationsTour.ts';
 
 interface NotificationItem {
 	id: string;
@@ -28,6 +31,7 @@ const NotificationsPage: React.FC = () => {
 	const { user, signOut } = useAuth();
 	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 	const userMenuRef = useRef<HTMLDivElement | null>(null);
+	const { startTour, hasCompletedTour } = useTour(notificationsTourSteps, 'notifications');
 
 	const navLinks = [
 		{ label: 'Inicio', onClick: () => navigate('/dashboard') },
@@ -244,54 +248,54 @@ const NotificationsPage: React.FC = () => {
 		<div className="min-h-screen bg-brand-neutral flex flex-col">
 			{renderHeader()}
 
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
-				<div className="mb-8">
-					<h1 className="text-3xl font-semibold text-gray-900">Notificaciones</h1>
-					<p className="text-gray-600 mt-2">
-						Gestiona las alertas generadas por tus procesos favoritos y consultas recientes.
-					</p>
-				</div>
-
-				<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
-					<div className="flex items-center gap-3">
-						<div className="rounded-full bg-primary-100 text-primary-700 px-4 py-2 text-sm font-medium">
-							Total: {notifications.length}
-						</div>
-						<div className="rounded-full bg-amber-100 text-amber-700 px-4 py-2 text-sm font-medium">
-							Sin leer: {unreadCount}
-						</div>
+		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
+			<div className="mb-8" data-tour="notifications-header">
+				<h1 className="text-3xl font-semibold text-gray-900">Notificaciones</h1>
+				<p className="text-gray-600 mt-2">
+					Gestiona las alertas generadas por tus procesos favoritos y consultas recientes.
+				</p>
+			</div>			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+				<div className="flex items-center gap-3" data-tour="stats-badges">
+					<div className="rounded-full bg-primary-100 text-primary-700 px-4 py-2 text-sm font-medium">
+						Total: {notifications.length}
 					</div>
-					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-						<label className="inline-flex items-center text-sm font-medium text-gray-600">
-							<input
-								type="checkbox"
-								className="h-4 w-4 text-primary-600 border-gray-300 rounded mr-2"
-								checked={showUnreadOnly}
-								onChange={(event) => setShowUnreadOnly(event.target.checked)}
-							/>
-							Mostrar solo no leídas
-						</label>
-						<div className="flex flex-col gap-3 sm:flex-row">
-							<button
-								type="button"
-								onClick={loadNotifications}
-								className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-primary-700 shadow-sm ring-1 ring-primary-200 transition hover:bg-primary-50"
-							>
+					<div className="rounded-full bg-amber-100 text-amber-700 px-4 py-2 text-sm font-medium">
+						Sin leer: {unreadCount}
+					</div>
+				</div>
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+					<label className="inline-flex items-center text-sm font-medium text-gray-600" data-tour="filter-unread">
+						<input
+							type="checkbox"
+							className="h-4 w-4 text-primary-600 border-gray-300 rounded mr-2"
+							checked={showUnreadOnly}
+							onChange={(event) => setShowUnreadOnly(event.target.checked)}
+						/>
+						Mostrar solo no leídas
+					</label>
+					<div className="flex flex-col gap-3 sm:flex-row">
+						<button
+							type="button"
+							onClick={loadNotifications}
+							className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-primary-700 shadow-sm ring-1 ring-primary-200 transition hover:bg-primary-50"
+							data-tour="refresh-button"
+						>
 								<span role="img" aria-label="Actualizar">
 									🔄
 								</span>
 								Actualizar
 							</button>
-							<button
-								type="button"
-								onClick={handleMarkAllAsRead}
-								disabled={unreadCount === 0 || isMarkingAll}
-								className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
-									unreadCount === 0 || isMarkingAll
-										? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-										: 'bg-primary-600 text-white shadow-sm hover:bg-primary-500'
-								}`}
-							>
+						<button
+							type="button"
+							onClick={handleMarkAllAsRead}
+							disabled={unreadCount === 0 || isMarkingAll}
+							className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
+								unreadCount === 0 || isMarkingAll
+									? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+									: 'bg-primary-600 text-white shadow-sm hover:bg-primary-500'
+							}`}
+							data-tour="mark-all-read-btn"
+						>
 								<span role="img" aria-label="Marcar todas">
 									✅
 								</span>
@@ -324,7 +328,7 @@ const NotificationsPage: React.FC = () => {
 					) : (
 						<ul className="divide-y divide-gray-200">
 							{filteredNotifications.map((item) => (
-								<li key={item.id} className={`px-6 py-5 ${item.is_read ? 'bg-white' : 'bg-primary-50'}`}>
+								<li key={item.id} className={`px-6 py-5 ${item.is_read ? 'bg-white' : 'bg-primary-50'}`} data-tour="notification-item">
 									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
 										<div className="flex-1">
 											<div className="flex items-center gap-2 mb-1">
@@ -365,6 +369,8 @@ const NotificationsPage: React.FC = () => {
 					)}
 				</div>
 			</div>
+			
+			<HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />
 			<PublicFooter />
 		</div>
 	);

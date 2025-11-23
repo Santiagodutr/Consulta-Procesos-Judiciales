@@ -4,6 +4,9 @@ import { Mail, Phone, ShieldCheck, Building2, CalendarDays, CheckCircle2, XCircl
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { toast } from 'react-hot-toast';
+import { useTour } from '../hooks/useTour.ts';
+import { HelpButton } from '../components/HelpButton.tsx';
+import { profileTourSteps } from '../tours/profileTour.ts';
 
 const formatDocumentType = (type?: string) => {
 	switch (type) {
@@ -58,6 +61,7 @@ export const ProfilePage: React.FC = () => {
 	const userMenuRef = useRef<HTMLDivElement | null>(null);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const { startTour, hasCompletedTour } = useTour(profileTourSteps, 'profile');
 
 	type PreferenceKey =
 		| 'email_enabled'
@@ -388,8 +392,8 @@ export const ProfilePage: React.FC = () => {
 						</div>
 					) : (
 						<div className="space-y-8">
-							<section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-								<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+						<section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8" data-tour="profile-header">
+							<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 									<div className="flex items-center gap-4">
 										<div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
 											<img src="/usuario.png" alt="Avatar de usuario" className="h-10 w-10" />
@@ -420,7 +424,7 @@ export const ProfilePage: React.FC = () => {
 							</section>
 
 							<section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-								<div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+								<div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8" data-tour="personal-info">
 									<div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
 										<div>
 											<h2 className="text-xl font-semibold text-gray-900">Información personal</h2>
@@ -453,6 +457,7 @@ export const ProfilePage: React.FC = () => {
 														type="button"
 														onClick={() => setIsEditing(true)}
 														className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+														data-tour="edit-button"
 													>
 														Editar información
 													</button>
@@ -578,7 +583,7 @@ export const ProfilePage: React.FC = () => {
 									</div>
 								</div>
 
-								<div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+								<div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8" data-tour="account-status">
 									<h2 className="text-xl font-semibold text-gray-900">Estado de la cuenta</h2>
 									<div className="mt-6 space-y-5">
 										<div className="flex items-start gap-3">
@@ -607,7 +612,7 @@ export const ProfilePage: React.FC = () => {
 								</div>
 							</section>
 
-							<section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
+							<section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8" data-tour="notification-preferences">
 								<h2 className="text-xl font-semibold text-gray-900">Preferencias de notificación</h2>
 								<p className="mt-2 text-sm text-gray-600">Controla los canales y tipos de alertas que recibes sobre tus procesos.</p>
 								<div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -657,6 +662,7 @@ export const ProfilePage: React.FC = () => {
 				</div>
 			</main>
 
+			<HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />
 			<PublicFooter />
 		</div>
 	);

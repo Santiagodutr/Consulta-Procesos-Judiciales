@@ -82,6 +82,219 @@ html.reduced-motion *::after {
    FIN ESTILOS DE ACCESIBILIDAD
    ============================================ */
 
+/* ============================================
+   ESTILOS PARA TOUR GUIADO (DRIVER.JS)
+   ============================================ */
+
+.driverjs-theme-custom .driver-popover {
+  background-color: #ffffff;
+  color: #1f2937;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 2px solid #3b82f6;
+  max-width: 400px;
+}
+
+.driverjs-theme-custom .driver-popover-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #dbeafe;
+}
+
+.driverjs-theme-custom .driver-popover-description {
+  font-size: 0.975rem;
+  line-height: 1.6;
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
+
+.driverjs-theme-custom .driver-popover-navigation-btns {
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.driverjs-theme-custom .driver-popover-next-btn,
+.driverjs-theme-custom .driver-popover-prev-btn {
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.driverjs-theme-custom .driver-popover-next-btn:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.driverjs-theme-custom .driver-popover-prev-btn {
+  background-color: #6b7280;
+}
+
+.driverjs-theme-custom .driver-popover-prev-btn:hover {
+  background-color: #4b5563;
+  transform: translateY(-1px);
+}
+
+.driverjs-theme-custom .driver-popover-close-btn {
+  color: #6b7280;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.driverjs-theme-custom .driver-popover-close-btn:hover {
+  color: #1f2937;
+  background-color: #f3f4f6;
+}
+
+.driverjs-theme-custom .driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: #3b82f6;
+  font-weight: 600;
+  background-color: #dbeafe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-right: auto;
+}
+
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 9997 !important;
+  pointer-events: auto !important;
+}
+
+.driver-popover {
+  z-index: 10000 !important;
+}
+
+/* CRÍTICO: Resetear TODOS los estilos de driver.js que afectan la apariencia */
+.driver-active-element,
+.driver-active-element *,
+.driver-active-element *::before,
+.driver-active-element *::after,
+.driver-highlighted-element,
+.driver-highlighted-element *,
+.driver-highlighted-element *::before,
+.driver-highlighted-element *::after {
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  mix-blend-mode: normal !important;
+}
+
+/* El contenedor principal con el efecto de recorte */
+.driver-active-element,
+.driver-highlighted-element {
+  position: relative !important;
+  z-index: 9998 !important;
+  box-shadow: 0 0 0 5000px rgba(0, 0, 0, 0.5) !important;
+  isolation: isolate !important;
+}
+
+/* Forzar que todos los backgrounds, borders y colores se mantengan */
+.driver-active-element *[class*="bg-"],
+.driver-highlighted-element *[class*="bg-"],
+.driver-active-element *[class*="border-"],
+.driver-highlighted-element *[class*="border-"],
+.driver-active-element *[class*="text-"],
+.driver-highlighted-element *[class*="text-"] {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Específicamente para elementos con estilos inline o clases de Tailwind */
+.driver-active-element .bg-blue-50,
+.driver-highlighted-element .bg-blue-50 {
+  background-color: rgb(239 246 255) !important;
+}
+
+.driver-active-element .bg-gray-50,
+.driver-highlighted-element .bg-gray-50 {
+  background-color: rgb(249 250 251) !important;
+}
+
+.driver-active-element .bg-yellow-100,
+.driver-highlighted-element .bg-yellow-100 {
+  background-color: rgb(254 249 195) !important;
+}
+
+.driver-active-element .bg-blue-100,
+.driver-highlighted-element .bg-blue-100 {
+  background-color: rgb(219 234 254) !important;
+}
+
+.driver-active-element .bg-purple-100,
+.driver-highlighted-element .bg-purple-100 {
+  background-color: rgb(243 232 255) !important;
+}
+
+.driver-active-element .bg-green-100,
+.driver-highlighted-element .bg-green-100 {
+  background-color: rgb(220 252 231) !important;
+}
+
+.driver-active-element .border-gray-200,
+.driver-highlighted-element .border-gray-200 {
+  border-color: rgb(229 231 235) !important;
+}
+
+.driver-active-element .border-blue-500,
+.driver-highlighted-element .border-blue-500 {
+  border-color: rgb(59 130 246) !important;
+}
+
+.driver-active-element .text-gray-500,
+.driver-highlighted-element .text-gray-500 {
+  color: rgb(107 114 128) !important;
+}
+
+.driver-active-element .text-gray-600,
+.driver-highlighted-element .text-gray-600 {
+  color: rgb(75 85 99) !important;
+}
+
+.driver-active-element .text-gray-700,
+.driver-highlighted-element .text-gray-700 {
+  color: rgb(55 65 81) !important;
+}
+
+.driver-active-element .text-gray-900,
+.driver-highlighted-element .text-gray-900 {
+  color: rgb(17 24 39) !important;
+}
+
+/* Animación de pulso para elementos destacados */
+@keyframes driver-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 5000px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 5000px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ============================================
+   FIN ESTILOS TOUR GUIADO
+   ============================================ */
+
 @layer components {
   .btn-primary {
     @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
