@@ -18,10 +18,10 @@
     "dotenv": "^16.4.5",
     "driver.js": "^1.4.0",
     "file-saver": "^2.0.5",
-    "framer-motion": "^10.16.16",
+    "framer-motion": "^11.18.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
-    "lucide-react": "^0.294.0",
+    "lucide-react": "^0.475.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-datepicker": "^4.25.0",
@@ -39,7 +39,12 @@
     "recharts": "^2.8.0",
     "tailwind-merge": "^2.1.0",
     "yup": "^1.4.0",
-    "zod": "^4.1.11"
+    "zod": "^3.22.4"
+  },
+  "overrides": {
+    "minimatch": "^9.0.3",
+    "glob": "^10.3.10",
+    "nth-check": "^2.1.1"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
