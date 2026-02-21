@@ -14,7 +14,6 @@ import {
   ActuacionDocument,
   PaginationInfo
 } from '../services/judicialPortalService.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import { Header } from '../components/Header.tsx';
 import {
   Star,
@@ -54,7 +53,7 @@ const REGISTROS_POR_PAGINA = 30;
 
 const MyProcessesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const { startTour, hasCompletedTour } = useTour(myProcessesTourSteps, 'myprocesses');
 
   const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
@@ -75,7 +74,6 @@ const MyProcessesPage: React.FC = () => {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [actuacionDocuments, setActuacionDocuments] = useState<ActuacionDocument[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
-  const [selectedActuacion, setSelectedActuacion] = useState<ProcessActivity | null>(null);
   const [isDownloadingDOCX, setIsDownloadingDOCX] = useState(false);
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
   const [isFavorite, setIsFavorite] = useState(true);
@@ -198,7 +196,7 @@ const MyProcessesPage: React.FC = () => {
       return;
     }
 
-    setSelectedActuacion(actuacion);
+    // setSelectedActuacion(actuacion);
     setShowDocumentModal(true);
     setLoadingDocuments(true);
 
@@ -229,7 +227,7 @@ const MyProcessesPage: React.FC = () => {
   const handleCloseModal = () => {
     setShowDocumentModal(false);
     setActuacionDocuments([]);
-    setSelectedActuacion(null);
+    // setSelectedActuacion(null);
   };
 
   const handleDownloadDOCX = async () => {

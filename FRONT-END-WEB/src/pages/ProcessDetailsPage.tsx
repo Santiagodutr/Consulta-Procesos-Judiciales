@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import { directJudicialAPI } from '../services/apiService.ts';
 import {
   judicialPortalService,
@@ -40,7 +39,7 @@ const REGISTROS_POR_PAGINA = 30;
 export const ProcessDetailsPage: React.FC = () => {
   const { numeroRadicacion } = useParams<{ numeroRadicacion: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // const { user } = useAuth();
 
   const [processData, setProcessData] = useState<JudicialProcessData | null>(null);
   const [processDetails, setProcessDetails] = useState<any>(null);
@@ -62,7 +61,6 @@ export const ProcessDetailsPage: React.FC = () => {
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
-  const exportContentRef = useRef<HTMLElement | null>(null);
 
 
   useEffect(() => {

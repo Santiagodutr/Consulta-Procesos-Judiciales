@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { notificationAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import {
 	Bell,
 	CheckCircle2,
@@ -37,7 +36,7 @@ const NotificationsPage: React.FC = () => {
 	const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 	const [isMarkingAll, setIsMarkingAll] = useState(false);
 	const navigate = useNavigate();
-	const { user } = useAuth();
+	// const { user } = useAuth();
 	const { startTour, hasCompletedTour } = useTour(notificationsTourSteps, 'notifications');
 
 

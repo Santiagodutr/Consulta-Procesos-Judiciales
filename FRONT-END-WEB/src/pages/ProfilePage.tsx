@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Mail,
@@ -9,7 +9,6 @@ import {
 	CheckCircle2,
 	XCircle,
 	LogOut,
-	Home,
 	User,
 	Settings,
 	Bell,
@@ -20,8 +19,7 @@ import {
 	Clock,
 	Edit3,
 	Save,
-	X,
-	ChevronRight
+	X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { PublicFooter } from '../components/PublicFooter.tsx';

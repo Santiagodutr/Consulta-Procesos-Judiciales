@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
   Download,
   FileDown,
@@ -27,7 +26,6 @@ import {
 } from 'lucide-react';
 import { judicialPortalService, JudicialProcessData, ProcessActivity, ProcessSubject, ProcessDocument, ActuacionDocument, PaginationInfo } from '../services/judicialPortalService.ts';
 import { directJudicialAPI } from '../services/apiService.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import { Header } from '../components/Header.tsx';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { useTour } from '../hooks/useTour.ts';
@@ -37,8 +35,8 @@ import { homePageTourSteps } from '../tours/homePageTour.ts';
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
 
 const HomePage: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  // const navigate = useNavigate();
+  // const { user, signOut } = useAuth();
   const { startTour, hasCompletedTour } = useTour(homePageTourSteps, 'home');
 
   // Estados para búsqueda

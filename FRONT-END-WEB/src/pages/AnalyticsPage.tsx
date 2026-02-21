@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -27,7 +27,6 @@ import { es } from 'date-fns/locale';
 import { TooltipProps } from 'recharts/types/component/Tooltip';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { ProcessActivity, judicialPortalService } from '../services/judicialPortalService.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { useTour } from '../hooks/useTour.ts';
 import { HelpButton } from '../components/HelpButton.tsx';
@@ -390,7 +389,7 @@ const ActivityDot = (props: any) => {
 const formatNumber = (value: number) => new Intl.NumberFormat('es-CO').format(value);
 
 const AnalyticsPage: React.FC = () => {
-	const { user } = useAuth();
+	// const { user } = useAuth();
 	const { startTour, hasCompletedTour } = useTour(analyticsTourSteps, 'analytics');
 
 	const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
@@ -540,7 +539,7 @@ const AnalyticsPage: React.FC = () => {
 			}
 
 			const filename = selectedProcess
-				? `analitica-proceso-${selectedProcess.replace(/\s+/g, '-')}.pdf`
+				? `analitica - proceso - ${selectedProcess.replace(/\s+/g, '-')}.pdf`
 				: 'analitica-procesos.pdf';
 			pdf.save(filename);
 		} catch (exportError) {
@@ -783,22 +782,22 @@ const AnalyticsPage: React.FC = () => {
 												key={process.numero_radicacion}
 												type="button"
 												onClick={() => handleProcessSelection(process.numero_radicacion)}
-												className={`w-full group rounded-2xl p-4 text-left transition-all duration-300 border-2 ${isSelected
+												className={`w - full group rounded - 2xl p - 4 text - left transition - all duration - 300 border - 2 ${isSelected
 													? 'bg-primary-50 border-accent-500 shadow-md transform scale-[1.02]'
 													: 'bg-white border-transparent hover:border-gray-100 hover:bg-gray-50'
-													}`}
+													} `}
 											>
-												<p className={`text-sm font-bold font-mono tracking-tight transition-colors ${isSelected ? 'text-primary-900' : 'text-gray-600'}`}>
+												<p className={`text - sm font - bold font - mono tracking - tight transition - colors ${isSelected ? 'text-primary-900' : 'text-gray-600'} `}>
 													{process.numero_radicacion}
 												</p>
 												<p className="mt-1 text-[10px] font-medium text-gray-400 truncate uppercase tracking-tight">{process.despacho}</p>
 												<div className="mt-3 flex items-center justify-between">
-													<span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${isSelected ? 'bg-primary-900 text-accent-400' : 'bg-gray-100 text-gray-500'}`}>
+													<span className={`px - 2 py - 0.5 rounded - full text - [9px] font - bold uppercase tracking - widest transition - colors ${isSelected ? 'bg-primary-900 text-accent-400' : 'bg-gray-100 text-gray-500'} `}>
 														{process.tipo_proceso || 'CIVIL'}
 													</span>
 													<div className="flex items-center gap-1.5">
 														{analysisReady && <div className="w-1.5 h-1.5 rounded-full bg-accent-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></div>}
-														<span className={`text-[9px] font-bold uppercase tracking-wider ${analysisReady ? 'text-accent-600' : 'text-gray-300'}`}>
+														<span className={`text - [9px] font - bold uppercase tracking - wider ${analysisReady ? 'text-accent-600' : 'text-gray-300'} `}>
 															{analysisReady ? 'Listo' : 'Pendiente'}
 														</span>
 													</div>
@@ -886,7 +885,7 @@ const AnalyticsPage: React.FC = () => {
 											<Tooltip content={<ActivityTooltipContent />} cursor={{ stroke: '#EAB308', strokeWidth: 1 }} />
 											{selectedAnalytics.inactiveBlocks.map(block => (
 												<ReferenceArea
-													key={`${block.startLabel}-${block.endLabel}`}
+													key={`${block.startLabel} -${block.endLabel} `}
 													x1={block.startLabel}
 													x2={block.endLabel}
 													fill="#f8fafc"
@@ -898,7 +897,7 @@ const AnalyticsPage: React.FC = () => {
 												.filter(point => point.isPeak)
 												.map(point => (
 													<ReferenceDot
-														key={`peak-${point.yearKey}`}
+														key={`peak - ${point.yearKey} `}
 														x={point.label}
 														y={point.count}
 														r={8}
