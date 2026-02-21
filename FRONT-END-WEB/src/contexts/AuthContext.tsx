@@ -29,12 +29,6 @@ interface NotificationPreferences {
   weekly_summary: boolean;
 }
 
-interface AuthResponse {
-  user: AuthUser;
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-}
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -78,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const token = localStorage.getItem('access_token');
       const userData = localStorage.getItem('user');
-      
+
       if (token) {
         apiService.setAuthToken(token);
 
@@ -133,18 +127,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (response.success && response.data) {
         const authData = response.data;
-        
+
         console.log('AuthContext: Auth data structure:', authData);
         console.log('AuthContext: User object:', authData.user);
         console.log('AuthContext: Storing user data for:', authData.user?.email);
-        
+
         // Store tokens
         localStorage.setItem('access_token', authData.access_token);
         localStorage.setItem('refresh_token', authData.refresh_token);
-        
+
         // Set token in API service
         apiService.setAuthToken(authData.access_token);
-        
+
         // Si no hay datos de usuario en la respuesta, crear un usuario básico o obtenerlo del server
         if (authData.user) {
           localStorage.setItem('user', JSON.stringify(authData.user));
@@ -186,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(fallbackUser);
           }
         }
-        
+
         console.log('AuthContext: User state updated successfully');
       } else {
         throw new Error(response.message || 'Login failed');
@@ -203,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       const response = await apiService.post('/auth/register', signUpData);
-      
+
       if (response.data.success) {
         // Registration successful, user needs to verify email
         return response.data.message;
@@ -240,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const response = await apiService.put('/auth/profile', updateData);
-      
+
       if (response.success && response.data) {
         const updatedUser = {
           ...user,
@@ -288,11 +282,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const forgotPassword = async (email: string) => {
     try {
       const response = await apiService.post('/auth/forgot-password', { email });
-      
+
       if (!response.data.success) {
         throw new Error(response.data.message || 'Password reset request failed');
       }
-      
+
       return response.data.message;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || error.message || 'Password reset request failed');
@@ -309,7 +303,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!response.data.success) {
         throw new Error(response.data.message || 'Password reset failed');
       }
-      
+
       return response.data.message;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || error.message || 'Password reset failed');

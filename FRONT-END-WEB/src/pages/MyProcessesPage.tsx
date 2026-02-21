@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { directJudicialAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
@@ -23,15 +23,12 @@ import {
   AlertCircle,
   Download,
   FileDown,
-  ArrowLeft,
   X,
   ChevronLeft,
   ChevronRight,
   Gavel,
-  Clock,
   Briefcase,
   User,
-  LogOut,
   Search,
   Calendar,
   Building2,
@@ -84,7 +81,6 @@ const MyProcessesPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(true);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
-  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
   useEffect(() => {
     loadFavorites();

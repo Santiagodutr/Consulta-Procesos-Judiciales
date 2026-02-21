@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { authAPI } from '../../services/apiService.ts';
 import {
   ShieldAlert,
   Lock,
-  CheckCircle2,
-  ArrowLeft,
   Loader2,
   ShieldCheck,
   Eye,
   EyeOff,
-  ChevronRight,
   RefreshCcw,
   AlertCircle
 } from 'lucide-react';

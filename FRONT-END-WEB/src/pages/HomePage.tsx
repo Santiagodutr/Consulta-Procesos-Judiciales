@@ -77,30 +77,7 @@ const HomePage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
 
   // Manejar búsqueda
   const handleSearch = async (e: React.FormEvent) => {

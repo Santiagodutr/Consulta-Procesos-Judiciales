@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../contexts/AuthContext';
 
 export const VerifyEmailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<'verifying' | 'success' | 'error' | 'expired'>('verifying');
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -21,22 +20,22 @@ export const VerifyEmailPage: React.FC = () => {
       try {
         // Simulate API call to verify email
         // await verifyEmailToken(token);
-        
+
         setTimeout(() => {
           setVerificationStatus('success');
           setIsLoading(false);
           toast.success('¡Correo electrónico verificado exitosamente!');
         }, 2000);
-        
+
       } catch (error: any) {
         console.error('Email verification error:', error);
-        
+
         if (error.status === 410) {
           setVerificationStatus('expired');
         } else {
           setVerificationStatus('error');
         }
-        
+
         setIsLoading(false);
         toast.error('Error al verificar el correo electrónico');
       }
@@ -96,10 +95,10 @@ export const VerifyEmailPage: React.FC = () => {
               ¡Correo verificado!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Tu correo electrónico ha sido verificado exitosamente. 
+              Tu correo electrónico ha sido verificado exitosamente.
               Ahora puedes acceder a todas las funcionalidades de tu cuenta.
             </p>
-            
+
             <div className="mt-8 bg-green-50 border border-green-200 rounded-md p-4">
               <div className="flex">
                 <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -144,7 +143,7 @@ export const VerifyEmailPage: React.FC = () => {
               Enlace expirado
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Este enlace de verificación ha expirado. 
+              Este enlace de verificación ha expirado.
               Los enlaces de verificación son válidos por 24 horas por seguridad.
             </p>
 
@@ -173,7 +172,7 @@ export const VerifyEmailPage: React.FC = () => {
                 ) : null}
                 Enviar nuevo correo de verificación
               </button>
-              
+
               <Link
                 to="/login"
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -197,7 +196,7 @@ export const VerifyEmailPage: React.FC = () => {
               Error de verificación
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              No pudimos verificar tu correo electrónico. 
+              No pudimos verificar tu correo electrónico.
               El enlace puede ser inválido o haber expirado.
             </p>
 
@@ -227,7 +226,7 @@ export const VerifyEmailPage: React.FC = () => {
                 ) : null}
                 Intentar nuevamente
               </button>
-              
+
               <Link
                 to="/register"
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"

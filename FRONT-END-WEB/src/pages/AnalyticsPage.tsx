@@ -40,12 +40,7 @@ import {
 	Loader2,
 	TrendingUp,
 	FileDown,
-	User,
-	LogOut,
-	Bell,
 	Search,
-	ChevronRight,
-	ArrowLeft,
 	Star,
 	Gavel
 } from 'lucide-react';
@@ -395,7 +390,6 @@ const ActivityDot = (props: any) => {
 const formatNumber = (value: number) => new Intl.NumberFormat('es-CO').format(value);
 
 const AnalyticsPage: React.FC = () => {
-	const navigate = useNavigate();
 	const { user } = useAuth();
 	const { startTour, hasCompletedTour } = useTour(analyticsTourSteps, 'analytics');
 
@@ -409,7 +403,6 @@ const AnalyticsPage: React.FC = () => {
 	const [exporting, setExporting] = useState(false);
 	const exportContentRef = useRef<HTMLElement | null>(null);
 
-	const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
 	const loadProcessAnalytics = useCallback(
 		async (numeroRadicacion: string) => {

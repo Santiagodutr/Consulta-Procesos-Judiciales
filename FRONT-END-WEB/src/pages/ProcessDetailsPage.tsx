@@ -14,7 +14,6 @@ import {
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { Header } from '../components/Header.tsx';
 import {
-  ArrowLeft,
   Star,
   Download,
   FileDown,
@@ -22,7 +21,6 @@ import {
   ChevronRight,
   X,
   User,
-  LogOut,
   Gavel,
   Calendar,
   Building2,
@@ -66,7 +64,6 @@ export const ProcessDetailsPage: React.FC = () => {
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
   const exportContentRef = useRef<HTMLElement | null>(null);
 
-  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
   useEffect(() => {
     if (numeroRadicacion) {

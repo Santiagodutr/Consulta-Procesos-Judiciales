@@ -10,7 +10,6 @@ import {
   Instagram,
   Linkedin,
   Search,
-  Star,
   ShieldCheck,
   Building2
 } from 'lucide-react';

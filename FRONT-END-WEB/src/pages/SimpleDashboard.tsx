@@ -66,37 +66,6 @@ export const SimpleDashboard: React.FC = () => {
     }
   };
 
-  const quickActions = [
-    {
-      title: 'Consultar Procesos',
-      description: 'Buscar procesos judiciales por número de radicación',
-      icon: <Search className="w-8 h-8" />,
-      href: '/consulta',
-      color: 'accent',
-    },
-    {
-      title: 'Mis Procesos',
-      description: 'Ver procesos guardados',
-      icon: <Star className="w-8 h-8" />,
-      href: '/processes',
-      color: 'yellow',
-    },
-    {
-      title: 'Análisis',
-      description: 'Ver estadísticas y reportes',
-      icon: <BarChart3 className="w-8 h-8" />,
-      href: '/analytics',
-      color: 'purple',
-    },
-    {
-      title: 'Notificaciones',
-      description: 'Revisa alertas recientes',
-      icon: <Bell className="w-8 h-8" />,
-      href: '/notifications',
-      color: 'green',
-    },
-  ];
-
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
   return (

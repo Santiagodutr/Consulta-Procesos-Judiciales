@@ -1,13 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { notificationAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import {
-	ArrowLeft,
-	User,
-	LogOut,
 	Bell,
 	CheckCircle2,
 	RefreshCw,
@@ -43,7 +40,6 @@ const NotificationsPage: React.FC = () => {
 	const { user } = useAuth();
 	const { startTour, hasCompletedTour } = useTour(notificationsTourSteps, 'notifications');
 
-	const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
 	const loadNotifications = useCallback(async () => {
 		try {

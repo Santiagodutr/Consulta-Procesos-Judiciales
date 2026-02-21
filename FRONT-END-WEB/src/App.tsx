@@ -13,13 +13,12 @@ import { ProfilePage } from './pages/ProfilePage.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { MainLayout } from './components/MainLayout.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
-import { PublicFooter } from './components/PublicFooter.tsx';
 import NotificationsPage from './pages/NotificationsPage.tsx';
 import { WelcomePage } from './pages/WelcomePage.tsx';
 
 
 function App() {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (

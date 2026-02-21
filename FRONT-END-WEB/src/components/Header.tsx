@@ -4,7 +4,6 @@ import {
     User,
     LogOut,
     ArrowLeft,
-    Home,
     Menu,
     X,
     LayoutDashboard,

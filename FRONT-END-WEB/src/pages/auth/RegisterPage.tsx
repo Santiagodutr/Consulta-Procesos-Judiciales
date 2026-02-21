@@ -6,19 +6,12 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { authAPI } from '../../services/apiService.ts';
 import {
-  UserPlus,
   Mail,
-  Lock,
-  User,
-  ShieldCheck,
   ArrowLeft,
-  ChevronRight,
   Shield,
-  Briefcase,
   Smartphone,
   CheckCircle2,
-  Loader2,
-  Building2
+  Loader2
 } from 'lucide-react';
 
 const registerSchema = z.object({
