@@ -12,9 +12,10 @@ import {
   ProcessSubject,
   ProcessDocument,
   ActuacionDocument,
-  PaginationInfo,
+  PaginationInfo
 } from '../services/judicialPortalService.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import { Header } from '../components/Header.tsx';
 import {
   Star,
   Eye,
@@ -26,6 +27,18 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Gavel,
+  Clock,
+  Briefcase,
+  User,
+  LogOut,
+  Search,
+  Calendar,
+  Building2,
+  MapPin,
+  FileText,
+  Users,
+  Loader2
 } from 'lucide-react';
 
 interface FavoriteProcess {
@@ -44,9 +57,7 @@ const REGISTROS_POR_PAGINA = 30;
 
 const MyProcessesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const { user } = useAuth();
   const { startTour, hasCompletedTour } = useTour(myProcessesTourSteps, 'myprocesses');
 
   const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
@@ -73,27 +84,10 @@ const MyProcessesPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(true);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
 
-  const navLinks = [
-    { label: 'Inicio', onClick: () => navigate('/dashboard') },
-    { label: 'Reportes', onClick: () => navigate('/analytics') },
-    { label: 'Notificaciones', onClick: () => navigate('/notifications') },
-  ];
-
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
   useEffect(() => {
     loadFavorites();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadFavorites = async () => {
@@ -115,30 +109,12 @@ const MyProcessesPage: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (err) {
-      console.error('Error al cerrar sesión:', err);
-    }
-  };
-
   const handleHeaderBack = () => {
-    setSelectedProcess(null);
-    setProcessDetails(null);
-    setSujetos([]);
-    setDocumentos([]);
-    setActuaciones([]);
-    setTodasActuaciones([]);
-    setActuacionesPaginaActual(1);
-    setActuacionesPaginacion(null);
-    setActiveTab('datos');
-    setIsFavorite(true);
-  };
-
-  const handleLogoClick = () => {
-    navigate('/');
+    if (selectedProcess) {
+      setSelectedProcess(null);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleTabChange = (tab: TabType) => {
@@ -302,7 +278,8 @@ const MyProcessesPage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('es-CO', {
@@ -441,500 +418,392 @@ const MyProcessesPage: React.FC = () => {
     }
   };
 
-  const renderHeader = (showBack: boolean) => (
-    <header className="bg-primary-700 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-3">
-            {showBack && (
-              <button
-                type="button"
-                onClick={handleHeaderBack}
-                className="rounded-full p-2 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                title="Regresar al listado"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleLogoClick}
-              className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
-            >
-              <img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
-            </button>
-          </div>
 
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.label}
-                type="button"
-                onClick={link.onClick}
-                className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
-              >
-                {link.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="relative" ref={userMenuRef}>
-              <button
-                type="button"
-                onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
-                <span className="hidden sm:inline">{displayName}</span>
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-
-              {isUserMenuOpen && (
-                <div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
-                  <div className="py-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        navigate('/profile');
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
-                    >
-                      Perfil
-                    </button>
-                   
-                  </div>
-                  <div className="border-t border-gray-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-
+  // Conditional Rendering Logic
   if (selectedProcess) {
     const detailsSource = processDetails || selectedProcess;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
-        {renderHeader(true)}
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+        <Header title="Detalles del Proceso" onBack={handleHeaderBack} />
 
-        <main className="flex-1">
+        <main className="flex-1 py-10">
           {isLoadingDetails ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Cargando detalles del proceso...</span>
+            <div className="flex flex-col items-center justify-center py-32 space-y-6">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-full border-t-2 border-accent-500 animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Gavel className="h-8 w-8 text-primary-900 animate-pulse" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-primary-900 uppercase tracking-widest">Sincronizando Expediente</p>
+                <p className="text-xs text-gray-400 mt-1">Consultando base de datos judicial en tiempo real...</p>
+              </div>
             </div>
           ) : (
-            <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">DETALLE DEL PROCESO</h2>
-                  <p className="text-lg text-blue-600 font-mono">{selectedProcess.numeroRadicacion}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={handleToggleFavorite}
-                    disabled={isSavingFavorite}
-                    className={`${
-                      isFavorite
-                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                    } disabled:opacity-50 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2`}
-                    title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                  >
-                    {isSavingFavorite ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span className="text-gray-700">Guardando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Star className={`h-5 w-5 ${isFavorite ? 'fill-white' : 'text-gray-600'}`} />
-                        <span className={isFavorite ? 'text-white' : 'text-gray-700'}>
-                          {isFavorite ? 'Favorito' : 'Guardar'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleDownloadDOCX}
-                    disabled={isDownloadingDOCX}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                  >
-                    {isDownloadingDOCX ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Descargando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FileDown className="h-5 w-5" />
-                        <span>Descargar DOC</span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleDownloadCSV}
-                    disabled={isDownloadingCSV}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                  >
-                    {isDownloadingCSV ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Descargando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-5 w-5" />
-                        <span>Descargar CSV</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="text-sm text-gray-600 space-y-1 mt-4">
-                <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
-                <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
-              </div>
-            </div>
-
-            <div className="bg-white shadow-sm rounded-lg">
-              <div className="border-b">
-                <div className="flex flex-wrap">
-                  <button
-                    onClick={() => handleTabChange('datos')}
-                    className={`px-6 py-4 font-semibold text-sm ${
-                      activeTab === 'datos'
-                        ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    DATOS DEL PROCESO
-                  </button>
-                  <button
-                    onClick={() => handleTabChange('sujetos')}
-                    className={`px-6 py-4 font-semibold text-sm ${
-                      activeTab === 'sujetos'
-                        ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    SUJETOS PROCESALES
-                  </button>
-                  <button
-                    onClick={() => handleTabChange('documentos')}
-                    className={`px-6 py-4 font-semibold text-sm ${
-                      activeTab === 'documentos'
-                        ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    DOCUMENTOS DEL PROCESO
-                  </button>
-                  <button
-                    onClick={() => handleTabChange('actuaciones')}
-                    className={`px-6 py-4 font-semibold text-sm ${
-                      activeTab === 'actuaciones'
-                        ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    ACTUACIONES
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6">
-                {isLoadingTab ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">Cargando...</span>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Process Header Card */}
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ring-1 ring-gray-100/50 mb-8 animate-fade-in">
+                <div className="bg-primary-900 px-8 py-10 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                    <Gavel size={240} className="text-white" />
                   </div>
-                ) : (
-                  <>
-                    {activeTab === 'datos' && (
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha de Radicación:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{formatDate(detailsSource?.fechaRadicacion || selectedProcess.fechaRadicacion || 'N/A')}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Recurso:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.recurso || 'SIN TIPO DE RECURSO'}</p>
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Despacho:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.despacho || selectedProcess.despacho}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Ponente:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.ponente || 'No especificado'}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Ubicación del Expediente:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.ubicacionExpediente || 'ARCHIVO'}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Proceso:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.tipoProceso || selectedProcess.tipoProceso || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Clase de Proceso:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.claseProceso || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Subclase de Proceso:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.subclaseProceso || 'SIN SUBCLASE DE PROCESO'}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Contenido de Radicación:</label>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.contenidoRadicacion || ''}</p>
-                          </div>
+
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+                    <div className="space-y-4">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-500/20 border border-accent-500/30 rounded-full text-accent-400">
+                        <div className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Expediente Digital Activo</span>
+                      </div>
+                      <h2 className="text-4xl font-serif font-bold text-white tracking-tight">
+                        {selectedProcess.numeroRadicacion}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-6 text-white/60">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-accent-500" />
+                          <span className="text-xs font-semibold">Radicado: {formatDate(selectedProcess.fechaRadicacion)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-accent-500" />
+                          <span className="text-xs font-semibold truncate max-w-[300px]">{selectedProcess.despacho}</span>
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {activeTab === 'sujetos' && (
-                      <div className="space-y-4">
-                        {sujetos.length === 0 ? (
-                          <p className="text-center text-gray-500 py-8">No hay sujetos procesales disponibles</p>
+                    <div className="flex flex-wrap gap-4" data-tour="process-actions">
+                      <button
+                        onClick={handleToggleFavorite}
+                        disabled={isSavingFavorite}
+                        className={`group flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${isFavorite
+                          ? 'bg-accent-500 text-primary-900 shadow-lg shadow-accent-500/20 active:scale-95'
+                          : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                          }`}
+                      >
+                        {isSavingFavorite ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-primary-900" />
                         ) : (
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
+                          <Star className={`h-5 w-5 ${isFavorite ? 'fill-primary-900 text-primary-900' : ''} group-hover:scale-110 transition-transform`} />
+                        )}
+                        <span>{isFavorite ? 'Favorito' : 'Guardar'}</span>
+                      </button>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleDownloadDOCX}
+                          disabled={isDownloadingDOCX}
+                          className="flex items-center gap-2 px-5 py-3.5 bg-white/10 text-white rounded-xl text-sm font-bold border border-white/10 hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {isDownloadingDOCX ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4 text-accent-500" />}
+                          <span>Word</span>
+                        </button>
+                        <button
+                          onClick={handleDownloadCSV}
+                          disabled={isDownloadingCSV}
+                          className="flex items-center gap-2 px-5 py-3.5 bg-white/10 text-white rounded-xl text-sm font-bold border border-white/10 hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {isDownloadingCSV ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-success-400" />}
+                          <span>Excel</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100 bg-gray-50/50">
+                  <div className="p-4 px-8">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipo de Proceso</p>
+                    <p className="text-sm font-bold text-primary-900">{selectedProcess.tipoProceso || 'ORALIDAD'}</p>
+                  </div>
+                  <div className="p-4 px-8">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sujeto Activo</p>
+                    <p className="text-sm font-bold text-primary-900 truncate">{selectedProcess.demandante || 'RESERVA'}</p>
+                  </div>
+                  <div className="p-4 px-8">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sujeto Pasivo</p>
+                    <p className="text-sm font-bold text-primary-900 truncate">{selectedProcess.demandado || 'RESERVA'}</p>
+                  </div>
+                  <div className="p-4 px-8">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Estado</p>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-success-500"></span>
+                      <p className="text-sm font-bold text-primary-900">VIGENTE</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs & Content */}
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ring-1 ring-gray-100/50 animate-scale-in">
+                <div className="p-2 bg-gray-50/50 border-b border-gray-100">
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      { id: 'datos', label: 'Datos Generales', icon: FileText },
+                      { id: 'sujetos', label: 'Sujetos Procesales', icon: Users },
+                      { id: 'documentos', label: 'Expediente Dig.', icon: Briefcase },
+                      { id: 'actuaciones', label: 'Actuaciones', icon: Gavel },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id as TabType)}
+                        className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === tab.id
+                          ? 'bg-primary-900 text-white shadow-lg shadow-primary-900/20 active:scale-95'
+                          : 'text-gray-500 hover:bg-gray-100 hover:text-primary-900'
+                          }`}
+                      >
+                        <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-accent-500' : ''}`} />
+                        <span>{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {isLoadingTab ? (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                      <Loader2 className="h-10 w-10 text-accent-500 animate-spin" />
+                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando Sección</p>
+                    </div>
+                  ) : (
+                    <>
+                      {activeTab === 'datos' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4 px-2">
+                          {[
+                            { label: 'Fecha de Radicación', value: formatDate(detailsSource?.fechaRadicacion || selectedProcess.fechaRadicacion || 'N/A'), icon: Calendar },
+                            { label: 'Recurso', value: detailsSource?.recurso || 'SIN TIPO DE RECURSO', icon: Gavel },
+                            { label: 'Ponente', value: detailsSource?.ponente || 'No especificado', icon: User },
+                            { label: 'Ubicación Exp.', value: detailsSource?.ubicacionExpediente || 'ARCHIVO', icon: MapPin },
+                            { label: 'Tipo Proceso', value: detailsSource?.tipoProceso || selectedProcess.tipoProceso || 'N/A', icon: Briefcase },
+                            { label: 'Clase Proceso', value: detailsSource?.claseProceso || 'N/A', icon: FileText },
+                            { label: 'Subclase Proceso', value: detailsSource?.subclaseProceso || 'SIN SUBCLASE', icon: FileText },
+                          ].map((item, idx) => (
+                            <div key={idx} className="space-y-2 group">
+                              <div className="flex items-center gap-2">
+                                <item.icon className="w-3.5 h-3.5 text-accent-500" />
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{item.label}</span>
+                              </div>
+                              <p className="text-sm font-bold text-primary-900 bg-gray-50/50 p-4 rounded-xl border border-gray-100 group-hover:border-accent-500/20 transition-colors">
+                                {item.value}
+                              </p>
+                            </div>
+                          ))}
+                          <div className="md:col-span-2 lg:col-span-3 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-3.5 h-3.5 text-accent-500" />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Despacho</span>
+                            </div>
+                            <p className="text-sm font-bold text-primary-900 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                              {detailsSource?.despacho || selectedProcess.despacho}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'sujetos' && (
+                        <div className="overflow-hidden rounded-2xl border border-gray-100">
+                          <table className="min-w-full divide-y divide-gray-100">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                {['Sujeto', 'Rol', 'Identificación'].map(header => (
+                                  <th key={header} className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    {header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {sujetos.length > 0 ? sujetos.map((sujeto, idx) => (
+                                <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                                  <td className="px-6 py-5 text-sm font-bold text-primary-900">
+                                    {sujeto.nombreRazonSocial || sujeto.lsNombreSujeto || '-'}
+                                  </td>
+                                  <td className="px-6 py-5">
+                                    <span className="inline-flex px-2.5 py-1 bg-primary-900/5 text-primary-900 text-[10px] font-bold uppercase tracking-wider rounded-md">
+                                      {sujeto.tipoSujeto || sujeto.lsTipoSujeto || '-'}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-5 text-sm font-medium text-gray-500">
+                                    {sujeto.identificacion || sujeto.lsIdentificacion || '-'}
+                                  </td>
+                                </tr>
+                              )) : (
                                 <tr>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Identificación</th>
-                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Apoderado</th>
+                                  <td colSpan={3} className="px-6 py-12 text-center text-gray-400 font-medium">No se registran sujetos procesales</td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {activeTab === 'documentos' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {documentos.length > 0 ? documentos.map((doc, idx) => (
+                            <div key={idx} className="group bg-white p-5 rounded-2xl border border-gray-100 hover:border-accent-500/30 hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300">
+                              <div className="flex gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 group-hover:bg-accent-500 group-hover:text-primary-900 transition-colors">
+                                  <FileText className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-primary-900 truncate mb-1">{doc.lsNombreArchivo}</p>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{doc.lsTipoDocumento}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )) : (
+                            <div className="col-span-full py-20 text-center space-y-3">
+                              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                                <Search className="w-8 h-8 text-gray-300" />
+                              </div>
+                              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No se encontraron archivos adjuntos</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {activeTab === 'actuaciones' && (
+                        <div className="space-y-6">
+                          <div className="overflow-hidden rounded-2xl border border-gray-100">
+                            <table className="min-w-full divide-y divide-gray-100">
+                              <thead className="bg-primary-900">
+                                <tr>
+                                  <th className="px-6 py-4 text-left text-[10px] font-bold text-accent-500 uppercase tracking-widest">Fecha</th>
+                                  <th className="px-6 py-4 text-left text-[10px] font-bold text-accent-500 uppercase tracking-widest">Actuación</th>
+                                  <th className="px-6 py-4 text-center text-[10px] font-bold text-accent-500 uppercase tracking-widest">Docs</th>
                                 </tr>
                               </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {sujetos.map((sujeto, index) => (
-                                  <tr key={index} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      {sujeto.nombreRazonSocial || sujeto.lsNombreSujeto || '-'}
+                              <tbody className="divide-y divide-gray-100 bg-white">
+                                {actuaciones.map((actuacion, idx) => (
+                                  <tr key={idx} className="hover:bg-gray-50/80 transition-colors group">
+                                    <td className="px-6 py-5 whitespace-nowrap">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-accent-500/10 transition-colors">
+                                          <Calendar className="w-4 h-4 text-gray-400 group-hover:text-accent-500" />
+                                        </div>
+                                        <span className="text-xs font-bold text-primary-900">{formatDate(actuacion.fechaActuacion)}</span>
+                                      </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                      {sujeto.tipoSujeto || sujeto.lsTipoSujeto || '-'}
+                                    <td className="px-6 py-5">
+                                      <p className="text-sm font-bold text-primary-900 mb-1 leading-tight">{actuacion.actuacion}</p>
+                                      <p className="text-xs text-gray-500 line-clamp-2">{actuacion.anotacion || 'Sin anotaciones adicionales'}</p>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                      {sujeto.identificacion || sujeto.lsIdentificacion || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                      {sujeto.lsApoderado || '-'}
+                                    <td className="px-6 py-5 text-center">
+                                      {actuacion.conDocumentos ? (
+                                        <button
+                                          onClick={() => handleVerDocumentos(actuacion)}
+                                          className="w-10 h-10 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-600 hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95"
+                                        >
+                                          <FileDown className="w-4 h-4" />
+                                        </button>
+                                      ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300">
+                                          <X className="w-4 h-4" />
+                                        </div>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
                           </div>
-                        )}
-                      </div>
-                    )}
 
-                    {activeTab === 'documentos' && (
-                      <div className="space-y-4">
-                        {documentos.length === 0 ? (
-                          <p className="text-center text-gray-500 py-8">No hay documentos disponibles</p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {documentos.map((documento, index) => (
-                              <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                <div className="flex items-start gap-3">
-                                  <div className="bg-blue-100 rounded p-2">
-                                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-900 truncate">{documento.lsNombreArchivo}</p>
-                                    <p className="text-xs text-gray-600 mt-1">{documento.lsTipoDocumento}</p>
-                                    {documento.lsExtensionArchivo && (
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        {documento.lsExtensionArchivo.toUpperCase()}
-                                        {documento.lnTamanoArchivo && ` • ${(documento.lnTamanoArchivo / 1024).toFixed(1)} KB`}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === 'actuaciones' && (
-                      <div className="space-y-4">
-                        {actuaciones.length === 0 ? (
-                          <p className="text-center text-gray-500 py-8">No hay actuaciones disponibles</p>
-                        ) : (
-                          <>
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full bg-white border border-gray-200">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                      Fecha de Actuación
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                      Actuación
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                      Anotación
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                      Fecha Inicio Término
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                      Fecha Finaliza Término
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                      Fecha de Registro
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {actuaciones.map((actuacion, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 transition-colors border-b">
-                                      <td className="px-4 py-3 text-sm text-gray-900">
-                                        {formatDate(actuacion.fechaActuacion)}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm">
-                                        <div className="space-y-1">
-                                          <p className="font-medium text-gray-900">{actuacion.actuacion}</p>
-                                          {actuacion.conDocumentos && (
-                                            <button
-                                              onClick={() => handleVerDocumentos(actuacion)}
-                                              className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors"
-                                            >
-                                              📎 Con documentos
-                                            </button>
-                                          )}
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-gray-700">
-                                        {actuacion.anotacion || '-'}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                        {actuacion.fechaInicioTermino || actuacion.fechaInicial
-                                          ? formatDate(actuacion.fechaInicioTermino || actuacion.fechaInicial!)
-                                          : '-'}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                        {actuacion.fechaFinalizaTermino || actuacion.fechaFinal
-                                          ? formatDate(actuacion.fechaFinalizaTermino || actuacion.fechaFinal!)
-                                          : '-'}
-                                      </td>
-                                      <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                        {actuacion.fechaRegistro
-                                          ? formatDate(actuacion.fechaRegistro)
-                                          : '-'}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-
-                            {actuacionesPaginacion && actuacionesPaginacion.cantPaginas > 1 && (
-                              <div className="flex items-center justify-between mt-4">
-                                <button
-                                  onClick={() => loadActuacionesPagina(actuacionesPaginaActual - 1)}
-                                  disabled={!actuacionesPaginacion.anteriorPagina}
-                                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50"
-                                >
-                                  <ChevronLeft className="h-4 w-4" />
-                                  Anterior
-                                </button>
-                                <p className="text-sm text-gray-600">
-                                  Página {actuacionesPaginaActual} de {actuacionesPaginacion.cantPaginas}
+                          {actuacionesPaginacion && actuacionesPaginacion.cantPaginas > 1 && (
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                              <button
+                                onClick={() => loadActuacionesPagina(actuacionesPaginaActual - 1)}
+                                disabled={!actuacionesPaginacion.anteriorPagina}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-primary-900 hover:bg-gray-50 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Anterior</span>
+                              </button>
+                              <div className="px-4 py-1.5 bg-gray-100 rounded-full">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                  Folio {actuacionesPaginaActual} de {actuacionesPaginacion.cantPaginas}
                                 </p>
-                                <button
-                                  onClick={() => loadActuacionesPagina(actuacionesPaginaActual + 1)}
-                                  disabled={!actuacionesPaginacion.siguientePagina}
-                                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50"
-                                >
-                                  Siguiente
-                                  <ChevronRight className="h-4 w-4" />
-                                </button>
                               </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
+                              <button
+                                onClick={() => loadActuacionesPagina(actuacionesPaginaActual + 1)}
+                                disabled={!actuacionesPaginacion.siguientePagina}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-primary-900 hover:bg-gray-50 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                              >
+                                <span>Siguiente</span>
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           )}
         </main>
 
         <PublicFooter />
 
+        {/* Improved Document Modal */}
         {showDocumentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full">
-              <div className="flex items-center justify-between p-4 border-b">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Documentos de la actuación</h3>
-                  <p className="text-sm text-gray-600">
-                    {selectedActuacion?.actuacion} - {formatDate(selectedActuacion?.fechaActuacion || '')}
-                  </p>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+            <div
+              className="absolute inset-0 bg-primary-900/60 backdrop-blur-sm animate-fade-in"
+              onClick={handleCloseModal}
+            ></div>
+            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in">
+              <div className="bg-primary-900 p-8 flex items-center justify-between border-b border-white/10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent-500"></div>
+                    <span className="text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">Expediente Adjunto</span>
+                  </div>
+                  <h3 className="text-xl font-serif font-bold text-white">Documentos de Actuación</h3>
                 </div>
                 <button
                   onClick={handleCloseModal}
-                  className="p-2 text-gray-500 hover:text-gray-700"
+                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-danger-500 hover:text-white transition-all"
                 >
-                  <X className="h-5 w-5" />
+                  <X size={20} />
                 </button>
               </div>
 
-              <div className="p-4">
+              <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
                 {loadingDocuments ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">Cargando documentos...</span>
+                  <div className="py-20 flex flex-col items-center gap-4">
+                    <Loader2 className="h-10 w-10 text-accent-500 animate-spin" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recuperando Archivos</p>
                   </div>
                 ) : actuacionDocuments.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No hay documentos asociados a esta actuación</p>
+                  <div className="py-20 text-center space-y-4">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                      <Search size={32} className="text-gray-300" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No se encontraron documentos</p>
+                  </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {actuacionDocuments.map((doc, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{doc.nombre}</p>
-                          {doc.fechaDocumento && (
-                            <p className="text-xs text-gray-500">Fecha: {formatDate(doc.fechaDocumento)}</p>
-                          )}
+                      <div key={idx} className="group flex items-center justify-between bg-gray-50 p-5 rounded-2xl border border-gray-100 hover:bg-white hover:border-accent-500/30 hover:shadow-lg transition-all">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 group-hover:bg-accent-500 group-hover:text-primary-900 transition-colors">
+                            <FileText size={24} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-primary-900 truncate">{doc.nombre}</p>
+                            {doc.fechaDocumento && (
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                {formatDate(doc.fechaDocumento)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <button
                           onClick={() => handleDownloadDocumento(doc)}
-                          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
+                          className="flex items-center gap-2 px-5 py-2.5 bg-primary-900 text-white rounded-xl text-xs font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95"
                         >
-                          <Download className="h-4 w-4" /> Descargar
+                          <Download size={14} />
+                          <span>Obtener</span>
                         </button>
                       </div>
                     ))}
@@ -948,17 +817,15 @@ const MyProcessesPage: React.FC = () => {
     );
   }
 
+  // Favorites List Redesign
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {renderHeader(false)}
-        <div className="flex-1 flex items-center justify-center py-24">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando procesos favoritos...</p>
-          </div>
+        <Header title="Gestión de Procesos" onBack={() => navigate('/dashboard')} />
+        <div className="flex-1 flex flex-col items-center justify-center py-24 space-y-6">
+          <div className="w-16 h-16 rounded-full border-t-2 border-accent-500 animate-spin"></div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cargando Portafolio</p>
         </div>
-
         <PublicFooter />
       </div>
     );
@@ -967,123 +834,146 @@ const MyProcessesPage: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {renderHeader(false)}
+        <Header title="Gestión de Procesos" onBack={() => navigate('/dashboard')} />
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
-            <div className="flex items-center justify-center mb-4">
-              <AlertCircle className="h-12 w-12 text-red-500" />
+          <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center border border-gray-100">
+            <div className="w-20 h-20 bg-danger-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={40} className="text-danger-500" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">Error</h2>
-            <p className="text-gray-600 text-center mb-4">{error}</p>
+            <h2 className="text-2xl font-serif font-bold text-primary-900 mb-2">Error de Conexión</h2>
+            <p className="text-gray-500 text-sm mb-8 leading-relaxed">{error}</p>
             <button
               onClick={loadFavorites}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full bg-primary-900 text-white py-4 px-6 rounded-2xl font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95"
             >
-              Reintentar
+              Reintentar sincronización
             </button>
           </div>
         </div>
-
         <PublicFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {renderHeader(false)}
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <Header title="Gestión de Procesos" onBack={() => navigate('/dashboard')} />
 
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto py-8 px-4">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6" data-tour="favorites-header">
-          <div className="flex items-center gap-3">
-            <Star className="h-8 w-8 text-yellow-500 fill-yellow-500" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">Procesos favoritos</h2>
-              <p className="text-gray-600">Tienes {favoriteProcesses.length} procesos guardados</p>
+      <main className="flex-1 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-accent-500"></div>
+                <span className="text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">Expedientes Guardados</span>
+              </div>
+              <h1 className="text-4xl font-serif font-bold text-primary-900 tracking-tight">Mi Portafolio</h1>
+              <p className="text-gray-500 text-sm">Gestiona y monitorea tus procesos judiciales favoritos</p>
+            </div>
+
+            <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 ring-1 ring-gray-100/50">
+              <div className="px-6 py-2 bg-gray-50 rounded-xl text-center">
+                <p className="text-[24px] font-serif font-bold text-primary-900 leading-none">{favoriteProcesses.length}</p>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Activos</p>
+              </div>
+              <button
+                onClick={() => navigate('/')}
+                className="px-6 py-3 bg-primary-900 text-white text-sm font-bold rounded-xl hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95 flex items-center gap-3"
+              >
+                <Search size={16} />
+                Nuevo Proceso
+              </button>
             </div>
           </div>
-        </div>
 
-        {favoriteProcesses.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">No tienes procesos favoritos</h2>
-            <p className="text-gray-600 mb-6">
-              Consulta un proceso y haz clic en el botón "Guardar" para agregarlo a tus favoritos.
-            </p>
-            <button
-              onClick={() => navigate('/')}
-              className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Consultar Procesos
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {favoriteProcesses.map(process => (
-              <div
-                key={process.numero_radicacion}
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
-                data-tour="process-card"
+          {favoriteProcesses.length === 0 ? (
+            <div className="bg-white rounded-3xl shadow-xl p-20 text-center border border-gray-100 animate-scale-in">
+              <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto transform rotate-12">
+                <Star size={48} className="text-gray-200" />
+              </div>
+              <h2 className="text-2xl font-serif font-bold text-primary-900 mb-3">Tu portafolio está vacío</h2>
+              <p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed">
+                Empieza a seguir procesos judiciales para recibir actualizaciones en tiempo real y generar reportes detallados.
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="bg-primary-900 text-white py-4 px-10 rounded-2xl font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95 shadow-xl shadow-primary-900/10"
               >
-                <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                      <h3 className="text-lg font-semibold text-gray-800">{process.numero_radicacion}</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Despacho:</span>
-                        <p className="text-gray-600 mt-1">{process.despacho}</p>
+                Buscar mi primer proceso
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {favoriteProcesses.map((process, idx) => (
+                <div
+                  key={process.numero_radicacion}
+                  className="group bg-white rounded-3xl shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-primary-900/5 transition-all duration-500 overflow-hidden animate-scale-in"
+                  style={{ animationDelay: `${idx * 100}ms` }}
+                  data-tour="process-card"
+                >
+                  <div className="p-8">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-accent-500 uppercase tracking-widest">JustiTrack ID: {process.id || 'N/A'}</p>
+                        <h3 className="text-xl font-serif font-bold text-primary-900 group-hover:text-accent-600 transition-colors">{process.numero_radicacion}</h3>
                       </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Departamento:</span>
-                        <p className="text-gray-600 mt-1">{process.tipo_proceso || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Demandante:</span>
-                        <p className="text-gray-600 mt-1">{process.demandante || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Demandado:</span>
-                        <p className="text-gray-600 mt-1">{process.demandado || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Fecha de Radicación:</span>
-                        <p className="text-gray-600 mt-1">{formatDate(process.fecha_radicacion)}</p>
+                      <div className="w-10 h-10 rounded-xl bg-accent-500/10 flex items-center justify-center text-accent-600">
+                        <Star size={20} className="fill-accent-500" />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => handleViewDetails(process.numero_radicacion)}
-                      className="flex items-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-                      title="Ver detalles del proceso"
-                      data-tour="view-details-btn"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>Ver Detalles</span>
-                    </button>
-                    <button
-                      onClick={() => handleRemoveFavorite(process.numero_radicacion)}
-                      className="flex items-center gap-2 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap"
-                      title="Quitar de favoritos"
-                      data-tour="remove-favorite-btn"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>Quitar</span>
-                    </button>
+                    <div className="grid grid-cols-2 gap-y-6 gap-x-4 mb-8">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 opacity-40">
+                          <Building2 size={12} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider">Despacho</span>
+                        </div>
+                        <p className="text-xs font-bold text-primary-900 truncate">{process.despacho}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 opacity-40">
+                          <Briefcase size={12} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider">Tipo</span>
+                        </div>
+                        <p className="text-xs font-bold text-primary-900 truncate">{process.tipo_proceso || 'CIVIL'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 opacity-40">
+                          <Users size={12} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider">Demandante</span>
+                        </div>
+                        <p className="text-xs font-bold text-primary-900 truncate">{process.demandante || 'RESERVA'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 opacity-40">
+                          <Calendar size={12} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider">Radicación</span>
+                        </div>
+                        <p className="text-xs font-bold text-primary-900">{formatDate(process.fecha_radicacion)}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-6 border-t border-gray-50">
+                      <button
+                        onClick={() => handleViewDetails(process.numero_radicacion)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-primary-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95"
+                      >
+                        <Eye size={18} />
+                        <span>Gestionar</span>
+                      </button>
+                      <button
+                        onClick={() => handleRemoveFavorite(process.numero_radicacion)}
+                        className="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-danger-50 hover:text-danger-500 transition-all border border-transparent hover:border-danger-100"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       <HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />

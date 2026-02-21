@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.tsx';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  ShieldCheck,
+  Gavel,
+  ArrowLeft,
+  Loader2
+} from 'lucide-react';
 
 interface LoginFormData {
   email: string;
@@ -24,13 +35,11 @@ export const LoginPage: React.FC = () => {
     if (!formData.email) {
       newErrors.email = 'El email es requerido';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Por favor ingrese un email válido';
+      newErrors.email = 'Ingrese un email profesional válido';
     }
 
     if (!formData.password) {
       newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     setErrors(newErrors);
@@ -39,30 +48,17 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
-    
     try {
-      // Usar el signIn del AuthContext que maneja todo el estado
-      console.log('LoginPage: Starting signIn process...');
       await signIn(formData.email, formData.password);
-      
-      console.log('LoginPage: SignIn completed, navigating to dashboard...');
-      
-      // Pequeño delay para asegurar que el estado se haya actualizado
       setTimeout(() => {
         navigate('/dashboard');
       }, 100);
-      
     } catch (error: any) {
       console.error('Login error:', error);
-      
-      // El AuthContext ya maneja los errores, solo mostrar el mensaje
-      setErrors({ email: error.message || 'Error de conexión. Intente nuevamente.' });
+      setErrors({ email: error.message || 'Credenciales inválidas. Intente nuevamente.' });
     } finally {
       setIsLoading(false);
     }
@@ -70,164 +66,165 @@ export const LoginPage: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Limpiar error cuando el usuario empiece a escribir
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof LoginFormData]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
+      setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div>
-          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-100">
-            <img src="/usuario.png" alt="Icono de usuario" className="h-10 w-10 object-contain" />
+    <div className="min-h-screen flex bg-white font-sans overflow-hidden">
+      {/* Visual Side (LHS) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary-900 relative items-center justify-center p-20">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80')] opacity-10 bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-900/90 to-accent-500/20"></div>
+
+        <div className="relative z-10 space-y-12 max-w-lg">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-500/20 border border-accent-500/30 rounded-full text-accent-400">
+              <ShieldCheck size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Plataforma Certificada</span>
+            </div>
+            <h1 className="text-6xl font-serif font-bold text-white leading-tight">
+              Justicia <br />
+              <span className="text-accent-500">Digital</span> de Alta Precisión.
+            </h1>
+            <p className="text-lg text-white/60 leading-relaxed font-light">
+              Gestione su portafolio judicial con la herramienta líder en automatización y consulta de procesos gubernamentales en Colombia.
+            </p>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Iniciar Sesión
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Accede al sistema de consulta de procesos judiciales
-          </p>
+
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <p className="text-3xl font-serif font-bold text-white">24/7</p>
+              <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Monitorización</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-3xl font-serif font-bold text-white">99.9%</p>
+              <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Sincronización</p>
+            </div>
+          </div>
         </div>
 
-        {/* Formulario */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`mt-1 block w-full px-3 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Ingrese su correo electrónico"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
+        <div className="absolute bottom-12 left-20 right-20 flex justify-between items-center text-white/30">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em]">JustiTrack © 2026</p>
+          <div className="flex gap-6">
+            <Gavel size={16} />
+            <ShieldCheck size={16} />
+          </div>
+        </div>
+      </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Contraseña
-              </label>
-              <div className="relative mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`block w-full px-3 py-3 pr-10 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.password ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Ingrese su contraseña"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={togglePasswordVisibility}
-                >
-                  {showPassword ? (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
+      {/* Form Side (RHS) */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+        <div className="max-w-md w-full animate-scale-in">
+          <div className="mb-10 text-center lg:text-left">
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-primary-900 transition-colors mb-8 group"
+            >
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="text-xs font-bold uppercase tracking-widest">Volver al inicio</span>
+            </button>
+            <div className="flex justify-center lg:justify-start mb-6">
+              <div className="bg-primary-900 p-3 rounded-2xl shadow-xl border border-white/10">
+                <img src="/logo_justitrack.png" alt="JustiTrack" className="h-10 w-auto" />
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
             </div>
+            <h2 className="text-4xl font-serif font-bold text-primary-900 tracking-tight mb-2">Bienvenido de nuevo</h2>
+            <p className="text-gray-500">Ingrese sus credenciales para acceder a su panel profesional.</p>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
+                  Correo Electrónico
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-accent-600 transition-colors">
+                    <Mail size={18} />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={`w-full bg-white border ${errors.email ? 'border-danger-500 shadow-danger-500/5' : 'border-gray-200 group-hover:border-gray-300 focus:border-accent-500'} rounded-2xl pl-14 pr-5 py-4 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 transition-all outline-none`}
+                    placeholder="nombre@ejemplo.com"
+                  />
+                </div>
+                {errors.email && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.email}</p>}
+              </div>
 
-          <div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <label htmlFor="password" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    Contraseña
+                  </label>
+                  <Link to="/forgot-password" className="text-[10px] font-bold text-accent-600 hover:text-primary-900 uppercase tracking-widest">
+                    ¿Olvidó su clave?
+                  </Link>
+                </div>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-accent-600 transition-colors">
+                    <Lock size={18} />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className={`w-full bg-white border ${errors.password ? 'border-danger-500 shadow-danger-500/5' : 'border-gray-200 group-hover:border-gray-300 focus:border-accent-500'} rounded-2xl pl-14 pr-12 py-4 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 transition-all outline-none`}
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-primary-900 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.password}</p>}
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-primary-900 text-white rounded-2xl py-5 font-bold text-sm hover:bg-accent-500 hover:text-primary-900 transition-all shadow-xl shadow-primary-900/10 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 group"
             >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Iniciando sesión...
-                </span>
-              ) : (
-                'Iniciar Sesión'
-              )}
+              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}
+              <span>{isLoading ? 'Autenticando...' : 'Iniciar Sesión'}</span>
             </button>
-          </div>
 
-          <div className="text-center">
-            <span className="text-sm text-gray-600">
-              ¿No tienes una cuenta?{' '}
-              <Link
-                to="/register"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                Regístrate aquí
-              </Link>
-            </span>
-          </div>
+            <div className="text-center pt-8">
+              <p className="text-sm text-gray-500">
+                ¿Aún no tiene cuenta profesional?{' '}
+                <Link to="/register" className="font-bold text-accent-600 hover:text-primary-900 transition-colors underline decoration-accent-500/30 underline-offset-4">
+                  Regístrese aquí
+                </Link>
+              </p>
+            </div>
+          </form>
 
-          <div className="text-center">
-            <Link
-              to="/"
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              ← Volver a la página principal
-            </Link>
+          {/* Verification Badge */}
+          <div className="mt-12 p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Seguridad TLS 1.3</p>
+              <p className="text-xs text-primary-900 font-bold">Sus datos están protegidos por encriptación bancaria.</p>
+            </div>
           </div>
-        </form>
-
-        {/* Demo credentials - remove in production */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-md">
-          <p className="text-xs text-blue-600 text-center">
-            Demo: admin@judicial.com / 123456789
-          </p>
         </div>
       </div>
     </div>
   );
 };
+
+export default LoginPage;

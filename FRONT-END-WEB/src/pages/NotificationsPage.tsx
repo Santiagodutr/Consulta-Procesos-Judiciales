@@ -1,13 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { notificationAPI } from '../services/apiService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
-import { ArrowLeft } from 'lucide-react';
+import {
+	ArrowLeft,
+	User,
+	LogOut,
+	Bell,
+	CheckCircle2,
+	RefreshCw,
+	BellRing,
+	Clock,
+	Briefcase,
+	Gavel
+} from 'lucide-react';
 import { useTour } from '../hooks/useTour.ts';
 import { HelpButton } from '../components/HelpButton.tsx';
 import { notificationsTourSteps } from '../tours/notificationsTour.ts';
+import { Header } from '../components/Header.tsx';
 
 interface NotificationItem {
 	id: string;
@@ -28,16 +40,8 @@ const NotificationsPage: React.FC = () => {
 	const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 	const [isMarkingAll, setIsMarkingAll] = useState(false);
 	const navigate = useNavigate();
-	const { user, signOut } = useAuth();
-	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-	const userMenuRef = useRef<HTMLDivElement | null>(null);
+	const { user } = useAuth();
 	const { startTour, hasCompletedTour } = useTour(notificationsTourSteps, 'notifications');
-
-	const navLinks = [
-		{ label: 'Inicio', onClick: () => navigate('/dashboard') },
-		{ label: 'Reportes', onClick: () => navigate('/analytics') },
-		{ label: 'Notificaciones', onClick: () => navigate('/notifications') },
-	];
 
 	const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
@@ -63,16 +67,6 @@ const NotificationsPage: React.FC = () => {
 		loadNotifications();
 	}, [loadNotifications]);
 
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-				setIsUserMenuOpen(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
 
 	const unreadCount = useMemo(
 		() => notifications.filter((item) => !item.is_read).length,
@@ -141,235 +135,200 @@ const NotificationsPage: React.FC = () => {
 		});
 	};
 
-	const handleLogout = async () => {
-		try {
-			await signOut();
-			navigate('/login');
-		} catch (error) {
-			console.error('Error during logout:', error);
-			navigate('/login');
-		}
-	};
 
-	const handleHeaderBack = () => {
-		navigate('/dashboard');
-	};
-
-	const handleLogoClick = () => {
-		navigate('/');
-	};
-
-	const renderHeader = () => (
-		<header className="bg-primary-700 text-white shadow-lg">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="flex h-16 items-center justify-between">
-					<div className="flex items-center gap-3">
-						<button
-							type="button"
-							onClick={handleHeaderBack}
-							className="rounded-full p-2 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-							title="Regresar"
-						>
-							<ArrowLeft className="h-5 w-5" />
-						</button>
-						<button
-							type="button"
-							onClick={handleLogoClick}
-							className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
-						>
-							<img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
-						</button>
-					</div>
-
-					<div className="hidden md:flex items-center gap-8">
-						{navLinks.map((link) => (
-							<button
-								key={link.label}
-								type="button"
-								onClick={link.onClick}
-								className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
-							>
-								{link.label}
-							</button>
-						))}
-					</div>
-
-					<div className="flex items-center gap-2 md:gap-4">
-						<div className="relative" ref={userMenuRef}>
-							<button
-								type="button"
-								onClick={() => setIsUserMenuOpen((prev) => !prev)}
-								className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-							>
-								<img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
-								<span className="hidden sm:inline">{displayName}</span>
-								<svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-									<path d="M6 9l6 6 6-6" />
-								</svg>
-							</button>
-
-							{isUserMenuOpen && (
-								<div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
-									<div className="py-2">
-										<button
-											type="button"
-											onClick={() => {
-												setIsUserMenuOpen(false);
-												navigate('/profile');
-											}}
-											className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
-										>
-											Perfil
-										</button>
-										
-									</div>
-									<div className="border-t border-gray-100">
-										<button
-											type="button"
-											onClick={() => {
-												setIsUserMenuOpen(false);
-												handleLogout();
-											}}
-											className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
-										>
-											Cerrar Sesión
-										</button>
-									</div>
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-			</div>
-		</header>
-	);
 
 	return (
-		<div className="min-h-screen bg-brand-neutral flex flex-col">
-			{renderHeader()}
+		<div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+			<Header title="Centro de Notificaciones" onBack={() => navigate('/dashboard')} />
 
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
-			<div className="mb-8" data-tour="notifications-header">
-				<h1 className="text-3xl font-semibold text-gray-900">Notificaciones</h1>
-				<p className="text-gray-600 mt-2">
-					Gestiona las alertas generadas por tus procesos favoritos y consultas recientes.
-				</p>
-			</div>			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
-				<div className="flex items-center gap-3" data-tour="stats-badges">
-					<div className="rounded-full bg-primary-100 text-primary-700 px-4 py-2 text-sm font-medium">
-						Total: {notifications.length}
+			<main className="flex-1 py-12">
+				<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in">
+						<div className="space-y-2">
+							<div className="flex items-center gap-2">
+								<div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></div>
+								<span className="text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">Centro de Notificaciones</span>
+							</div>
+							<h1 className="text-4xl font-serif font-bold text-primary-900 tracking-tight">Mis Alertas</h1>
+							<p className="text-gray-500 text-sm">Gestiona las actualizaciones críticas de tus procesos judiciales</p>
+						</div>
+
+						<div className="flex flex-wrap items-center gap-3 p-1.5 bg-white rounded-2xl shadow-sm border border-gray-100 ring-1 ring-gray-100/50" data-tour="stats-badges">
+							<div className="px-5 py-2.5 bg-gray-50 rounded-xl flex items-center gap-3">
+								<Bell size={18} className="text-primary-900" />
+								<div>
+									<p className="text-lg font-serif font-bold text-primary-900 leading-none">{notifications.length}</p>
+									<p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total</p>
+								</div>
+							</div>
+							<div className="px-5 py-2.5 bg-accent-500/10 rounded-xl flex items-center gap-3">
+								<BellRing size={18} className="text-accent-600" />
+								<div>
+									<p className="text-lg font-serif font-bold text-accent-600 leading-none">{unreadCount}</p>
+									<p className="text-[9px] font-bold text-accent-500 uppercase tracking-widest mt-1">Nuevas</p>
+								</div>
+							</div>
+						</div>
 					</div>
-					<div className="rounded-full bg-amber-100 text-amber-700 px-4 py-2 text-sm font-medium">
-						Sin leer: {unreadCount}
-					</div>
-				</div>
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-					<label className="inline-flex items-center text-sm font-medium text-gray-600" data-tour="filter-unread">
-						<input
-							type="checkbox"
-							className="h-4 w-4 text-primary-600 border-gray-300 rounded mr-2"
-							checked={showUnreadOnly}
-							onChange={(event) => setShowUnreadOnly(event.target.checked)}
-						/>
-						Mostrar solo no leídas
-					</label>
-					<div className="flex flex-col gap-3 sm:flex-row">
-						<button
-							type="button"
-							onClick={loadNotifications}
-							className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-medium text-primary-700 shadow-sm ring-1 ring-primary-200 transition hover:bg-primary-50"
-							data-tour="refresh-button"
-						>
-								<span role="img" aria-label="Actualizar">
-									🔄
-								</span>
-								Actualizar
+
+					<div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 bg-white p-4 rounded-3xl shadow-sm border border-gray-100 animate-fade-in">
+						<div className="flex items-center gap-6">
+							<label
+								className="inline-flex items-center cursor-pointer group"
+								data-tour="filter-unread"
+							>
+								<div className="relative">
+									<input
+										type="checkbox"
+										className="sr-only"
+										checked={showUnreadOnly}
+										onChange={(event) => setShowUnreadOnly(event.target.checked)}
+									/>
+									<div className={`w-12 h-6 rounded-full transition-colors duration-300 ${showUnreadOnly ? 'bg-accent-500' : 'bg-gray-200'}`}></div>
+									<div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 transform ${showUnreadOnly ? 'translate-x-6' : 'translate-x-0'}`}></div>
+								</div>
+								<span className="ml-3 text-sm font-bold text-primary-900 group-hover:text-accent-600 transition-colors">Solo no leídas</span>
+							</label>
+
+							<button
+								type="button"
+								onClick={loadNotifications}
+								className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-primary-900 transition-colors p-2 rounded-xl"
+								data-tour="refresh-button"
+							>
+								<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+								<span>Sincronizar</span>
 							</button>
+						</div>
+
 						<button
 							type="button"
 							onClick={handleMarkAllAsRead}
 							disabled={unreadCount === 0 || isMarkingAll}
-							className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
-								unreadCount === 0 || isMarkingAll
-									? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-									: 'bg-primary-600 text-white shadow-sm hover:bg-primary-500'
-							}`}
+							className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary-900 text-white px-8 py-3.5 rounded-2xl text-sm font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none shadow-xl shadow-primary-900/10"
 							data-tour="mark-all-read-btn"
 						>
-								<span role="img" aria-label="Marcar todas">
-									✅
-								</span>
-								Marcar todas como leídas
-							</button>
-						</div>
+							{isMarkingAll ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+							<span>Marcar todas como leídas</span>
+						</button>
 					</div>
-				</div>
 
-				<div className="bg-white shadow rounded-xl">
-					{loading ? (
-						<div className="flex flex-col items-center justify-center py-16">
-							<img src="/notificaciones.png" alt="Cargando" className="h-16 w-16 mb-4" />
-							<p className="text-gray-500">Cargando notificaciones...</p>
-						</div>
-					) : filteredNotifications.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-							<img src="/notificaciones.png" alt="Sin notificaciones" className="h-20 w-20 mb-4" />
-							<h2 className="text-xl font-semibold text-gray-800 mb-2">No hay notificaciones</h2>
-							<p className="text-gray-500 mb-4">
-								Aquí aparecerán las actualizaciones de los procesos que sigues y tus consultas recientes.
-							</p>
-							<Link
-								to="/dashboard"
-								className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-700 hover:bg-primary-600"
-							>
-								Volver al dashboard
-							</Link>
-						</div>
-					) : (
-						<ul className="divide-y divide-gray-200">
-							{filteredNotifications.map((item) => (
-								<li key={item.id} className={`px-6 py-5 ${item.is_read ? 'bg-white' : 'bg-primary-50'}`} data-tour="notification-item">
-									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-										<div className="flex-1">
-											<div className="flex items-center gap-2 mb-1">
-												<span className="text-lg" role="img" aria-label="Bell">
-													{item.is_read ? '🔔' : '🛎️'}
-												</span>
-												<h3 className={`text-base font-semibold ${item.is_read ? 'text-gray-800' : 'text-primary-800'}`}>
-													{item.title}
-												</h3>
-												{!item.is_read && (
-													<span className="text-xs font-medium uppercase bg-primary-600 text-white px-2 py-0.5 rounded-full">
-														Nueva
-													</span>
+					<div className="space-y-4 min-h-[400px]">
+						{loading ? (
+							<div className="flex flex-col items-center justify-center py-20 space-y-6 animate-pulse">
+								<div className="w-16 h-16 rounded-full border-t-2 border-accent-500 animate-spin"></div>
+								<p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Recuperando Alertas</p>
+							</div>
+						) : filteredNotifications.length === 0 ? (
+							<div className="bg-white rounded-3xl shadow-xl p-20 text-center border border-gray-100 animate-scale-in">
+								<div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto transform rotate-12 mb-8">
+									<Bell size={48} className="text-gray-200" />
+								</div>
+								<h2 className="text-2xl font-serif font-bold text-primary-900 mb-3">Todo al día</h2>
+								<p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed text-sm">
+									{showUnreadOnly
+										? "No tienes notificaciones pendientes por leer en este momento."
+										: "Tu bandeja de alertas está vacía. Te informaremos cuando haya movimientos en tus procesos."}
+								</p>
+								<button
+									onClick={() => navigate('/dashboard')}
+									className="bg-primary-900 text-white py-4 px-10 rounded-2xl font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95 shadow-xl shadow-primary-900/10 text-sm"
+								>
+									Volver al Panel
+								</button>
+							</div>
+						) : (
+							<div className="space-y-4">
+								{filteredNotifications.map((item, idx) => (
+									<div
+										key={item.id}
+										className={`group relative bg-white rounded-3xl p-6 border transition-all duration-300 hover:shadow-2xl hover:shadow-primary-900/5 animate-scale-in ${item.is_read
+											? 'border-gray-100 opacity-80'
+											: 'border-accent-500/20 ring-1 ring-accent-500/5 bg-white shadow-xl shadow-accent-500/5'
+											}`}
+										style={{ animationDelay: `${idx * 50}ms` }}
+										data-tour="notification-item"
+									>
+										{!item.is_read && (
+											<div className="absolute top-0 left-0 w-1.5 h-full bg-accent-500 rounded-l-3xl"></div>
+										)}
+
+										<div className="flex flex-col md:flex-row items-start gap-6">
+											<div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${item.is_read
+												? 'bg-gray-50 text-gray-400'
+												: 'bg-accent-500/10 text-accent-600 group-hover:bg-accent-500 group-hover:text-primary-900'
+												}`}>
+												{item.is_read ? <Bell size={24} /> : <BellRing size={24} />}
+											</div>
+
+											<div className="flex-1 min-w-0 space-y-3">
+												<div className="flex flex-wrap items-center gap-3">
+													<h3 className={`text-lg font-serif font-bold leading-tight ${item.is_read ? 'text-primary-900/60' : 'text-primary-900'
+														}`}>
+														{item.title}
+													</h3>
+													{!item.is_read && (
+														<span className="px-2 py-0.5 bg-accent-500 text-primary-900 text-[9px] font-bold uppercase tracking-widest rounded-md">
+															Nuevo Movimiento
+														</span>
+													)}
+												</div>
+
+												<p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+													{item.message}
+												</p>
+
+												<div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2">
+													<div className="flex items-center gap-2">
+														<Clock size={12} className="text-gray-400" />
+														<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+															{formatDate(item.created_at)}
+														</span>
+													</div>
+													{item.process_id && (
+														<div className="flex items-center gap-2">
+															<Gavel size={12} className="text-accent-500" />
+															<span className="text-[10px] font-bold text-primary-900 uppercase tracking-widest">
+																EXP. {item.process_id}
+															</span>
+														</div>
+													)}
+													{item.type && (
+														<div className="flex items-center gap-2">
+															<Briefcase size={12} className="text-gray-400" />
+															<span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+																{item.type}
+															</span>
+														</div>
+													)}
+												</div>
+											</div>
+
+											<div className="md:self-center">
+												{!item.is_read ? (
+													<button
+														type="button"
+														onClick={() => handleMarkAsRead(item.id)}
+														className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 text-primary-900 rounded-xl text-xs font-bold hover:bg-primary-900 hover:text-white transition-all active:scale-95 border border-gray-100"
+													>
+														<CheckCircle2 size={14} />
+														<span>Entendido</span>
+													</button>
+												) : (
+													<div className="w-10 h-10 rounded-full flex items-center justify-center text-gray-200">
+														<CheckCircle2 size={20} />
+													</div>
 												)}
 											</div>
-											<p className="text-sm text-gray-600 whitespace-pre-wrap mb-2">{item.message}</p>
-											<div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
-												<span>Creada: {formatDate(item.created_at)}</span>
-												{item.read_at && <span>Leída: {formatDate(item.read_at)}</span>}
-												{item.process_id && <span>ID proceso: {item.process_id}</span>}
-											</div>
-										</div>
-										<div className="flex items-center gap-2">
-											{!item.is_read && (
-												<button
-													type="button"
-													onClick={() => handleMarkAsRead(item.id)}
-													className="inline-flex items-center px-3 py-2 border border-primary-600 text-sm font-medium rounded-md text-primary-600 hover:bg-primary-50"
-												>
-													Marcar como leída
-												</button>
-											)}
 										</div>
 									</div>
-								</li>
-							))}
-						</ul>
-					)}
+								))}
+							</div>
+						)}
+					</div>
 				</div>
-			</div>
-			
+			</main>
+
 			<HelpButton onClick={startTour} showNotification={!hasCompletedTour} position="bottom-left" />
 			<PublicFooter />
 		</div>

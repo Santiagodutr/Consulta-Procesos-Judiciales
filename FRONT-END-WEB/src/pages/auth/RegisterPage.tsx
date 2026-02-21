@@ -5,21 +5,32 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { authAPI } from '../../services/apiService.ts';
+import {
+  UserPlus,
+  Mail,
+  Lock,
+  User,
+  ShieldCheck,
+  ArrowLeft,
+  ChevronRight,
+  Shield,
+  Briefcase,
+  Smartphone,
+  CheckCircle2,
+  Loader2,
+  Building2
+} from 'lucide-react';
 
 const registerSchema = z.object({
-  email: z.string().email('Ingrese un email válido'),
+  email: z.string().email('Ingrese un email profesional válido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   confirmPassword: z.string(),
   first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
-  document_type: z.enum(['CC', 'CE', 'NIT', 'passport'], {
-    errorMap: () => ({ message: 'Seleccione un tipo de documento válido' })
-  }),
-  document_number: z.string().min(5, 'El número de documento debe tener al menos 5 caracteres'),
+  document_type: z.enum(['CC', 'CE', 'NIT', 'passport']),
+  document_number: z.string().min(5, 'El número de documento debe tener al menos 5 dígitos'),
   phone_number: z.string().min(10, 'El teléfono debe tener al menos 10 dígitos').optional(),
-  user_type: z.enum(['natural', 'juridical', 'company'], {
-    errorMap: () => ({ message: 'Seleccione un tipo de usuario válido' })
-  }),
+  user_type: z.enum(['natural', 'juridical', 'company']),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: 'Debe aceptar los términos y condiciones'
   })
@@ -37,314 +48,262 @@ export const RegisterPage: React.FC = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors }
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema)
   });
 
-  const watchUserType = watch('user_type');
-
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setIsLoading(true);
-      
       const { confirmPassword, acceptTerms, ...userData } = data;
-      
-      console.log('🚀 Iniciando registro con datos:', userData);
-      
-      // Llamar directamente a la API de registro
       const response = await authAPI.register(userData);
-      
-      console.log('📋 Respuesta del servidor:', response);
-      
-      // Verificar diferentes formatos de respuesta exitosa
-      if (response.success || response.data?.success || response.message?.includes('success')) {
-        toast.success('¡Cuenta creada exitosamente! Iniciando sesión...');
-        
-        // Después del registro exitoso, iniciar sesión automáticamente
+
+      if (response.success || response.data?.success) {
+        toast.success('¡Cuenta creada! Autenticando...');
         try {
           const loginResponse = await authAPI.login(userData.email, userData.password);
-          
-          console.log('🔐 Respuesta del login:', loginResponse);
-          
           if (loginResponse.success && loginResponse.data) {
-            // Guardar el token y datos del usuario
             localStorage.setItem('access_token', loginResponse.data.access_token);
             localStorage.setItem('refresh_token', loginResponse.data.refresh_token);
             localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
-            
-            console.log('✅ Login automático exitoso, tokens guardados');
-            
             toast.success('¡Bienvenido al sistema!');
-            
-            // Esperar un poco para que se guarden los datos y luego redirigir
-            setTimeout(() => {
-              navigate('/');
-            }, 100);
+            setTimeout(() => navigate('/dashboard'), 100);
           } else {
-            toast.success('Cuenta creada exitosamente. Por favor inicia sesión.');
             navigate('/login');
           }
-        } catch (loginError) {
-          console.error('❌ Error en login automático:', loginError);
-          toast.success('Cuenta creada exitosamente. Por favor inicia sesión.');
+        } catch {
           navigate('/login');
         }
       } else {
-        // Si no hay indicador de éxito claro, pero tampoco hay error, asumir éxito
-        console.log('⚠️ Respuesta ambigua, pero probablemente exitosa');
-        toast.success('Cuenta creada exitosamente. Por favor inicia sesión.');
         navigate('/login');
       }
-      
     } catch (error: any) {
-      console.error('❌ Error completo en registro:', error);
-      
-      // Mejorar el manejo de errores
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Error al crear la cuenta. Por favor intenta nuevamente.';
-      
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || error.message || 'Error al crear la cuenta');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-            <img src="/usuario.png" alt="Icono de usuario" className="h-8 w-8 object-contain" />
+    <div className="min-h-screen flex bg-white font-sans overflow-hidden">
+      {/* Visual Side (LHS) */}
+      <div className="hidden lg:flex lg:w-5/12 bg-primary-900 relative items-center justify-center p-20">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80')] opacity-10 bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-900/95 to-accent-500/10"></div>
+
+        <div className="relative z-10 space-y-12 max-w-sm">
+          <div className="space-y-6">
+            <h1 className="text-5xl font-serif font-bold text-white leading-tight">
+              Únase a la Élite <span className="text-accent-500">Legal</span>.
+            </h1>
+            <p className="text-lg text-white/50 leading-relaxed font-light">
+              Cree su cuenta hoy y acceda a las herramientas de gestión judicial más avanzadas del país.
+            </p>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Crear nueva cuenta
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            O{' '}
-            <Link
-              to="/login"
-              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+
+          <div className="space-y-6">
+            {[
+              { text: 'Seguimiento en tiempo real 24/7', icon: CheckCircle2 },
+              { text: 'Alertas tempranas de actuaciones', icon: CheckCircle2 },
+              { text: 'Descarga masiva de expedientes', icon: CheckCircle2 },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-4 group">
+                <div className="w-8 h-8 rounded-full bg-accent-500/10 flex items-center justify-center text-accent-500 group-hover:bg-accent-500 group-hover:text-primary-900 transition-all">
+                  <item.icon size={16} />
+                </div>
+                <span className="text-sm font-medium text-white/80">{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Form Side (RHS) */}
+      <div className="w-full lg:w-7/12 flex items-center justify-center p-6 md:p-12 bg-gray-50 overflow-y-auto">
+        <div className="max-w-2xl w-full animate-scale-in my-12">
+          <div className="mb-10 flex flex-col items-center">
+            <button
+              onClick={() => navigate('/login')}
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-primary-900 transition-colors mb-8 group self-start"
             >
-              inicia sesión con tu cuenta existente
-            </Link>
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="text-xs font-bold uppercase tracking-widest">Ya tengo cuenta</span>
+            </button>
+            <div className="mb-6">
+              <div className="bg-primary-900 p-3 rounded-2xl shadow-xl border border-white/10">
+                <img src="/logo_justitrack.png" alt="JustiTrack" className="h-10 w-auto" />
+              </div>
+            </div>
+            <h2 className="text-4xl font-serif font-bold text-primary-900 tracking-tight mb-2">Crear nueva cuenta</h2>
+            <p className="text-gray-500 text-center max-w-md">Complete el formulario para habilitar su acceso al ecosistema JustiTrack.</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
+            {/* Step 1: Account Type */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 font-bold text-xs italic">01</div>
+                <h3 className="text-sm font-serif font-bold text-primary-900 uppercase tracking-widest">Tipo de Usuario</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Perfil Social</label>
+                  <select
+                    {...register('user_type')}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                  >
+                    <option value="">Seleccionar tipo</option>
+                    <option value="natural">Persona Natural</option>
+                    <option value="juridical">Persona Jurídica</option>
+                    <option value="company">Empresa / Firma de Abogados</option>
+                  </select>
+                  {errors.user_type && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.user_type.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Documento de Identidad</label>
+                  <div className="flex gap-2">
+                    <select
+                      {...register('document_type')}
+                      className="w-1/3 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                    >
+                      <option value="CC">CC</option>
+                      <option value="CE">CE</option>
+                      <option value="NIT">NIT</option>
+                    </select>
+                    <input
+                      {...register('document_number')}
+                      type="text"
+                      placeholder="Número"
+                      className="w-2/3 bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                    />
+                  </div>
+                  {(errors.document_type || errors.document_number) && <p className="text-xs font-bold text-danger-600 px-1 mt-1">Identificación requerida</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Personal Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 font-bold text-xs italic">02</div>
+                <h3 className="text-sm font-serif font-bold text-primary-900 uppercase tracking-widest">Datos Personales</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Nombre(s)</label>
+                  <input
+                    {...register('first_name')}
+                    type="text"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                    placeholder="Ej. Juan Andrés"
+                  />
+                  {errors.first_name && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.first_name.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Apellido(s)</label>
+                  <input
+                    {...register('last_name')}
+                    type="text"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                    placeholder="Ej. Pérez García"
+                  />
+                  {errors.last_name && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.last_name.message}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Correo Profesional</label>
+                  <div className="relative group">
+                    <Mail size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-accent-600" />
+                    <input
+                      {...register('email')}
+                      type="email"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                      placeholder="abogado@firma.com"
+                    />
+                  </div>
+                  {errors.email && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.email.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Teléfono Móvil</label>
+                  <div className="relative group">
+                    <Smartphone size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-accent-600" />
+                    <input
+                      {...register('phone_number')}
+                      type="tel"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                      placeholder="300 123 4567"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Security */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 font-bold text-xs italic">03</div>
+                <h3 className="text-sm font-serif font-bold text-primary-900 uppercase tracking-widest">Seguridad</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Nueva Contraseña</label>
+                  <input
+                    {...register('password')}
+                    type="password"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                    placeholder="Consultar requisitos"
+                  />
+                  {errors.password && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.password.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Confirmar Contraseña</label>
+                  <input
+                    {...register('confirmPassword')}
+                    type="password"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-primary-900 font-bold focus:ring-4 focus:ring-accent-500/10 focus:border-accent-500 transition-all outline-none"
+                    placeholder="Repetir..."
+                  />
+                  {errors.confirmPassword && <p className="text-xs font-bold text-danger-600 px-1 mt-1">{errors.confirmPassword.message}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Terms and Submit */}
+            <div className="pt-6 space-y-6">
+              <label className="flex items-start gap-4 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  {...register('acceptTerms')}
+                  className="mt-1 w-5 h-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500"
+                />
+                <span className="text-xs font-medium text-gray-500 leading-relaxed">
+                  Declaro que he leído y acepto los{' '}
+                  <Link to="/terms" className="text-accent-600 font-bold hover:underline">Términos del Servicio</Link>{' '}
+                  y la <Link to="/privacy" className="text-accent-600 font-bold hover:underline">Política de Tratamiento de Datos</Link>.
+                </span>
+              </label>
+              {errors.acceptTerms && <p className="text-xs font-bold text-danger-600 px-1">{errors.acceptTerms.message}</p>}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-primary-900 text-white rounded-2xl py-5 font-bold text-sm hover:bg-accent-500 hover:text-primary-900 transition-all shadow-2xl shadow-primary-900/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 group"
+              >
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Shield size={18} className="group-hover:scale-110 transition-transform" />}
+                <span>{isLoading ? 'Creando cuenta profesional...' : 'Finalizar Registro'}</span>
+              </button>
+            </div>
+          </form>
+
+          <p className="text-center mt-12 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">
+            Protección de datos conforme a la Ley 1581 de 2012
           </p>
         </div>
-
-        {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-4">
-            {/* Tipo de Usuario */}
-            <div>
-              <label htmlFor="user_type" className="block text-sm font-medium text-gray-700">
-                Tipo de Usuario
-              </label>
-              <select
-                id="user_type"
-                {...register('user_type')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Seleccionar tipo</option>
-                <option value="natural">Persona Natural</option>
-                <option value="juridical">Persona Jurídica</option>
-              </select>
-              {errors.user_type && (
-                <p className="mt-1 text-sm text-red-600">{errors.user_type.message}</p>
-              )}
-            </div>
-
-            {/* Nombres y Apellidos */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                  Nombres
-                </label>
-                <input
-                  id="first_name"
-                  type="text"
-                  {...register('first_name')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ingrese sus nombres"
-                />
-                {errors.first_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.first_name.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                  Apellidos
-                </label>
-                <input
-                  id="last_name"
-                  type="text"
-                  {...register('last_name')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ingrese sus apellidos"
-                />
-                {errors.last_name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.last_name.message}</p>
-                )}
-              </div>
-            </div>
-
-
-
-            {/* Documento */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="document_type" className="block text-sm font-medium text-gray-700">
-                  Tipo de Documento
-                </label>
-                <select
-                  id="document_type"
-                  {...register('document_type')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Seleccionar</option>
-                  <option value="CC">Cédula de Ciudadanía</option>
-                  <option value="CE">Cédula de Extranjería</option>
-                  <option value="passport">Pasaporte</option>
-                </select>
-                {errors.document_type && (
-                  <p className="mt-1 text-sm text-red-600">{errors.document_type.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="document_number" className="block text-sm font-medium text-gray-700">
-                  Número de Documento
-                </label>
-                <input
-                  id="document_number"
-                  type="text"
-                  {...register('document_number')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Número sin puntos ni comas"
-                />
-                {errors.document_number && (
-                  <p className="mt-1 text-sm text-red-600">{errors.document_number.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Correo Electrónico
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                {...register('email')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="correo@ejemplo.com"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Teléfono */}
-            <div>
-              <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700">
-                Teléfono (Opcional)
-              </label>
-              <input
-                id="phone_number"
-                type="tel"
-                {...register('phone_number')}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ej: 3001234567"
-              />
-              {errors.phone_number && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone_number.message}</p>
-              )}
-            </div>
-
-            {/* Contraseñas */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Contraseña
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  {...register('password')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Mínimo 8 caracteres"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirmar Contraseña
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  {...register('confirmPassword')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Repetir contraseña"
-                />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Términos y condiciones */}
-            <div className="flex items-start">
-              <input
-                id="acceptTerms"
-                type="checkbox"
-                {...register('acceptTerms')}
-                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-700">
-                Acepto los{' '}
-                <Link to="/terms" className="text-blue-600 hover:text-blue-500">
-                  términos y condiciones
-                </Link>{' '}
-                y la{' '}
-                <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
-                  política de privacidad
-                </Link>
-              </label>
-            </div>
-            {errors.acceptTerms && (
-              <p className="text-sm text-red-600">{errors.acceptTerms.message}</p>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? (
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : null}
-              Crear Cuenta
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
 };
+
+export default RegisterPage;

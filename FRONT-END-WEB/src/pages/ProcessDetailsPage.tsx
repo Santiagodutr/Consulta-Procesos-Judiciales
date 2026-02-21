@@ -12,6 +12,7 @@ import {
   PaginationInfo,
 } from '../services/judicialPortalService.ts';
 import { PublicFooter } from '../components/PublicFooter.tsx';
+import { Header } from '../components/Header.tsx';
 import {
   ArrowLeft,
   Star,
@@ -20,6 +21,18 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  User,
+  LogOut,
+  Gavel,
+  Calendar,
+  Building2,
+  MapPin,
+  FileText,
+  Users,
+  Briefcase,
+  Loader2,
+  Search,
+  Clock
 } from 'lucide-react';
 
 type TabType = 'datos' | 'sujetos' | 'documentos' | 'actuaciones';
@@ -29,7 +42,7 @@ const REGISTROS_POR_PAGINA = 30;
 export const ProcessDetailsPage: React.FC = () => {
   const { numeroRadicacion } = useParams<{ numeroRadicacion: string }>();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const [processData, setProcessData] = useState<JudicialProcessData | null>(null);
   const [processDetails, setProcessDetails] = useState<any>(null);
@@ -51,14 +64,7 @@ export const ProcessDetailsPage: React.FC = () => {
   const [isDownloadingCSV, setIsDownloadingCSV] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavingFavorite, setIsSavingFavorite] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement | null>(null);
-
-  const navLinks = [
-    { label: 'Inicio', onClick: () => navigate('/dashboard') },
-    { label: 'Reportes', onClick: () => navigate('/analytics') },
-    { label: 'Notificaciones', onClick: () => navigate('/notifications') },
-  ];
+  const exportContentRef = useRef<HTMLElement | null>(null);
 
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
@@ -68,16 +74,6 @@ export const ProcessDetailsPage: React.FC = () => {
     }
   }, [numeroRadicacion]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const loadProcessDetails = async (radicacion: string) => {
     try {
@@ -353,18 +349,6 @@ export const ProcessDetailsPage: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (err) {
-      console.error('Error cerrando sesión:', err);
-    }
-  };
-
-  const handleLogoClick = () => {
-    navigate('/');
-  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) {
@@ -386,102 +370,23 @@ export const ProcessDetailsPage: React.FC = () => {
     }
   };
 
-  const renderHeader = () => (
-    <header className="bg-primary-700 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="rounded-full p-2 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-              title="Regresar"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={handleLogoClick}
-              className="flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
-            >
-              <img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
-            </button>
-          </div>
-
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <button
-                key={link.label}
-                type="button"
-                onClick={link.onClick}
-                className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
-              >
-                {link.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="relative" ref={userMenuRef}>
-              <button
-                type="button"
-                onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
-                <span className="hidden sm:inline">{displayName}</span>
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-
-              {isUserMenuOpen && (
-                <div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
-                  <div className="py-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        navigate('/profile');
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
-                    >
-                      Perfil
-                    </button>
-                    
-                  </div>
-                  <div className="border-t border-gray-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
-        {renderHeader()}
-        <div className="flex-1 flex items-center justify-center py-24">
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+        <Header title="Historial de Expediente" />
+        <div className="flex-1 flex flex-col items-center justify-center py-32 space-y-6">
+          <div className="relative">
+            <div className="h-20 w-20 rounded-full border-t-2 border-accent-500 animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Gavel className="h-8 w-8 text-primary-900 animate-pulse" />
+            </div>
+          </div>
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando información del proceso...</p>
+            <p className="text-sm font-bold text-primary-900 uppercase tracking-widest">Sincronizando Expediente</p>
+            <p className="text-xs text-gray-400 mt-1">Recuperando registros históricos de la Rama Judicial...</p>
           </div>
         </div>
-
         <PublicFooter />
       </div>
     );
@@ -489,22 +394,23 @@ export const ProcessDetailsPage: React.FC = () => {
 
   if (error || !processData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
-        {renderHeader()}
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+        <Header title="Historial de Expediente" />
         <div className="flex-1 flex items-center justify-center py-24 px-4">
-          <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
-            <span className="text-5xl mb-4 block">❌</span>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error</h2>
-            <p className="text-gray-600 mb-6">{error || 'No se encontró información del proceso.'}</p>
+          <div className="bg-white rounded-3xl shadow-xl p-12 max-w-lg w-full text-center border border-gray-100 animate-scale-in">
+            <div className="w-20 h-20 bg-danger-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <X className="h-10 w-10 text-danger-500" />
+            </div>
+            <h2 className="text-2xl font-serif font-bold text-primary-900 mb-2">Error de Sincronización</h2>
+            <p className="text-gray-500 mb-8 leading-relaxed">{error || 'No se encontró información del proceso en los archivos históricos.'}</p>
             <button
               onClick={() => navigate('/dashboard')}
-              className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-primary-900 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95 shadow-xl shadow-primary-900/10"
             >
-              Regresar al dashboard
+              Regresar al Panel
             </button>
           </div>
         </div>
-
         <PublicFooter />
       </div>
     );
@@ -513,411 +419,412 @@ export const ProcessDetailsPage: React.FC = () => {
   const detailsSource = processDetails || processData;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
-      {renderHeader()}
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <Header title="Historial de Expediente" />
 
-      <main className="flex-1 pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white shadow-sm border-b mb-6 rounded-lg p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">DETALLE DEL PROCESO</h2>
-                <p className="text-lg text-blue-600 font-mono">{processData.numeroRadicacion}</p>
+      <main className="flex-1 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Process Header Card */}
+          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ring-1 ring-gray-100/50 mb-8 animate-fade-in">
+            <div className="bg-primary-900 px-8 py-10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                <Gavel size={240} className="text-white" />
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={handleToggleFavorite}
-                  disabled={isSavingFavorite}
-                  className={`${
-                    isFavorite
-                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                  } disabled:opacity-50 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2`}
-                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                >
-                  {isSavingFavorite ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span className="text-gray-700">Guardando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Star className={`h-5 w-5 ${isFavorite ? 'fill-white' : 'text-gray-600'}`} />
-                      <span className={isFavorite ? 'text-white' : 'text-gray-700'}>
-                        {isFavorite ? 'Favorito' : 'Guardar'}
-                      </span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDownloadDOCX}
-                  disabled={isDownloadingDOCX}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  {isDownloadingDOCX ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Descargando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileDown className="h-5 w-5" />
-                      <span>Descargar DOC</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDownloadCSV}
-                  disabled={isDownloadingCSV}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  {isDownloadingCSV ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Descargando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-5 w-5" />
-                      <span>Descargar CSV</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            <div className="text-sm text-gray-600 space-y-1 mt-4">
-              <p>Fecha de consulta: {new Date().toLocaleString('es-CO')}</p>
-              <p>Fecha de replicación de datos: {new Date().toLocaleString('es-CO')}</p>
-            </div>
-          </div>
 
-          <div className="bg-white shadow-sm rounded-lg">
-          <div className="border-b">
-            <div className="flex flex-wrap">
-              <button
-                onClick={() => handleTabChange('datos')}
-                className={`px-6 py-4 font-semibold text-sm ${
-                  activeTab === 'datos'
-                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                DATOS DEL PROCESO
-              </button>
-              <button
-                onClick={() => handleTabChange('sujetos')}
-                className={`px-6 py-4 font-semibold text-sm ${
-                  activeTab === 'sujetos'
-                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                SUJETOS PROCESALES
-              </button>
-              <button
-                onClick={() => handleTabChange('documentos')}
-                className={`px-6 py-4 font-semibold text-sm ${
-                  activeTab === 'documentos'
-                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                DOCUMENTOS DEL PROCESO
-              </button>
-              <button
-                onClick={() => handleTabChange('actuaciones')}
-                className={`px-6 py-4 font-semibold text-sm ${
-                  activeTab === 'actuaciones'
-                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                ACTUACIONES
-              </button>
-            </div>
-          </div>
-
-          <div className="p-6">
-            {isLoadingTab ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Cargando...</span>
-              </div>
-            ) : (
-              <>
-                {activeTab === 'datos' && (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha de Radicación:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{formatDate(detailsSource?.fechaRadicacion || processData.fechaRadicacion)}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Recurso:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.recurso || 'SIN TIPO DE RECURSO'}</p>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Despacho:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.despacho || processData.despacho}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Ponente:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.ponente || 'No especificado'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Ubicación del Expediente:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.ubicacionExpediente || 'ARCHIVO'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Proceso:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.tipoProceso || processData.tipoProceso || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Clase de Proceso:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.claseProceso || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Subclase de Proceso:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.subclaseProceso || 'SIN SUBCLASE DE PROCESO'}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Contenido de Radicación:</label>
-                        <p className="text-gray-900 bg-gray-50 p-3 rounded">{detailsSource?.contenidoRadicacion || ''}</p>
-                      </div>
+              <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-500/20 border border-accent-500/30 rounded-full text-accent-400">
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Expediente Digital</span>
+                  </div>
+                  <h2 className="text-4xl font-serif font-bold text-white tracking-tight">
+                    {processData.numeroRadicacion}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-6 text-white/60">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-accent-500" />
+                      <span className="text-xs font-semibold">Radicado: {formatDate(processData.fechaRadicacion)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-accent-500" />
+                      <span className="text-xs font-semibold truncate max-w-[300px]">{processData.despacho}</span>
                     </div>
                   </div>
-                )}
+                </div>
 
-                {activeTab === 'sujetos' && (
-                  <div className="space-y-4">
-                    {sujetos.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">No hay sujetos procesales disponibles</p>
+                <div className="flex flex-wrap gap-4">
+                  <button
+                    onClick={handleToggleFavorite}
+                    disabled={isSavingFavorite}
+                    className={`group flex items-center gap-3 px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${isFavorite
+                      ? 'bg-accent-500 text-primary-900 shadow-lg shadow-accent-500/20 active:scale-95'
+                      : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                      }`}
+                  >
+                    {isSavingFavorite ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-primary-900" />
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                      <Star className={`h-5 w-5 ${isFavorite ? 'fill-primary-900 text-primary-900' : ''} group-hover:scale-110 transition-transform`} />
+                    )}
+                    <span>{isFavorite ? 'Favorito' : 'Guardar'}</span>
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDownloadDOCX}
+                      disabled={isDownloadingDOCX}
+                      className="flex items-center gap-2 px-5 py-3.5 bg-white/10 text-white rounded-xl text-sm font-bold border border-white/10 hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {isDownloadingDOCX ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4 text-accent-500" />}
+                      <span>Word</span>
+                    </button>
+                    <button
+                      onClick={handleDownloadCSV}
+                      disabled={isDownloadingCSV}
+                      className="flex items-center gap-2 px-5 py-3.5 bg-white/10 text-white rounded-xl text-sm font-bold border border-white/10 hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {isDownloadingCSV ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 text-success-400" />}
+                      <span>Excel</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100 bg-gray-50/50">
+              <div className="p-4 px-8">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipo de Proceso</p>
+                <p className="text-sm font-bold text-primary-900 whitespace-nowrap overflow-hidden text-ellipsis">{processData.tipoProceso || 'ORALIDAD'}</p>
+              </div>
+              <div className="p-4 px-8">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sujeto Activo</p>
+                <p className="text-sm font-bold text-primary-900 truncate">{processData.demandante || 'RESERVA'}</p>
+              </div>
+              <div className="p-4 px-8">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sujeto Pasivo</p>
+                <p className="text-sm font-bold text-primary-900 truncate">{processData.demandado || 'RESERVA'}</p>
+              </div>
+              <div className="p-4 px-8">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Estado</p>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-success-500"></span>
+                  <p className="text-sm font-bold text-primary-900">ACTIVO</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs & Content */}
+          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ring-1 ring-gray-100/50 animate-scale-in">
+            <div className="p-2 bg-gray-50/50 border-b border-gray-100">
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { id: 'datos', label: 'Datos Generales', icon: FileText },
+                  { id: 'sujetos', label: 'Sujetos Procesales', icon: Users },
+                  { id: 'documentos', label: 'Expediente Dig.', icon: Briefcase },
+                  { id: 'actuaciones', label: 'Actuaciones', icon: Gavel },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id as TabType)}
+                    className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === tab.id
+                      ? 'bg-primary-900 text-white shadow-lg shadow-primary-900/20 active:scale-95'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-primary-900'
+                      }`}
+                  >
+                    <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-accent-500' : ''}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6">
+              {isLoadingTab ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <Loader2 className="h-10 w-10 text-accent-500 animate-spin" />
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Cargando Sección</p>
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'datos' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-4 px-2">
+                      {[
+                        { label: 'Fecha de Radicación', value: formatDate(detailsSource?.fechaRadicacion || processData.fechaRadicacion), icon: Calendar },
+                        { label: 'Recurso', value: detailsSource?.recurso || 'SIN TIPO DE RECURSO', icon: Gavel },
+                        { label: 'Ponente', value: detailsSource?.ponente || 'No especificado', icon: User },
+                        { label: 'Ubicación Exp.', value: detailsSource?.ubicacionExpediente || 'ARCHIVO', icon: MapPin },
+                        { label: 'Tipo Proceso', value: detailsSource?.tipoProceso || processData.tipoProceso || 'N/A', icon: Briefcase },
+                        { label: 'Clase Proceso', value: detailsSource?.claseProceso || 'N/A', icon: FileText },
+                        { label: 'Subclase Proceso', value: detailsSource?.subclaseProceso || 'SIN SUBCLASE', icon: FileText },
+                      ].map((item, idx) => (
+                        <div key={idx} className="space-y-2 group">
+                          <div className="flex items-center gap-2">
+                            <item.icon className="w-3.5 h-3.5 text-accent-500" />
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{item.label}</span>
+                          </div>
+                          <p className="text-sm font-bold text-primary-900 bg-gray-50/50 p-4 rounded-xl border border-gray-100 group-hover:border-accent-500/20 transition-colors">
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                      <div className="md:col-span-2 lg:col-span-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-3.5 h-3.5 text-accent-500" />
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Despacho</span>
+                        </div>
+                        <p className="text-sm font-bold text-primary-900 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                          {detailsSource?.despacho || processData.despacho}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'sujetos' && (
+                    <div className="overflow-hidden rounded-2xl border border-gray-100">
+                      <table className="min-w-full divide-y divide-gray-100">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {['Sujeto', 'Rol', 'Identificación', 'Apoderado'].map(header => (
+                              <th key={header} className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {sujetos.length > 0 ? sujetos.map((sujeto, idx) => (
+                            <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                              <td className="px-6 py-5 text-sm font-bold text-primary-900">
+                                {sujeto.nombreRazonSocial || sujeto.lsNombreSujeto || '-'}
+                              </td>
+                              <td className="px-6 py-5">
+                                <span className="inline-flex px-2.5 py-1 bg-primary-900/5 text-primary-900 text-[10px] font-bold uppercase tracking-wider rounded-md">
+                                  {sujeto.tipoSujeto || sujeto.lsTipoSujeto || '-'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-5 text-sm font-medium text-gray-500">
+                                {sujeto.identificacion || sujeto.lsIdentificacion || '-'}
+                              </td>
+                              <td className="px-6 py-5 text-xs text-gray-400">
+                                {sujeto.lsApoderado || '-'}
+                              </td>
+                            </tr>
+                          )) : (
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Identificación</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Apoderado</th>
+                              <td colSpan={4} className="px-6 py-12 text-center text-gray-400 font-medium">No se registran sujetos procesales</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {activeTab === 'documentos' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {documentos.length > 0 ? documentos.map((doc, idx) => (
+                        <div key={idx} className="group bg-white p-5 rounded-2xl border border-gray-100 hover:border-accent-500/30 hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300">
+                          <div className="flex gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 group-hover:bg-accent-500 group-hover:text-primary-900 transition-colors">
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-primary-900 truncate mb-1">{doc.lsNombreArchivo}</p>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{doc.lsTipoDocumento}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="col-span-full py-20 text-center space-y-3">
+                          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto">
+                            <Search className="w-8 h-8 text-gray-300" />
+                          </div>
+                          <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No hay archivos en el expediente digital</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'actuaciones' && (
+                    <div className="space-y-6">
+                      <div className="overflow-hidden rounded-2xl border border-gray-100">
+                        <table className="min-w-full divide-y divide-gray-100">
+                          <thead className="bg-primary-900">
+                            <tr>
+                              {['Fecha', 'Actuación', 'Detalle', 'Documento'].map(header => (
+                                <th key={header} className="px-6 py-4 text-left text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">
+                                  {header}
+                                </th>
+                              ))}
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {sujetos.map((sujeto, index) => (
-                              <tr key={index} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {sujeto.nombreRazonSocial || sujeto.lsNombreSujeto || '-'}
+                          <tbody className="divide-y divide-gray-100">
+                            {actuaciones.length > 0 ? actuaciones.map((actuacion, idx) => (
+                              <tr key={idx} className="group hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-5">
+                                  <div className="flex items-center gap-2">
+                                    <Clock size={14} className="text-accent-500" />
+                                    <span className="text-sm font-bold text-primary-900 whitespace-nowrap">{formatDate(actuacion.fechaActuacion)}</span>
+                                  </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                  {sujeto.tipoSujeto || sujeto.lsTipoSujeto || '-'}
+                                <td className="px-6 py-5">
+                                  <span className="text-sm font-bold text-primary-900 uppercase tracking-tight">{actuacion.actuacion}</span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                  {sujeto.identificacion || sujeto.lsIdentificacion || '-'}
+                                <td className="px-6 py-5 pr-12">
+                                  <p className="text-xs text-gray-500 leading-relaxed max-w-md italic">
+                                    {actuacion.anotacion || 'Sin anotaciones registradas'}
+                                  </p>
                                 </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">
-                                  {sujeto.lsApoderado || '-'}
+                                <td className="px-6 py-5">
+                                  <button
+                                    onClick={() => handleVerDocumentos(actuacion)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-primary-900/5 text-primary-900 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-accent-500 hover:text-primary-900 transition-all border border-transparent hover:border-accent-500/20"
+                                  >
+                                    <FileText size={14} />
+                                    <span>Ver Adjunto</span>
+                                  </button>
                                 </td>
                               </tr>
-                            ))}
+                            )) : (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-12 text-center text-gray-400 font-medium">No se registran actuaciones</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
-                    )}
-                  </div>
-                )}
 
-                {activeTab === 'documentos' && (
-                  <div className="space-y-4">
-                    {documentos.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">No hay documentos disponibles</p>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {documentos.map((documento, index) => (
-                          <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start gap-3">
-                              <div className="bg-blue-100 rounded p-2">
-                                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 truncate">{documento.lsNombreArchivo}</p>
-                                <p className="text-xs text-gray-600 mt-1">{documento.lsTipoDocumento}</p>
-                                {documento.lsExtensionArchivo && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {documento.lsExtensionArchivo.toUpperCase()}
-                                    {documento.lnTamanoArchivo && ` • ${(documento.lnTamanoArchivo / 1024).toFixed(1)} KB`}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'actuaciones' && (
-                  <div className="space-y-4">
-                    {actuaciones.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">No hay actuaciones disponibles</p>
-                    ) : (
-                      <>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full bg-white border border-gray-200">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha de Actuación
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Actuación
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Anotación
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha Inicio Término
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha Finaliza Término
-                                </th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">
-                                  Fecha de Registro
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {actuaciones.map((actuacion, index) => (
-                                <tr key={index} className="hover:bg-gray-50 transition-colors border-b">
-                                  <td className="px-4 py-3 text-sm text-gray-900">
-                                    {formatDate(actuacion.fechaActuacion)}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <div className="space-y-1">
-                                      <p className="font-medium text-gray-900">{actuacion.actuacion}</p>
-                                      {actuacion.conDocumentos && (
-                                        <button
-                                          onClick={() => handleVerDocumentos(actuacion)}
-                                          className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors"
-                                        >
-                                          📎 Con documentos
-                                        </button>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700">
-                                    {actuacion.anotacion || '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                    {actuacion.fechaInicioTermino || actuacion.fechaInicial
-                                      ? formatDate(actuacion.fechaInicioTermino || actuacion.fechaInicial!)
-                                      : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                    {actuacion.fechaFinalizaTermino || actuacion.fechaFinal
-                                      ? formatDate(actuacion.fechaFinalizaTermino || actuacion.fechaFinal!)
-                                      : '-'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-center text-gray-900">
-                                    {actuacion.fechaRegistro
-                                      ? formatDate(actuacion.fechaRegistro)
-                                      : '-'}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {actuacionesPaginacion && actuacionesPaginacion.cantPaginas > 1 && (
-                          <div className="flex items-center justify-between mt-4">
+                      {/* Pagination */}
+                      {actuacionesPaginacion && actuacionesPaginacion.cantPaginas > 1 && (
+                        <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6 mt-4 border border-gray-100 rounded-2xl">
+                          <div className="flex flex-1 justify-between sm:hidden">
                             <button
-                              onClick={() => loadActuacionesPagina(actuacionesPaginaActual - 1)}
                               disabled={!actuacionesPaginacion.anteriorPagina}
-                              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50"
+                              onClick={() => loadActuacionesPagina(actuacionesPaginaActual - 1)}
+                              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                             >
-                              <ChevronLeft className="h-4 w-4" />
                               Anterior
                             </button>
-                            <p className="text-sm text-gray-600">
-                              Página {actuacionesPaginaActual} de {actuacionesPaginacion.cantPaginas}
-                            </p>
                             <button
-                              onClick={() => loadActuacionesPagina(actuacionesPaginaActual + 1)}
                               disabled={!actuacionesPaginacion.siguientePagina}
-                              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 disabled:opacity-50"
+                              onClick={() => loadActuacionesPagina(actuacionesPaginaActual + 1)}
+                              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                             >
                               Siguiente
-                              <ChevronRight className="h-4 w-4" />
                             </button>
                           </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-        </div>
-      </main>
-
-      <PublicFooter />
-
-      {showDocumentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full">
-            <div className="flex items-center justify-between p-4 border-b">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Documentos de la actuación</h3>
-                <p className="text-sm text-gray-600">
-                  {selectedActuacion?.actuacion} - {formatDate(selectedActuacion?.fechaActuacion)}
-                </p>
-              </div>
-              <button
-                onClick={handleCloseModal}
-                className="p-2 text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-4">
-              {loadingDocuments ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">Cargando documentos...</span>
-                </div>
-              ) : actuacionDocuments.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">No hay documentos asociados a esta actuación</p>
-              ) : (
-                <div className="space-y-4">
-                  {actuacionDocuments.map((doc, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{doc.nombre}</p>
-                        {doc.fechaDocumento && (
-                          <p className="text-xs text-gray-500">Fecha: {formatDate(doc.fechaDocumento)}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDownloadDocumento(doc)}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
-                      >
-                        <Download className="h-4 w-4" /> Descargar
-                      </button>
+                          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-sm text-gray-700">
+                                Mostrando página <span className="font-bold text-primary-900">{actuacionesPaginaActual}</span> de{' '}
+                                <span className="font-bold text-primary-900">{actuacionesPaginacion.cantPaginas}</span> ({actuacionesPaginacion.cantRegistros} actuaciones)
+                              </p>
+                            </div>
+                            <div>
+                              <nav className="isolate inline-flex -space-x-px rounded-xl shadow-sm border border-gray-100 overflow-hidden" aria-label="Pagination">
+                                <button
+                                  disabled={!actuacionesPaginacion.anteriorPagina}
+                                  onClick={() => loadActuacionesPagina(actuacionesPaginaActual - 1)}
+                                  className="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-30 border-r border-gray-100"
+                                >
+                                  <ChevronLeft className="h-5 w-5" />
+                                </button>
+                                <button
+                                  disabled={!actuacionesPaginacion.siguientePagina}
+                                  onClick={() => loadActuacionesPagina(actuacionesPaginaActual + 1)}
+                                  className="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-30"
+                                >
+                                  <ChevronRight className="h-5 w-5" />
+                                </button>
+                              </nav>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
+      </main>
+
+      {/* Document Modal */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 z-[100] overflow-y-auto">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div className="fixed inset-0 bg-primary-900/40 backdrop-blur-sm transition-opacity" onClick={handleCloseModal}></div>
+
+            <div className="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl animate-scale-in border border-gray-100">
+              <div className="bg-primary-900 px-8 py-6 flex items-center justify-between border-b border-accent-500/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-accent-500/10 flex items-center justify-center text-accent-500">
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-accent-500 uppercase tracking-[0.2em] leading-none mb-1">Documentos de Actuación</h3>
+                    <p className="text-white text-xs font-serif opacity-80">{selectedActuacion?.actuacion || 'Detalles del Archivo'}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white transition-all"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="px-8 py-8 bg-gray-50/50">
+                {loadingDocuments ? (
+                  <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                    <Loader2 className="h-10 w-10 text-accent-500 animate-spin" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Recuperando Archivos</p>
+                  </div>
+                ) : actuacionDocuments.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {actuacionDocuments.map((doc, idx) => (
+                      <div key={idx} className="group flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 hover:border-accent-500/30 hover:shadow-xl transition-all duration-300">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 group-hover:bg-accent-500 group-hover:text-primary-900 transition-colors">
+                            <FileText size={20} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-primary-900 truncate mb-1">{doc.nombre || `Documento_${doc.idRegDocumento}`}</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{doc.nombre?.split('.').pop() || 'PDF'} • Expediente Digital</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleDownloadDocumento(doc)}
+                          className="flex items-center gap-2 px-5 py-3 bg-primary-900 text-white rounded-xl text-xs font-bold hover:bg-accent-500 hover:text-primary-900 transition-all active:scale-95 shadow-lg shadow-primary-900/10"
+                        >
+                          <Download size={14} />
+                          <span>Descargar</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 space-y-4">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-gray-100">
+                      <Search size={32} className="text-gray-200" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No se encontraron adjuntos para este registro</p>
+                  </div>
+                )}
+              </div>
+              <div className="bg-white px-8 py-6 border-t border-gray-100 text-center">
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Todos los archivos son firmados digitalmente por la Rama Judicial</p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
+      <PublicFooter />
     </div>
   );
 };
+
+export default ProcessDetailsPage;

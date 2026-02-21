@@ -7,16 +7,28 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: '#f0f4f8',
+          100: '#d9e2ec',
+          200: '#bcccdc',
+          300: '#9fb3c8',
+          400: '#829ab1',
+          500: '#627d98',
+          600: '#486581',
+          700: '#334e68',
+          800: '#243b53',
+          900: '#102a43', // Deep Navy
+        },
+        accent: { // Gold / Bronze
+          50: '#fbf7f1',
+          100: '#f5eadb',
+          200: '#ebdcb6',
+          300: '#dfcc91',
+          400: '#d4bb6c',
+          500: '#b49b49',
+          600: '#8d7939',
+          700: '#67582a',
+          800: '#42381b',
+          900: '#1e190c',
         },
         secondary: {
           50: '#f8fafc',
@@ -69,30 +81,40 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', 'serif'],
       },
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-in': 'slideIn 0.3s ease-out',
-        'bounce-subtle': 'bounceSubtle 2s infinite',
+        'fade-in': 'fadeIn 0.8s ease-out forwards',
+        'slide-up': 'slideUp 0.8s ease-out forwards',
+        'scale-in': 'scaleIn 0.5s ease-out forwards',
+        'float': 'float 6s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        slideIn: {
-          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
-        bounceSubtle: {
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        float: {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-5px)' },
+          '50%': { transform: 'translateY(-10px)' },
         },
       },
+      backgroundImage: {
+        'hero-pattern': "url('/hero-pattern.svg')", // Placeholder, we might use CSS gradients instead
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+      }
     },
   },
   plugins: [

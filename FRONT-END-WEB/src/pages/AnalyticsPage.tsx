@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
 	ResponsiveContainer,
 	LineChart,
@@ -32,12 +32,22 @@ import { PublicFooter } from '../components/PublicFooter.tsx';
 import { useTour } from '../hooks/useTour.ts';
 import { HelpButton } from '../components/HelpButton.tsx';
 import { analyticsTourSteps } from '../tours/analyticsTour.ts';
+import { Header } from '../components/Header.tsx';
 import {
 	Activity as ActivityIcon,
 	BarChart3,
 	CalendarClock,
 	Loader2,
 	TrendingUp,
+	FileDown,
+	User,
+	LogOut,
+	Bell,
+	Search,
+	ChevronRight,
+	ArrowLeft,
+	Star,
+	Gavel
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -150,15 +160,15 @@ const parseActivityDate = (activity: ProcessActivity): Date | null => {
 };
 
 const buildAnalyticsFromActivities = (activities: ProcessActivity[]): ActivityAnalytics => {
-		const parsedDates = activities
-			.map(parseActivityDate)
-			.filter((date): date is Date => date !== null)
-			.sort((a, b) => a.getTime() - b.getTime());
+	const parsedDates = activities
+		.map(parseActivityDate)
+		.filter((date): date is Date => date !== null)
+		.sort((a, b) => a.getTime() - b.getTime());
 
-		const countedDates = parsedDates.filter(date => {
-			const yearNumber = date.getFullYear();
-			return yearNumber >= ANALYTICS_START_YEAR && yearNumber <= ANALYTICS_END_YEAR;
-		});
+	const countedDates = parsedDates.filter(date => {
+		const yearNumber = date.getFullYear();
+		return yearNumber >= ANALYTICS_START_YEAR && yearNumber <= ANALYTICS_END_YEAR;
+	});
 
 	const timelineStart = startOfYear(new Date(ANALYTICS_START_YEAR, 0, 1));
 	const timelineEnd = startOfYear(new Date(ANALYTICS_END_YEAR, 0, 1));
@@ -187,14 +197,14 @@ const buildAnalyticsFromActivities = (activities: ProcessActivity[]): ActivityAn
 		};
 	}
 
-		if (countedDates.length === 0) {
-			const hasHistoricalData = parsedDates.length > 0;
-			const lastHistoricalLabel = hasHistoricalData
-				? capitalize(format(parsedDates[parsedDates.length - 1], 'dd MMM yyyy', { locale: es }))
-				: 'Sin registros';
-			const firstHistoricalLabel = hasHistoricalData
-				? capitalize(format(parsedDates[0], 'dd MMM yyyy', { locale: es }))
-				: undefined;
+	if (countedDates.length === 0) {
+		const hasHistoricalData = parsedDates.length > 0;
+		const lastHistoricalLabel = hasHistoricalData
+			? capitalize(format(parsedDates[parsedDates.length - 1], 'dd MMM yyyy', { locale: es }))
+			: 'Sin registros';
+		const firstHistoricalLabel = hasHistoricalData
+			? capitalize(format(parsedDates[0], 'dd MMM yyyy', { locale: es }))
+			: undefined;
 		const chartData = timelineYears.map(yearDate => ({
 			yearKey: format(yearDate, 'yyyy'),
 			label: format(yearDate, 'yyyy'),
@@ -216,19 +226,19 @@ const buildAnalyticsFromActivities = (activities: ProcessActivity[]): ActivityAn
 			firstActivityLabel: firstHistoricalLabel,
 			inactiveBlocks: chartData.length > 0
 				? [
-						{
-							startLabel: chartData[0].label,
-							endLabel: chartData[chartData.length - 1].label,
-							length: chartData.length,
-						},
-					]
+					{
+						startLabel: chartData[0].label,
+						endLabel: chartData[chartData.length - 1].label,
+						length: chartData.length,
+					},
+				]
 				: [],
 		};
 	}
 
-		const countsByYear = new Map<string, number>();
-		countedDates.forEach(date => {
-			const yearKey = format(startOfYear(date), 'yyyy');
+	const countsByYear = new Map<string, number>();
+	countedDates.forEach(date => {
+		const yearKey = format(startOfYear(date), 'yyyy');
 		countsByYear.set(yearKey, (countsByYear.get(yearKey) || 0) + 1);
 	});
 
@@ -254,35 +264,19 @@ const buildAnalyticsFromActivities = (activities: ProcessActivity[]): ActivityAn
 
 	const peakPoint = chartData.find(point => point.isPeak);
 
-		let inactiveSegments = 0;
-		const inactiveBlocks: InactiveBlock[] = [];
-		let inactiveStartIndex: number | null = null;
+	let inactiveSegments = 0;
+	const inactiveBlocks: InactiveBlock[] = [];
+	let inactiveStartIndex: number | null = null;
 
-		chartData.forEach((point, index) => {
-			if (point.count === 0) {
-				if (inactiveStartIndex === null) {
-					inactiveStartIndex = index;
-				}
-			} else if (inactiveStartIndex !== null) {
-				inactiveSegments += 1;
-				const startPoint = chartData[inactiveStartIndex];
-				const endPoint = chartData[index - 1];
-				const startDate = parseISO(startPoint.dateISO);
-				const endDate = parseISO(endPoint.dateISO);
-				const length = differenceInCalendarYears(endDate, startDate) + 1;
-				inactiveBlocks.push({
-					startLabel: startPoint.label,
-					endLabel: endPoint.label,
-					length,
-				});
-				inactiveStartIndex = null;
+	chartData.forEach((point, index) => {
+		if (point.count === 0) {
+			if (inactiveStartIndex === null) {
+				inactiveStartIndex = index;
 			}
-		});
-
-		if (inactiveStartIndex !== null) {
+		} else if (inactiveStartIndex !== null) {
 			inactiveSegments += 1;
 			const startPoint = chartData[inactiveStartIndex];
-			const endPoint = chartData[chartData.length - 1];
+			const endPoint = chartData[index - 1];
 			const startDate = parseISO(startPoint.dateISO);
 			const endDate = parseISO(endPoint.dateISO);
 			const length = differenceInCalendarYears(endDate, startDate) + 1;
@@ -291,15 +285,31 @@ const buildAnalyticsFromActivities = (activities: ProcessActivity[]): ActivityAn
 				endLabel: endPoint.label,
 				length,
 			});
+			inactiveStartIndex = null;
 		}
+	});
+
+	if (inactiveStartIndex !== null) {
+		inactiveSegments += 1;
+		const startPoint = chartData[inactiveStartIndex];
+		const endPoint = chartData[chartData.length - 1];
+		const startDate = parseISO(startPoint.dateISO);
+		const endDate = parseISO(endPoint.dateISO);
+		const length = differenceInCalendarYears(endDate, startDate) + 1;
+		inactiveBlocks.push({
+			startLabel: startPoint.label,
+			endLabel: endPoint.label,
+			length,
+		});
+	}
 
 	let longestGapDays = 0;
 	let longestGapStart: Date | null = null;
 	let longestGapEnd: Date | null = null;
 
-		for (let i = 1; i < countedDates.length; i += 1) {
-			const current = countedDates[i];
-			const previous = countedDates[i - 1];
+	for (let i = 1; i < countedDates.length; i += 1) {
+		const current = countedDates[i];
+		const previous = countedDates[i - 1];
 		const gap = Math.max(0, differenceInCalendarDays(current, previous) - 1);
 		if (gap > longestGapDays) {
 			longestGapDays = gap;
@@ -310,37 +320,37 @@ const buildAnalyticsFromActivities = (activities: ProcessActivity[]): ActivityAn
 
 	const gapToToday = Math.max(
 		0,
-			differenceInCalendarDays(new Date(), countedDates[countedDates.length - 1]) - 1,
+		differenceInCalendarDays(new Date(), countedDates[countedDates.length - 1]) - 1,
 	);
 
 	if (gapToToday > longestGapDays) {
 		longestGapDays = gapToToday;
-			longestGapStart = countedDates[countedDates.length - 1];
+		longestGapStart = countedDates[countedDates.length - 1];
 		longestGapEnd = new Date();
 	}
 
 	const longestGap = longestGapDays > 0 && longestGapStart && longestGapEnd
 		? {
-				days: longestGapDays,
-				fromLabel: capitalize(format(longestGapStart, 'dd MMM yyyy', { locale: es })),
-				toLabel: capitalize(format(longestGapEnd, 'dd MMM yyyy', { locale: es })),
-			}
+			days: longestGapDays,
+			fromLabel: capitalize(format(longestGapStart, 'dd MMM yyyy', { locale: es })),
+			toLabel: capitalize(format(longestGapEnd, 'dd MMM yyyy', { locale: es })),
+		}
 		: undefined;
 
-		const averagePerYear = chartData.length > 0 ? countedDates.length / chartData.length : 0;
+	const averagePerYear = chartData.length > 0 ? countedDates.length / chartData.length : 0;
 
 	return {
 		chartData,
-			totalActivities: countedDates.length,
+		totalActivities: countedDates.length,
 		peakCount: peakPoint?.count ?? 0,
 		peakYearLabel: peakPoint?.label,
 		averagePerYear,
 		inactiveSegments,
 		longestGap,
-			lastActivityLabel: capitalize(
-				format(countedDates[countedDates.length - 1], 'dd MMM yyyy', { locale: es }),
-			),
-			firstActivityLabel: capitalize(format(countedDates[0], 'dd MMM yyyy', { locale: es })),
+		lastActivityLabel: capitalize(
+			format(countedDates[countedDates.length - 1], 'dd MMM yyyy', { locale: es }),
+		),
+		firstActivityLabel: capitalize(format(countedDates[0], 'dd MMM yyyy', { locale: es })),
 		inactiveBlocks,
 	};
 };
@@ -353,13 +363,20 @@ const ActivityTooltipContent: React.FC<TooltipProps<string, string>> = ({ active
 	const point = payload[0].payload as ActivityChartPoint;
 
 	return (
-		<div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-xl">
-			<p className="text-sm font-semibold text-slate-900">{point.label}</p>
-			<p className="text-sm text-slate-600">
-				Actuaciones: <span className="font-semibold text-slate-900">{point.count}</span>
-			</p>
-			{point.isPeak && <p className="text-xs font-medium text-amber-600">Pico de actividad</p>}
-			{point.isInactive && <p className="text-xs font-medium text-slate-500">Periodo inactivo</p>}
+		<div className="rounded-xl border border-accent-500/20 bg-primary-900 px-4 py-3 shadow-2xl animate-fade-in">
+			<p className="text-xs font-bold text-accent-400 uppercase tracking-widest mb-1">{point.label}</p>
+			<div className="flex items-center gap-2">
+				<p className="text-sm font-bold text-white">
+					Actuaciones: <span className="text-accent-500">{point.count}</span>
+				</p>
+			</div>
+			{point.isPeak && (
+				<div className="mt-2 flex items-center gap-1">
+					<span className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></span>
+					<p className="text-[10px] font-bold text-accent-500 uppercase">Pico de actividad</p>
+				</div>
+			)}
+			{point.isInactive && <p className="mt-2 text-[10px] font-medium text-gray-400 uppercase">Periodo inactivo</p>}
 		</div>
 	);
 };
@@ -367,19 +384,19 @@ const ActivityTooltipContent: React.FC<TooltipProps<string, string>> = ({ active
 const ActivityDot = (props: any) => {
 	const { cx, cy, payload } = props;
 	if (payload.isPeak) {
-		return <circle cx={cx} cy={cy} r={6} fill="#fb923c" stroke="#1f2937" strokeWidth={2} />;
+		return <circle cx={cx} cy={cy} r={6} fill="#EAB308" stroke="#0F1E33" strokeWidth={2} />;
 	}
 	if (payload.count === 0) {
-		return <circle cx={cx} cy={cy} r={4} fill="#94a3b8" stroke="#ffffff" strokeWidth={1.5} />;
+		return <circle cx={cx} cy={cy} r={4} fill="#1e293b" stroke="#334155" strokeWidth={1} />;
 	}
-	return <circle cx={cx} cy={cy} r={4} fill="#2563eb" stroke="#ffffff" strokeWidth={1.5} />;
+	return <circle cx={cx} cy={cy} r={4} fill="#EAB308" stroke="#0F1E33" strokeWidth={1.5} />;
 };
 
 const formatNumber = (value: number) => new Intl.NumberFormat('es-CO').format(value);
 
 const AnalyticsPage: React.FC = () => {
 	const navigate = useNavigate();
-	const { user, signOut } = useAuth();
+	const { user } = useAuth();
 	const { startTour, hasCompletedTour } = useTour(analyticsTourSteps, 'analytics');
 
 	const [favoriteProcesses, setFavoriteProcesses] = useState<FavoriteProcess[]>([]);
@@ -389,38 +406,13 @@ const AnalyticsPage: React.FC = () => {
 	const [loadingProcess, setLoadingProcess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [processError, setProcessError] = useState<string | null>(null);
-	const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 	const [exporting, setExporting] = useState(false);
-	const userMenuRef = useRef<HTMLDivElement | null>(null);
 	const exportContentRef = useRef<HTMLElement | null>(null);
 
-	const displayName = useMemo(() => {
-		const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ');
-		return name || 'Usuario';
-	}, [user?.first_name, user?.last_name]);
+	const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Usuario';
 
-	const navLinks = useMemo(
-		() => [
-			{ label: 'Inicio', onClick: () => navigate('/dashboard') },
-			{ label: 'Reportes', onClick: () => navigate('/analytics') },
-			{ label: 'Notificaciones', onClick: () => navigate('/notifications') },
-		],
-		[navigate],
-	);
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-				setIsUserMenuOpen(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
-
-		const loadProcessAnalytics = useCallback(
-			async (numeroRadicacion: string) => {
+	const loadProcessAnalytics = useCallback(
+		async (numeroRadicacion: string) => {
 			setLoadingProcess(true);
 			setProcessError(null);
 
@@ -471,70 +463,57 @@ const AnalyticsPage: React.FC = () => {
 			}
 		},
 		[],
-		);
+	);
 
-		const loadFavorites = useCallback(async () => {
-			setLoadingFavorites(true);
-			setError(null);
+	const loadFavorites = useCallback(async () => {
+		setLoadingFavorites(true);
+		setError(null);
 
-			try {
-				const response = await directJudicialAPI.getFavoriteProcesses();
-				if (response.success && Array.isArray(response.data)) {
-					setFavoriteProcesses(response.data);
-				} else {
-					setFavoriteProcesses([]);
-					setError(response.message || 'No se pudieron obtener los procesos favoritos');
-				}
-			} catch (e) {
-				console.error('Error loading favorites', e);
-				setError('No se pudieron obtener los procesos favoritos');
+		try {
+			const response = await directJudicialAPI.getFavoriteProcesses();
+			if (response.success && Array.isArray(response.data)) {
+				setFavoriteProcesses(response.data);
+			} else {
 				setFavoriteProcesses([]);
-			} finally {
-				setLoadingFavorites(false);
+				setError(response.message || 'No se pudieron obtener los procesos favoritos');
 			}
-			}, []);
+		} catch (e) {
+			console.error('Error loading favorites', e);
+			setError('No se pudieron obtener los procesos favoritos');
+			setFavoriteProcesses([]);
+		} finally {
+			setLoadingFavorites(false);
+		}
+	}, []);
 
 	useEffect(() => {
 		loadFavorites();
 	}, [loadFavorites]);
 
-			useEffect(() => {
-				if (favoriteProcesses.length === 0) {
-					return;
-				}
-
-				if (!selectedProcess) {
-					setSelectedProcess(favoriteProcesses[0].numero_radicacion);
-				}
-			}, [favoriteProcesses, selectedProcess]);
-
-			useEffect(() => {
-				if (!selectedProcess) {
-					return;
-				}
-
-				if (!analyticsByProcess[selectedProcess]) {
-					loadProcessAnalytics(selectedProcess);
-				}
-			}, [selectedProcess, analyticsByProcess, loadProcessAnalytics]);
-
-		const handleProcessSelection = useCallback((numeroRadicacion: string) => {
-			setSelectedProcess(numeroRadicacion);
-			setProcessError(null);
-		}, []);
-
-	const handleLogout = useCallback(async () => {
-		try {
-			await signOut();
-			navigate('/login');
-		} catch (e) {
-			console.error('Error al cerrar sesión', e);
+	useEffect(() => {
+		if (favoriteProcesses.length === 0) {
+			return;
 		}
-	}, [navigate, signOut]);
 
-	const handleLogoClick = useCallback(() => {
-		navigate('/');
-	}, [navigate]);
+		if (!selectedProcess) {
+			setSelectedProcess(favoriteProcesses[0].numero_radicacion);
+		}
+	}, [favoriteProcesses, selectedProcess]);
+
+	useEffect(() => {
+		if (!selectedProcess) {
+			return;
+		}
+
+		if (!analyticsByProcess[selectedProcess]) {
+			loadProcessAnalytics(selectedProcess);
+		}
+	}, [selectedProcess, analyticsByProcess, loadProcessAnalytics]);
+
+	const handleProcessSelection = useCallback((numeroRadicacion: string) => {
+		setSelectedProcess(numeroRadicacion);
+		setProcessError(null);
+	}, []);
 
 	const handleExportPdf = useCallback(async () => {
 		if (!exportContentRef.current) {
@@ -592,44 +571,44 @@ const AnalyticsPage: React.FC = () => {
 			};
 		}
 
-				const combinedMap = new Map<string, { count: number; dateISO: string }>();
+		const combinedMap = new Map<string, { count: number; dateISO: string }>();
 
 		analyticsValues.forEach(analytics => {
 			analytics.chartData.forEach(point => {
-					const existing = combinedMap.get(point.yearKey);
+				const existing = combinedMap.get(point.yearKey);
 				if (existing) {
 					existing.count += point.count;
 				} else {
-						combinedMap.set(point.yearKey, { count: point.count, dateISO: point.dateISO });
+					combinedMap.set(point.yearKey, { count: point.count, dateISO: point.dateISO });
 				}
 			});
 		});
 
-				const chartData: ActivityChartPoint[] = [];
-				let globalMax = 0;
+		const chartData: ActivityChartPoint[] = [];
+		let globalMax = 0;
 
-				for (let year = ANALYTICS_START_YEAR; year <= ANALYTICS_END_YEAR; year += 1) {
-					const yearKey = year.toString();
-					const existing = combinedMap.get(yearKey);
-					const count = existing ? existing.count : 0;
-					if (count > globalMax) {
-						globalMax = count;
-					}
-					chartData.push({
-						yearKey,
-						label: yearKey,
-						count,
-						isPeak: false,
-						isInactive: count === 0,
-						dateISO: existing ? existing.dateISO : new Date(year, 0, 1).toISOString(),
-					});
-				}
+		for (let year = ANALYTICS_START_YEAR; year <= ANALYTICS_END_YEAR; year += 1) {
+			const yearKey = year.toString();
+			const existing = combinedMap.get(yearKey);
+			const count = existing ? existing.count : 0;
+			if (count > globalMax) {
+				globalMax = count;
+			}
+			chartData.push({
+				yearKey,
+				label: yearKey,
+				count,
+				isPeak: false,
+				isInactive: count === 0,
+				dateISO: existing ? existing.dateISO : new Date(year, 0, 1).toISOString(),
+			});
+		}
 
-				if (globalMax > 0) {
-					chartData.forEach(point => {
-						point.isPeak = point.count === globalMax;
-					});
-				}
+		if (globalMax > 0) {
+			chartData.forEach(point => {
+				point.isPeak = point.count === globalMax;
+			});
+		}
 
 		let inactiveSegments = 0;
 		let currentBlock = false;
@@ -659,104 +638,24 @@ const AnalyticsPage: React.FC = () => {
 		};
 	}, [analyticsByProcess]);
 
-	const renderHeader = () => (
-		<header className="bg-primary-700 text-white shadow-lg">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="flex h-16 items-center justify-between">
-					<div className="flex items-center gap-3">
-						<button
-							type="button"
-							onClick={handleLogoClick}
-							className="flex items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-						>
-							<img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
-						</button>
-					</div>
-
-					<div className="hidden items-center gap-8 md:flex">
-						{navLinks.map(link => (
-							<button
-								key={link.label}
-								type="button"
-								onClick={link.onClick}
-								className="rounded-full px-4 py-3 text-base font-semibold tracking-wide text-white/95 transition hover:bg-white/15 hover:text-white"
-							>
-								{link.label}
-							</button>
-						))}
-					</div>
-
-					<div className="flex items-center gap-2 md:gap-4">
-						<div className="relative" ref={userMenuRef}>
-							<button
-								type="button"
-								onClick={() => setIsUserMenuOpen(prev => !prev)}
-								className="flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-							>
-								<img src="/usuario.png" alt="Usuario" className="h-6 w-6" />
-								<span className="hidden sm:inline">{displayName}</span>
-								<svg
-									className="h-3 w-3"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								>
-									<path d="M6 9l6 6 6-6" />
-								</svg>
-							</button>
-
-							{isUserMenuOpen && (
-								<div className="absolute right-0 z-20 mt-3 w-52 overflow-hidden rounded-xl bg-white text-gray-700 shadow-xl ring-1 ring-black/5">
-									<div className="py-2">
-										<button
-											type="button"
-											onClick={() => {
-												setIsUserMenuOpen(false);
-												navigate('/profile');
-											}}
-											className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-100"
-										>
-											Perfil
-										</button>
-										
-									</div>
-									<div className="border-t border-gray-100">
-										<button
-											type="button"
-											onClick={() => {
-												setIsUserMenuOpen(false);
-												handleLogout();
-											}}
-											className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-50"
-										>
-											Cerrar Sesión
-										</button>
-									</div>
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-			</div>
-		</header>
-	);
 
 	return (
-		<div className="min-h-screen bg-slate-50 flex flex-col">
-			{renderHeader()}
+		<div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+			<Header title="Reportes Transaccionales" />
 
 			<main
 				ref={exportContentRef}
-				className="flex-1 mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8"
+				className="flex-1 mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 lg:px-8"
 			>
-				<div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" data-tour="analytics-header">
-					<div>
-						<h1 className="text-3xl font-bold text-slate-900">Analítica de Procesos Favoritos</h1>
-						<p className="mt-2 text-sm text-slate-600">
-							Explora la frecuencia de actuaciones judiciales, identifica picos de actividad y detecta periodos de inactividad en tus procesos guardados.
+				<div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between animate-fade-in" data-tour="analytics-header">
+					<div className="max-w-3xl">
+						<div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-500/10 border border-accent-500/20 rounded-full mb-4 text-accent-600">
+							<span className="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
+							<span className="text-[10px] font-bold uppercase tracking-[0.2em]">Inteligencia Judicial</span>
+						</div>
+						<h1 className="text-4xl font-serif font-bold text-primary-900 leading-tight">Analítica de Procesos Favoritos</h1>
+						<p className="mt-3 text-lg text-gray-500 max-w-2xl">
+							Explora la frecuencia de actuaciones judiciales, identifica picos de actividad y detecta periodos de inactividad con precisión estadística.
 						</p>
 					</div>
 					<button
@@ -765,82 +664,87 @@ const AnalyticsPage: React.FC = () => {
 						disabled={exporting || loadingProcess || loadingFavorites}
 						data-html2canvas-ignore="true"
 						data-tour="export-pdf-btn"
-						className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:bg-primary-400"
+						className="inline-flex items-center justify-center gap-3 rounded-xl bg-primary-900 px-6 py-3.5 text-sm font-bold text-white shadow-xl hover:bg-primary-800 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group shadow-primary-900/20"
 					>
 						{exporting ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								Generando PDF...
+								<Loader2 className="h-5 w-5 animate-spin" />
+								<span>Generando Reporte...</span>
 							</>
 						) : (
-							'Exportar análisis en PDF'
+							<>
+								<FileDown className="h-5 w-5 text-accent-500" />
+								<span>Exportar Análisis PDF</span>
+							</>
 						)}
 					</button>
 				</div>
 
-				<section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-tour="summary-cards">
-					<div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+				<section className="mb-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" data-tour="summary-cards">
+					<div className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ring-1 ring-gray-100/50 hover:shadow-xl transition-all duration-300 animate-scale-in">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-slate-500">Procesos favoritos</p>
-								<p className="mt-2 text-2xl font-semibold text-slate-900">
+								<p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Procesos favoritos</p>
+								<p className="text-3xl font-bold text-primary-900">
 									{loadingFavorites ? '—' : formatNumber(favoriteProcesses.length)}
 								</p>
 							</div>
-							<div className="rounded-full bg-primary-50 p-3 text-primary-700">
-								<ActivityIcon className="h-5 w-5" />
+							<div className="h-12 w-12 rounded-xl bg-primary-50 flex items-center justify-center text-primary-900 group-hover:bg-primary-900 group-hover:text-white transition-colors">
+								<Star className="h-6 w-6" />
 							</div>
 						</div>
 					</div>
 
-					<div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+					<div className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ring-1 ring-gray-100/50 hover:shadow-xl transition-all duration-300 animate-scale-in" style={{ animationDelay: '100ms' }}>
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-slate-500">Procesos analizados</p>
-								<p className="mt-2 text-2xl font-semibold text-slate-900">
+								<p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Procesos analizados</p>
+								<p className="text-3xl font-bold text-primary-900">
 									{formatNumber(globalSummary.processesAnalyzed)}
 								</p>
 							</div>
-							<div className="rounded-full bg-emerald-50 p-3 text-emerald-600">
-								<TrendingUp className="h-5 w-5" />
+							<div className="h-12 w-12 rounded-xl bg-accent-50 flex items-center justify-center text-accent-600 group-hover:bg-accent-500 group-hover:text-primary-900 transition-colors">
+								<ActivityIcon className="h-6 w-6" />
 							</div>
 						</div>
 					</div>
 
-					<div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+					<div className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ring-1 ring-gray-100/50 hover:shadow-xl transition-all duration-300 animate-scale-in" style={{ animationDelay: '200ms' }}>
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-slate-500">Actuaciones registradas</p>
-								<p className="mt-2 text-2xl font-semibold text-slate-900">
+								<p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Actuaciones registradas</p>
+								<p className="text-3xl font-bold text-primary-900">
 									{formatNumber(globalSummary.totalActivities)}
 								</p>
 								{globalSummary.peakLabel && (
-									<p className="text-xs font-medium text-amber-600">
-										Pico: {globalSummary.peakLabel} ({globalSummary.peakCount})
-									</p>
+									<div className="mt-2 flex items-center gap-1.5 px-2 py-0.5 bg-accent-50 rounded-full w-fit">
+										<TrendingUp className="w-3 h-3 text-accent-600" />
+										<span className="text-[10px] font-bold text-accent-600 tracking-tight">Pico: {globalSummary.peakLabel}</span>
+									</div>
 								)}
 							</div>
-							<div className="rounded-full bg-amber-50 p-3 text-amber-500">
-								<BarChart3 className="h-5 w-5" />
+							<div className="h-12 w-12 rounded-xl bg-primary-50 flex items-center justify-center text-primary-900 group-hover:bg-primary-900 group-hover:text-white transition-colors">
+								<BarChart3 className="h-6 w-6" />
 							</div>
 						</div>
 					</div>
 
-					<div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+					<div className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ring-1 ring-gray-100/50 hover:shadow-xl transition-all duration-300 animate-scale-in" style={{ animationDelay: '300ms' }}>
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm font-medium text-slate-500">Periodos inactivos</p>
-								<p className="mt-2 text-2xl font-semibold text-slate-900">
+								<p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Periodos inactivos</p>
+								<p className="text-3xl font-bold text-primary-900">
 									{formatNumber(globalSummary.inactiveSegments)}
 								</p>
 								{selectedAnalytics?.longestGap && (
-									<p className="text-xs text-slate-500">
-										Mayor: {selectedAnalytics.longestGap.days} días
-									</p>
+									<div className="mt-2 flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-full w-fit">
+										<CalendarClock className="w-3 h-3 text-gray-500" />
+										<span className="text-[10px] font-bold text-gray-500 tracking-tight">{selectedAnalytics.longestGap.days} días</span>
+									</div>
 								)}
 							</div>
-							<div className="rounded-full bg-slate-100 p-3 text-slate-500">
-								<CalendarClock className="h-5 w-5" />
+							<div className="h-12 w-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-gray-100 transition-colors">
+								<CalendarClock className="h-6 w-6" />
 							</div>
 						</div>
 					</div>
@@ -852,29 +756,31 @@ const AnalyticsPage: React.FC = () => {
 					</div>
 				)}
 
-				<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-					<aside className="space-y-4 lg:col-span-1" data-tour="process-list">
-						<div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
-							<div className="border-b border-slate-100 px-5 py-4">
-								<h2 className="text-lg font-semibold text-slate-900">Procesos favoritos</h2>
-								<p className="text-xs text-slate-500">Selecciona un radicado para analizar sus actuaciones.</p>
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+					<aside className="space-y-6 lg:col-span-1" data-tour="process-list">
+						<div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ring-1 ring-gray-100/50">
+							<div className="bg-primary-900 px-6 py-5">
+								<h2 className="text-lg font-serif font-bold text-white mb-1">Portafolio</h2>
+								<p className="text-[10px] font-bold text-accent-500 uppercase tracking-widest">Favoritos analizados</p>
 							</div>
 
-							<div className="max-h-[480px] overflow-y-auto px-3 py-2">
+							<div className="max-h-[520px] overflow-y-auto px-1.5 py-4 scrollbar-thin scrollbar-thumb-accent-500/20">
 								{loadingFavorites && (
-									<div className="flex items-center justify-center py-12 text-slate-500">
-										<Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando favoritos...
+									<div className="flex flex-col items-center justify-center py-16 text-gray-400 space-y-4">
+										<Loader2 className="h-8 w-8 animate-spin text-accent-500" />
+										<span className="text-[10px] font-bold uppercase">Sincronizando...</span>
 									</div>
 								)}
 
 								{!loadingFavorites && favoriteProcesses.length === 0 && (
-									<div className="flex flex-col items-center justify-center py-10 text-center text-sm text-slate-500">
-										<ActivityIcon className="mb-3 h-8 w-8 text-slate-300" />
-										No tienes procesos favoritos aún.
+									<div className="flex flex-col items-center justify-center py-16 text-center text-sm text-gray-400 px-4">
+										<Gavel className="mb-4 h-10 w-10 opacity-20" />
+										<p className="font-medium">No tiene procesos registrados para análisis.</p>
+										<Link to="/consulta" className="mt-4 text-accent-600 font-bold uppercase tracking-wider text-xs">Añadir Proceso</Link>
 									</div>
 								)}
 
-								<div className="space-y-2">
+								<div className="space-y-1.5 px-2">
 									{favoriteProcesses.map(process => {
 										const isSelected = selectedProcess === process.numero_radicacion;
 										const analysisReady = Boolean(analyticsByProcess[process.numero_radicacion]);
@@ -884,27 +790,25 @@ const AnalyticsPage: React.FC = () => {
 												key={process.numero_radicacion}
 												type="button"
 												onClick={() => handleProcessSelection(process.numero_radicacion)}
-												className={`w-full rounded-lg border px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
-													isSelected
-														? 'border-primary-500 bg-primary-50'
-														: 'border-transparent hover:border-slate-200 hover:bg-slate-50'
-												}`}
+												className={`w-full group rounded-2xl p-4 text-left transition-all duration-300 border-2 ${isSelected
+													? 'bg-primary-50 border-accent-500 shadow-md transform scale-[1.02]'
+													: 'bg-white border-transparent hover:border-gray-100 hover:bg-gray-50'
+													}`}
 											>
-												<p className="text-sm font-semibold text-slate-900">
+												<p className={`text-sm font-bold font-mono tracking-tight transition-colors ${isSelected ? 'text-primary-900' : 'text-gray-600'}`}>
 													{process.numero_radicacion}
 												</p>
-												<p className="mt-1 text-xs text-slate-500">{process.despacho}</p>
-												<div className="mt-2 flex items-center justify-between text-xs">
-													<span className="rounded-full bg-slate-100 px-2 py-1 text-slate-600">
-														{process.tipo_proceso || 'Sin tipo'}
+												<p className="mt-1 text-[10px] font-medium text-gray-400 truncate uppercase tracking-tight">{process.despacho}</p>
+												<div className="mt-3 flex items-center justify-between">
+													<span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-colors ${isSelected ? 'bg-primary-900 text-accent-400' : 'bg-gray-100 text-gray-500'}`}>
+														{process.tipo_proceso || 'CIVIL'}
 													</span>
-													<span
-														className={`font-medium ${
-															analysisReady ? 'text-emerald-600' : 'text-slate-400'
-														}`}
-													>
-														{analysisReady ? 'Analizado' : 'Pendiente'}
-													</span>
+													<div className="flex items-center gap-1.5">
+														{analysisReady && <div className="w-1.5 h-1.5 rounded-full bg-accent-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></div>}
+														<span className={`text-[9px] font-bold uppercase tracking-wider ${analysisReady ? 'text-accent-600' : 'text-gray-300'}`}>
+															{analysisReady ? 'Listo' : 'Pendiente'}
+														</span>
+													</div>
 												</div>
 											</button>
 										);
@@ -915,46 +819,55 @@ const AnalyticsPage: React.FC = () => {
 					</aside>
 
 					<section className="lg:col-span-3" data-tour="timeline-chart">
-						<div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-100">
-							<div className="flex flex-col gap-2 border-b border-slate-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+						<div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden ring-1 ring-gray-100/50">
+							<div className="flex flex-col gap-4 bg-gray-50/50 border-b border-gray-100 px-8 py-6 md:flex-row md:items-center md:justify-between">
 								<div>
-									<h2 className="text-lg font-semibold text-slate-900">Actividad procesal en el tiempo</h2>
-									<p className="text-xs text-slate-500">
-										Línea temporal que resalta los picos de actuaciones (naranja) y los periodos de inactividad (zonas sombreadas).
+									<div className="flex items-center gap-2 mb-1">
+										<h2 className="text-xl font-serif font-bold text-primary-900">Actividad Procesal Dinámica</h2>
+										{selectedProcess && (
+											<div className="px-3 py-0.5 rounded-full bg-accent-500 text-primary-900 text-[10px] font-bold font-mono shadow-sm">
+												{selectedProcess}
+											</div>
+										)}
+									</div>
+									<p className="text-xs text-gray-500 font-medium">
+										Cronograma técnico con detección de hitos críticos y periodos de latencia.
 									</p>
 								</div>
-								{selectedProcess && (
-									<div className="rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-600">
-										{selectedProcess}
-									</div>
-								)}
 							</div>
 
-							<div className="relative h-[380px] px-4 pb-6 pt-4">
+							<div className="relative h-[420px] px-6 pb-8 pt-8">
 								{loadingProcess && (
-									<div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-white/80 text-slate-500">
-										<Loader2 className="mb-2 h-6 w-6 animate-spin" /> Analizando actuaciones...
+									<div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-white/90 text-primary-900 backdrop-blur-sm animate-fade-in">
+										<Loader2 className="mb-4 h-10 w-10 animate-spin text-accent-500" />
+										<span className="text-[10px] font-bold uppercase tracking-[0.2em]">Analizando Actuaciones...</span>
 									</div>
 								)}
 
 								{!loadingProcess && !selectedAnalytics && (
-									<div className="flex h-full flex-col items-center justify-center text-sm text-slate-500">
-										<ActivityIcon className="mb-3 h-9 w-9 text-slate-300" />
-										Selecciona un proceso para visualizar su actividad.
+									<div className="flex h-full flex-col items-center justify-center text-center px-10">
+										<div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+											<BarChart3 className="h-10 w-10 text-gray-300" />
+										</div>
+										<h4 className="text-lg font-bold text-primary-900 mb-2">Selección Requerida</h4>
+										<p className="text-sm text-gray-400 max-w-xs">Especifique un proceso del portafolio lateral para desplegar los indicadores analíticos.</p>
 									</div>
 								)}
 
 								{processError && (
-									<div className="absolute inset-4 z-10 flex flex-col items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-center text-sm text-amber-700">
-										<p className="mb-2 font-semibold">No se pudo obtener la información completa.</p>
-										<p className="mb-4 px-4">{processError}</p>
+									<div className="absolute inset-8 z-10 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-accent-200 bg-accent-50 p-10 text-center animate-scale-in">
+										<div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+											<Search className="w-8 h-8 text-accent-500" />
+										</div>
+										<p className="mb-2 font-bold text-primary-900">Anomalía en la Sincronización</p>
+										<p className="mb-8 text-xs text-primary-900/70 px-4 leading-relaxed">{processError}</p>
 										{selectedProcess && (
 											<button
 												type="button"
 												onClick={() => loadProcessAnalytics(selectedProcess)}
-												className="rounded-md bg-primary-600 px-4 py-2 text-xs font-semibold text-white hover:bg-primary-700"
+												className="px-8 py-3 bg-primary-900 text-white text-xs font-bold rounded-xl hover:bg-primary-800 shadow-lg shadow-primary-900/20 transition-all active:scale-95"
 											>
-												Reintentar
+												REINTENTAR ANÁLISIS
 											</button>
 										)}
 									</div>
@@ -963,40 +876,52 @@ const AnalyticsPage: React.FC = () => {
 								{selectedAnalytics && selectedAnalytics.chartData.length > 0 && (
 									<ResponsiveContainer width="100%" height="100%">
 										<LineChart data={selectedAnalytics.chartData} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
-											<CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-											  <XAxis dataKey="label" tick={{ fill: '#475569', fontSize: 12 }} interval={0} />
-											<YAxis allowDecimals={false} tick={{ fill: '#475569', fontSize: 12 }} />
-											<Tooltip content={<ActivityTooltipContent />} />
+											<CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+											<XAxis
+												dataKey="label"
+												tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+												axisLine={{ stroke: '#f1f5f9' }}
+												tickLine={false}
+												interval={0}
+											/>
+											<YAxis
+												allowDecimals={false}
+												tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+												axisLine={false}
+												tickLine={false}
+											/>
+											<Tooltip content={<ActivityTooltipContent />} cursor={{ stroke: '#EAB308', strokeWidth: 1 }} />
 											{selectedAnalytics.inactiveBlocks.map(block => (
 												<ReferenceArea
 													key={`${block.startLabel}-${block.endLabel}`}
 													x1={block.startLabel}
 													x2={block.endLabel}
-													fill="#e2e8f0"
-													fillOpacity={0.25}
+													fill="#f8fafc"
+													fillOpacity={0.8}
 													ifOverflow="extendDomain"
 												/>
 											))}
-																	{selectedAnalytics.chartData
-																		.filter(point => point.isPeak)
-																		.map(point => (
-																			<ReferenceDot
-																				key={`peak-${point.yearKey}`}
+											{selectedAnalytics.chartData
+												.filter(point => point.isPeak)
+												.map(point => (
+													<ReferenceDot
+														key={`peak-${point.yearKey}`}
 														x={point.label}
 														y={point.count}
 														r={8}
-														fill="#fb923c"
-														stroke="#1f2937"
+														fill="#EAB308"
+														stroke="#0F1E33"
 														isFront
 													/>
 												))}
 											<Line
 												type="monotone"
 												dataKey="count"
-												stroke="#2563eb"
-												strokeWidth={2}
+												stroke="#0F1E33"
+												strokeWidth={3}
 												dot={<ActivityDot />}
-												activeDot={{ r: 6 }}
+												activeDot={{ r: 8, fill: '#EAB308', stroke: '#0F1E33', strokeWidth: 2 }}
+												animationDuration={1500}
 											/>
 										</LineChart>
 									</ResponsiveContainer>
@@ -1004,28 +929,31 @@ const AnalyticsPage: React.FC = () => {
 							</div>
 
 							{selectedAnalytics && (
-								<div className="grid grid-cols-1 gap-4 border-t border-slate-100 px-6 py-4 md:grid-cols-3" data-tour="activity-details">
+								<div className="grid grid-cols-1 gap-6 bg-gray-50/50 border-t border-gray-100 px-8 py-6 md:grid-cols-3 animate-fade-in" data-tour="activity-details">
 									<div>
-										<p className="text-xs uppercase tracking-wide text-slate-500">Pico de actividad</p>
-										<p className="mt-1 text-sm font-semibold text-slate-900">
-																							{selectedAnalytics.peakYearLabel
-																		? `${selectedAnalytics.peakYearLabel} (${formatNumber(selectedAnalytics.peakCount)})`
-												: 'Sin picos registrados'}
+										<p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Pico de actividad</p>
+										<p className="text-base font-bold text-primary-900">
+											{selectedAnalytics.peakYearLabel
+												? `${selectedAnalytics.peakYearLabel} (${formatNumber(selectedAnalytics.peakCount)} actuaciones)`
+												: 'Sin registros'}
 										</p>
 									</div>
 									<div>
-										<p className="text-xs uppercase tracking-wide text-slate-500">Última actuación</p>
-										<p className="mt-1 text-sm font-semibold text-slate-900">
-											{selectedAnalytics.lastActivityLabel || 'Sin registros'}
+										<p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Última actuación</p>
+										<p className="text-base font-bold text-primary-900">
+											{selectedAnalytics.lastActivityLabel || 'N/A'}
 										</p>
 									</div>
-									<div>
-										<p className="text-xs uppercase tracking-wide text-slate-500">Mayor periodo inactivo</p>
-										<p className="mt-1 text-sm font-semibold text-slate-900">
+									<div className="group">
+										<p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Mayor latencia</p>
+										<p className="text-base font-bold text-accent-600">
 											{selectedAnalytics.longestGap
-												? `${formatNumber(selectedAnalytics.longestGap.days)} días (${selectedAnalytics.longestGap.fromLabel} → ${selectedAnalytics.longestGap.toLabel})`
-												: 'Sin periodos prolongados'}
+												? `${formatNumber(selectedAnalytics.longestGap.days)} días inactivo`
+												: 'Actividad continua'}
 										</p>
+										{selectedAnalytics.longestGap && (
+											<p className="text-[10px] text-gray-400 mt-1 font-medium">{selectedAnalytics.longestGap.fromLabel} → {selectedAnalytics.longestGap.toLabel}</p>
+										)}
 									</div>
 								</div>
 							)}
@@ -1034,33 +962,49 @@ const AnalyticsPage: React.FC = () => {
 				</div>
 
 				{globalSummary.chartData.length > 0 && (
-					<section className="mt-8 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-100" data-tour="consolidated-chart">
-						<div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-							<div>
-								<h3 className="text-lg font-semibold text-slate-900">Actividad consolidada de favoritos</h3>
-												<p className="text-xs text-slate-500">
-													Comportamiento combinado de todos los procesos analizados. Los picos se resaltan en naranja y las columnas grises representan años sin actuaciones.
-								</p>
+					<section className="mt-12 group" data-tour="consolidated-chart">
+						<div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden ring-1 ring-gray-100/50">
+							<div className="bg-primary-900 px-8 py-6 border-b border-primary-800">
+								<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+									<div>
+										<h3 className="text-xl font-serif font-bold text-white">Consolidado de Actividad Proporcional</h3>
+										<p className="text-xs text-accent-500 font-bold uppercase tracking-widest mt-1">
+											Visión global de la carga procesal acumulada
+										</p>
+									</div>
+								</div>
 							</div>
-						</div>
 
-						<div className="h-[280px]">
-							<ResponsiveContainer width="100%" height="100%">
-								<BarChart data={globalSummary.chartData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-									<CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-									  <XAxis dataKey="label" tick={{ fill: '#475569', fontSize: 12 }} interval={0} />
-									<YAxis allowDecimals={false} tick={{ fill: '#475569', fontSize: 12 }} />
-									<Tooltip content={<ActivityTooltipContent />} />
-									<Bar dataKey="count" radius={[6, 6, 0, 0]}>
-															{globalSummary.chartData.map(point => (
-																<Cell
-																	key={point.yearKey}
-												fill={point.isPeak ? '#fb923c' : point.isInactive ? '#cbd5f5' : '#2563eb'}
-											/>
-										))}
-									</Bar>
-								</BarChart>
-							</ResponsiveContainer>
+							<div className="h-[320px] px-8 py-8">
+								<ResponsiveContainer width="100%" height="100%">
+									<BarChart data={globalSummary.chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+										<CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+										<XAxis
+											dataKey="label"
+											tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+											axisLine={false}
+											tickLine={false}
+											interval={0}
+										/>
+										<YAxis
+											allowDecimals={false}
+											tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+											axisLine={false}
+											tickLine={false}
+										/>
+										<Tooltip content={<ActivityTooltipContent />} cursor={{ fill: 'rgba(234, 179, 8, 0.05)' }} />
+										<Bar dataKey="count" radius={[4, 4, 0, 0]} animationDuration={2000}>
+											{globalSummary.chartData.map(point => (
+												<Cell
+													key={point.yearKey}
+													fill={point.isPeak ? '#EAB308' : point.isInactive ? '#f1f5f9' : '#0F1E33'}
+													className="hover:opacity-80 transition-opacity"
+												/>
+											))}
+										</Bar>
+									</BarChart>
+								</ResponsiveContainer>
+							</div>
 						</div>
 					</section>
 				)}

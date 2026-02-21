@@ -112,3 +112,6 @@ BACKEND/test-step-by-step.js
 SPRING-BACKEND/.env.example
 FRONT-END-WEB/node_modules/
 MOBILE-APP/.env
+
+.agents/
+.agent/
