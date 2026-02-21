@@ -132,7 +132,13 @@ export const NotFoundPage: React.FC = () => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-sm text-gray-500">
-          © 2024 Sistema de Consulta de Procesos Judiciales. Todos los derechos reservados.
+          © 2024 Sistema de Consulta de Procesos Judiciales. Todos los derechos reservados.{' '}
+          <span className="text-gray-400">
+            - Desarrollado por{' '}
+            <a href="https://portafolio-santiago-duarte.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-500 transition-colors">
+              Santiago Duarte
+            </a>
+          </span>
         </p>
       </div>
     </div>

@@ -135,7 +135,13 @@ export const PublicFooter: React.FC = () => {
         {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-xs text-gray-500">
-            © {currentYear} JustiTrack Legal Tech. Reservados todos los derechos.
+            © {currentYear} JustiTrack Legal Tech. Reservados todos los derechos.{' '}
+            <span className="text-gray-400">
+              - Desarrollado por{' '}
+              <a href="https://portafolio-santiago-duarte.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-accent-500 hover:text-white transition-colors">
+                Santiago Duarte
+              </a>
+            </span>
           </p>
           <div className="flex items-center gap-8 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
             <div className="flex items-center gap-2">
