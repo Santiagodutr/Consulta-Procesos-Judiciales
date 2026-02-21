@@ -15,6 +15,7 @@ import { MainLayout } from './components/MainLayout.tsx';
 import { useAuth } from './contexts/AuthContext.tsx';
 import NotificationsPage from './pages/NotificationsPage.tsx';
 import { WelcomePage } from './pages/WelcomePage.tsx';
+import { AboutUsPage } from './pages/AboutUsPage.tsx';
 
 
 function App() {
@@ -37,6 +38,14 @@ function App() {
           element={
             <ProtectedRoute requireAuth={false}>
               <WelcomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <ProtectedRoute requireAuth={false}>
+              <AboutUsPage />
             </ProtectedRoute>
           }
         />

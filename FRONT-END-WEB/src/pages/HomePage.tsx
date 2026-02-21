@@ -935,7 +935,7 @@ const HomePage: React.FC = () => {
   // ==================== PANTALLA INICIAL DE BÚSQUEDA ====================
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-accent-500/30 relative">
-      <Header title="Justia Portal" showBack={false} />
+      <Header title="JustiTrack" showBack={false} />
 
       {/* Hero Background Effect */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
