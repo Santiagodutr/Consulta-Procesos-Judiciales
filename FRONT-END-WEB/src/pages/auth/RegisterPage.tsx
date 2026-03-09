@@ -87,7 +87,7 @@ export const RegisterPage: React.FC = () => {
 
         <div className="relative z-10 space-y-12 max-w-sm">
           <div className="space-y-6">
-            <h1 className="text-5xl font-serif font-bold text-white leading-tight">
+            <h1 className="text-5xl font-sans font-bold text-white leading-tight">
               Únase a la Élite <span className="text-accent-500">Legal</span>.
             </h1>
             <p className="text-lg text-white/50 leading-relaxed font-light">
@@ -128,7 +128,7 @@ export const RegisterPage: React.FC = () => {
                 <img src="/logo_justitrack.png" alt="JustiTrack" className="h-10 w-auto" />
               </div>
             </div>
-            <h2 className="text-4xl font-serif font-bold text-primary-900 tracking-tight mb-2">Crear nueva cuenta</h2>
+            <h2 className="text-4xl font-sans font-bold text-primary-900 tracking-tight mb-2">Crear nueva cuenta</h2>
             <p className="text-gray-500 text-center max-w-md">Complete el formulario para habilitar su acceso al ecosistema JustiTrack.</p>
           </div>
 
@@ -137,7 +137,7 @@ export const RegisterPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 font-bold text-xs italic">01</div>
-                <h3 className="text-sm font-serif font-bold text-primary-900 uppercase tracking-widest">Tipo de Usuario</h3>
+                <h3 className="text-sm font-sans font-bold text-primary-900 uppercase tracking-widest">Tipo de Usuario</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -180,7 +180,7 @@ export const RegisterPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 font-bold text-xs italic">02</div>
-                <h3 className="text-sm font-serif font-bold text-primary-900 uppercase tracking-widest">Datos Personales</h3>
+                <h3 className="text-sm font-sans font-bold text-primary-900 uppercase tracking-widest">Datos Personales</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -237,7 +237,7 @@ export const RegisterPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded-xl bg-primary-900/5 flex items-center justify-center text-primary-900 font-bold text-xs italic">03</div>
-                <h3 className="text-sm font-serif font-bold text-primary-900 uppercase tracking-widest">Seguridad</h3>
+                <h3 className="text-sm font-sans font-bold text-primary-900 uppercase tracking-widest">Seguridad</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">

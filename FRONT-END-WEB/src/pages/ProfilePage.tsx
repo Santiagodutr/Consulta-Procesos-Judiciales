@@ -237,7 +237,7 @@ export const ProfilePage: React.FC = () => {
 						<div className="w-20 h-20 bg-danger-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
 							<XCircle className="h-10 w-10 text-danger-500" />
 						</div>
-						<h2 className="text-2xl font-serif font-bold text-primary-900 mb-2">Sesión Caducada</h2>
+						<h2 className="text-2xl font-sans font-bold text-primary-900 mb-2">Sesión Caducada</h2>
 						<p className="text-gray-500 mb-8 leading-relaxed">No pudimos cargar tu información. Por favor inicia sesión nuevamente.</p>
 						<button onClick={() => navigate('/login')} className="bg-primary-900 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-accent-500 hover:text-primary-900 transition-all shadow-xl">
 							Iniciar Sesión
@@ -276,7 +276,7 @@ export const ProfilePage: React.FC = () => {
 									<div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-500/20 border border-accent-500/30 rounded-full text-accent-400">
 										<span className="text-[10px] font-bold uppercase tracking-widest leading-none">Perfil Profesional</span>
 									</div>
-									<h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">{displayName}</h1>
+									<h1 className="text-4xl md:text-5xl font-sans font-bold text-white tracking-tight">{displayName}</h1>
 									<div className="flex flex-wrap justify-center md:justify-start items-center gap-6 text-white/70">
 										<div className="flex items-center gap-2">
 											<Mail size={16} className="text-accent-500" />
@@ -337,7 +337,7 @@ export const ProfilePage: React.FC = () => {
 											<ShieldCheck size={24} />
 										</div>
 										<div>
-											<h2 className="text-xl font-serif font-bold text-primary-900">Datos Principales</h2>
+											<h2 className="text-xl font-sans font-bold text-primary-900">Datos Principales</h2>
 											<p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">Información Legal y Contacto</p>
 										</div>
 									</div>

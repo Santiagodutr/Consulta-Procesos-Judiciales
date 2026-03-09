@@ -144,7 +144,7 @@ const NotificationsPage: React.FC = () => {
 								<div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></div>
 								<span className="text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">Centro de Notificaciones</span>
 							</div>
-							<h1 className="text-4xl font-serif font-bold text-primary-900 tracking-tight">Mis Alertas</h1>
+							<h1 className="text-4xl font-sans font-bold text-primary-900 tracking-tight">Mis Alertas</h1>
 							<p className="text-gray-500 text-sm">Gestiona las actualizaciones críticas de tus procesos judiciales</p>
 						</div>
 
@@ -152,14 +152,14 @@ const NotificationsPage: React.FC = () => {
 							<div className="px-5 py-2.5 bg-gray-50 rounded-xl flex items-center gap-3">
 								<Bell size={18} className="text-primary-900" />
 								<div>
-									<p className="text-lg font-serif font-bold text-primary-900 leading-none">{notifications.length}</p>
+									<p className="text-lg font-sans font-bold text-primary-900 leading-none">{notifications.length}</p>
 									<p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total</p>
 								</div>
 							</div>
 							<div className="px-5 py-2.5 bg-accent-500/10 rounded-xl flex items-center gap-3">
 								<BellRing size={18} className="text-accent-600" />
 								<div>
-									<p className="text-lg font-serif font-bold text-accent-600 leading-none">{unreadCount}</p>
+									<p className="text-lg font-sans font-bold text-accent-600 leading-none">{unreadCount}</p>
 									<p className="text-[9px] font-bold text-accent-500 uppercase tracking-widest mt-1">Nuevas</p>
 								</div>
 							</div>
@@ -219,7 +219,7 @@ const NotificationsPage: React.FC = () => {
 								<div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto transform rotate-12 mb-8">
 									<Bell size={48} className="text-gray-200" />
 								</div>
-								<h2 className="text-2xl font-serif font-bold text-primary-900 mb-3">Todo al día</h2>
+								<h2 className="text-2xl font-sans font-bold text-primary-900 mb-3">Todo al día</h2>
 								<p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed text-sm">
 									{showUnreadOnly
 										? "No tienes notificaciones pendientes por leer en este momento."
@@ -258,7 +258,7 @@ const NotificationsPage: React.FC = () => {
 
 											<div className="flex-1 min-w-0 space-y-3">
 												<div className="flex flex-wrap items-center gap-3">
-													<h3 className={`text-lg font-serif font-bold leading-tight ${item.is_read ? 'text-primary-900/60' : 'text-primary-900'
+													<h3 className={`text-lg font-sans font-bold leading-tight ${item.is_read ? 'text-primary-900/60' : 'text-primary-900'
 														}`}>
 														{item.title}
 													</h3>

@@ -92,7 +92,7 @@ export const ResetPasswordPage: React.FC = () => {
                 <div className="mx-auto h-20 w-20 flex items-center justify-center rounded-3xl bg-danger-50 text-danger-500 mb-8 border border-danger-100">
                   <ShieldAlert size={40} />
                 </div>
-                <h2 className="text-3xl font-serif font-bold text-primary-900 tracking-tight mb-4">
+                <h2 className="text-3xl font-sans font-bold text-primary-900 tracking-tight mb-4">
                   Enlace Caducado
                 </h2>
                 <div className="bg-danger-50 rounded-2xl p-6 mb-8 text-left border border-danger-50">
@@ -124,7 +124,7 @@ export const ResetPasswordPage: React.FC = () => {
                   <div className="mx-auto h-20 w-20 flex items-center justify-center rounded-3xl bg-accent-500/10 text-accent-600 mb-8 border border-accent-500/20">
                     <RefreshCcw size={40} />
                   </div>
-                  <h2 className="text-3xl font-serif font-bold text-primary-900 tracking-tight">Restablecer Clave</h2>
+                  <h2 className="text-3xl font-sans font-bold text-primary-900 tracking-tight">Restablecer Clave</h2>
                   <p className="mt-3 text-gray-500 leading-relaxed font-medium">Establezca una nueva contraseña de alta seguridad para su cuenta profesional.</p>
                 </div>
 

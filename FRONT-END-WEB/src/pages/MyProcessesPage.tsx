@@ -450,7 +450,7 @@ const MyProcessesPage: React.FC = () => {
                         <div className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
                         <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Expediente Digital Activo</span>
                       </div>
-                      <h2 className="text-4xl font-serif font-bold text-white tracking-tight">
+                      <h2 className="text-4xl font-sans font-bold text-white tracking-tight">
                         {selectedProcess.numeroRadicacion}
                       </h2>
                       <div className="flex flex-wrap items-center gap-6 text-white/60">
@@ -752,7 +752,7 @@ const MyProcessesPage: React.FC = () => {
                     <div className="w-2 h-2 rounded-full bg-accent-500"></div>
                     <span className="text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">Expediente Adjunto</span>
                   </div>
-                  <h3 className="text-xl font-serif font-bold text-white">Documentos de Actuación</h3>
+                  <h3 className="text-xl font-sans font-bold text-white">Documentos de Actuación</h3>
                 </div>
                 <button
                   onClick={handleCloseModal}
@@ -834,7 +834,7 @@ const MyProcessesPage: React.FC = () => {
             <div className="w-20 h-20 bg-danger-50 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle size={40} className="text-danger-500" />
             </div>
-            <h2 className="text-2xl font-serif font-bold text-primary-900 mb-2">Error de Conexión</h2>
+            <h2 className="text-2xl font-sans font-bold text-primary-900 mb-2">Error de Conexión</h2>
             <p className="text-gray-500 text-sm mb-8 leading-relaxed">{error}</p>
             <button
               onClick={loadFavorites}
@@ -861,13 +861,13 @@ const MyProcessesPage: React.FC = () => {
                 <div className="w-2 h-2 rounded-full bg-accent-500"></div>
                 <span className="text-[10px] font-bold text-accent-500 uppercase tracking-[0.2em]">Expedientes Guardados</span>
               </div>
-              <h1 className="text-4xl font-serif font-bold text-primary-900 tracking-tight">Mi Portafolio</h1>
+              <h1 className="text-4xl font-sans font-bold text-primary-900 tracking-tight">Mi Portafolio</h1>
               <p className="text-gray-500 text-sm">Gestiona y monitorea tus procesos judiciales favoritos</p>
             </div>
 
             <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 ring-1 ring-gray-100/50">
               <div className="px-6 py-2 bg-gray-50 rounded-xl text-center">
-                <p className="text-[24px] font-serif font-bold text-primary-900 leading-none">{favoriteProcesses.length}</p>
+                <p className="text-[24px] font-sans font-bold text-primary-900 leading-none">{favoriteProcesses.length}</p>
                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Activos</p>
               </div>
               <button
@@ -885,7 +885,7 @@ const MyProcessesPage: React.FC = () => {
               <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto transform rotate-12">
                 <Star size={48} className="text-gray-200" />
               </div>
-              <h2 className="text-2xl font-serif font-bold text-primary-900 mb-3">Tu portafolio está vacío</h2>
+              <h2 className="text-2xl font-sans font-bold text-primary-900 mb-3">Tu portafolio está vacío</h2>
               <p className="text-gray-500 mb-10 max-w-sm mx-auto leading-relaxed">
                 Empieza a seguir procesos judiciales para recibir actualizaciones en tiempo real y generar reportes detallados.
               </p>
@@ -909,7 +909,7 @@ const MyProcessesPage: React.FC = () => {
                     <div className="flex justify-between items-start mb-6">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-accent-500 uppercase tracking-widest">JustiTrack ID: {process.id || 'N/A'}</p>
-                        <h3 className="text-xl font-serif font-bold text-primary-900 group-hover:text-accent-600 transition-colors">{process.numero_radicacion}</h3>
+                        <h3 className="text-xl font-sans font-bold text-primary-900 group-hover:text-accent-600 transition-colors">{process.numero_radicacion}</h3>
                       </div>
                       <div className="w-10 h-10 rounded-xl bg-accent-500/10 flex items-center justify-center text-accent-600">
                         <Star size={20} className="fill-accent-500" />

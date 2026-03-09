@@ -34,7 +34,7 @@ export const WelcomePage: React.FC = () => {
                     <div className="max-w-7xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
                             <div className="flex flex-col">
-                                <span className="text-xl font-serif font-bold tracking-tight text-white leading-none">Justi<span className="text-accent-400">Track</span></span>
+                                <span className="text-xl font-sans font-bold tracking-tight text-white leading-none">Justi<span className="text-accent-400">Track</span></span>
                                 <span className="text-[9px] uppercase tracking-[0.3em] text-accent-500/60 font-bold">Rama Judicial</span>
                             </div>
                         </div>
@@ -78,7 +78,7 @@ export const WelcomePage: React.FC = () => {
                                 Portal de Inteligencia Judicial v2.0
                             </div>
 
-                            <h1 className="text-6xl md:text-8xl font-serif font-bold text-white tracking-tight leading-[0.9] md:leading-[1]">
+                            <h1 className="text-6xl md:text-8xl font-sans font-bold text-white tracking-tight leading-[0.9] md:leading-[1]">
                                 Justicia Digital <br />
                                 <span className="relative inline-block mt-4">
                                     <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-accent-200 via-accent-400 to-accent-200 animate-gradient-x italic">
@@ -156,7 +156,7 @@ export const WelcomePage: React.FC = () => {
 
                                         <div>
                                             <span className="text-[10px] font-bold tracking-[0.3em] text-accent-500/60 uppercase mb-2 block">{item.label}</span>
-                                            <h3 className="text-2xl font-serif font-bold text-white mb-4 group-hover:text-accent-400 transition-colors">{item.title}</h3>
+                                            <h3 className="text-2xl font-sans font-bold text-white mb-4 group-hover:text-accent-400 transition-colors">{item.title}</h3>
                                             <p className="text-gray-400 text-sm leading-relaxed font-light group-hover:text-gray-300 transition-colors">
                                                 {item.desc}
                                             </p>

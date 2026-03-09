@@ -79,7 +79,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <div className="mx-auto h-20 w-20 flex items-center justify-center rounded-3xl bg-accent-500/10 text-accent-600 mb-8 border border-accent-500/20">
                 {emailSent ? <FileCheck size={40} /> : <KeyRound size={40} />}
               </div>
-              <h2 className="text-3xl font-serif font-bold text-primary-900 tracking-tight">
+              <h2 className="text-3xl font-sans font-bold text-primary-900 tracking-tight">
                 {emailSent ? 'Correo Enviado' : 'Recuperar Clave'}
               </h2>
               <p className="mt-3 text-gray-500 leading-relaxed font-medium">

@@ -415,7 +415,7 @@ const HomePage: React.FC = () => {
                       <div className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
                       <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Expediente Digital</span>
                     </div>
-                    <h2 className="text-4xl font-serif font-bold text-white tracking-tight">
+                    <h2 className="text-4xl font-sans font-bold text-white tracking-tight">
                       {selectedProcess.numeroRadicacion}
                     </h2>
                     <div className="flex flex-wrap items-center gap-6 text-white/60">
@@ -740,7 +740,7 @@ const HomePage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-accent-500 uppercase tracking-[0.2em] leading-none mb-1">Documentos de Actuación</h3>
-                    <p className="text-white text-xs font-serif opacity-80">{selectedActuacion?.actuacion || 'Detalles del Archivo'}</p>
+                    <p className="text-white text-xs font-sans opacity-80">{selectedActuacion?.actuacion || 'Detalles del Archivo'}</p>
                   </div>
                 </div>
                 <button
@@ -818,7 +818,7 @@ const HomePage: React.FC = () => {
                 <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Nueva Consulta</span>
               </button>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary-900">
+              <h2 className="text-3xl md:text-4xl font-sans font-bold text-primary-900">
                 Expedientes <span className="text-accent-600">Encontrados</span>
               </h2>
             </div>
@@ -863,7 +863,7 @@ const HomePage: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <h4 className="text-xl md:text-2xl font-serif font-bold text-primary-900 group-hover:text-accent-600 transition-colors uppercase leading-tight">
+                      <h4 className="text-xl md:text-2xl font-sans font-bold text-primary-900 group-hover:text-accent-600 transition-colors uppercase leading-tight">
                         {process.despacho}
                       </h4>
                       <div className="flex items-center gap-2 text-gray-400">
@@ -952,7 +952,7 @@ const HomePage: React.FC = () => {
               <SearchCode size={14} />
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] leading-none">Buscador Oficial Rama Judicial</span>
             </div>
-            <h2 className="text-4xl md:text-6xl font-serif font-bold text-primary-900 leading-tight">
+            <h2 className="text-4xl md:text-6xl font-sans font-bold text-primary-900 leading-tight">
               Localice su <span className="text-accent-600">Proceso</span> <br />
               de Manera Instantánea.
             </h2>
@@ -977,7 +977,7 @@ const HomePage: React.FC = () => {
                   <div className="w-14 h-14 bg-accent-500 rounded-2xl flex items-center justify-center text-primary-900 shadow-xl mb-6">
                     <Search size={28} />
                   </div>
-                  <h3 className="text-2xl font-serif font-bold leading-tight decoration-accent-500 underline decoration-2 underline-offset-8">Consulta de Proceso</h3>
+                  <h3 className="text-2xl font-sans font-bold leading-tight decoration-accent-500 underline decoration-2 underline-offset-8">Consulta de Proceso</h3>
                   <p className="text-gray-400 text-sm mt-6 leading-relaxed">
                     Obtenga acceso directo a la base de datos de la Rama Judicial con un solo clic.
                   </p>

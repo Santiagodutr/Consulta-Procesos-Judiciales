@@ -122,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
                             </div>
                         </button>
                         <div className="hidden lg:block h-8 w-px bg-white/10 mx-2"></div>
-                        <h1 className="hidden lg:block text-sm font-serif font-bold uppercase tracking-widest text-accent-500/80">{title}</h1>
+                        <h1 className="hidden lg:block text-sm font-sans font-bold uppercase tracking-widest text-accent-500/80">{title}</h1>
                     </div>
 
                     <div className="hidden md:flex items-center gap-1 bg-primary-800/50 p-1 rounded-full border border-white/5">
@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 <div className="absolute right-0 z-50 mt-4 w-60 overflow-hidden rounded-xl bg-white text-gray-700 shadow-2xl ring-1 ring-black/5 animate-fade-in origin-top-right">
                                     <div className="p-4 bg-primary-900 text-white">
                                         <p className="text-sm font-medium text-accent-400">Cuenta</p>
-                                        <p className="text-base font-serif truncate">{displayName}</p>
+                                        <p className="text-base font-sans truncate">{displayName}</p>
                                         <p className="text-xs text-gray-400 truncate">{user?.email}</p>
                                     </div>
                                     <div className="py-2">

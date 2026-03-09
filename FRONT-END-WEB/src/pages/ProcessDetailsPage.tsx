@@ -396,7 +396,7 @@ export const ProcessDetailsPage: React.FC = () => {
             <div className="w-20 h-20 bg-danger-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <X className="h-10 w-10 text-danger-500" />
             </div>
-            <h2 className="text-2xl font-serif font-bold text-primary-900 mb-2">Error de Sincronización</h2>
+            <h2 className="text-2xl font-sans font-bold text-primary-900 mb-2">Error de Sincronización</h2>
             <p className="text-gray-500 mb-8 leading-relaxed">{error || 'No se encontró información del proceso en los archivos históricos.'}</p>
             <button
               onClick={() => navigate('/dashboard')}
@@ -432,7 +432,7 @@ export const ProcessDetailsPage: React.FC = () => {
                     <div className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse"></div>
                     <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Expediente Digital</span>
                   </div>
-                  <h2 className="text-4xl font-serif font-bold text-white tracking-tight">
+                  <h2 className="text-4xl font-sans font-bold text-white tracking-tight">
                     {processData.numeroRadicacion}
                   </h2>
                   <div className="flex flex-wrap items-center gap-6 text-white/60">
@@ -759,7 +759,7 @@ export const ProcessDetailsPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-accent-500 uppercase tracking-[0.2em] leading-none mb-1">Documentos de Actuación</h3>
-                    <p className="text-white text-xs font-serif opacity-80">{selectedActuacion?.actuacion || 'Detalles del Archivo'}</p>
+                    <p className="text-white text-xs font-sans opacity-80">{selectedActuacion?.actuacion || 'Detalles del Archivo'}</p>
                   </div>
                 </div>
                 <button

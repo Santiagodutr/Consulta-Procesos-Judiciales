@@ -78,7 +78,7 @@ export const SimpleDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative z-10">
           <div className="max-w-2xl animate-fade-in">
             <h2 className="text-accent-400 font-bold uppercase tracking-[0.3em] text-xs mb-4">Portal Profesional</h2>
-            <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-6 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-sans font-bold text-white mb-6 leading-tight">
               Bienvenido, {user?.first_name || 'Colega'}
             </h1>
             <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed mb-10">
@@ -109,7 +109,7 @@ export const SimpleDashboard: React.FC = () => {
             <div className="bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden">
               <div className="p-8 border-b border-gray-50 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-serif font-bold text-primary-900">Actividad Reciente</h2>
+                  <h2 className="text-2xl font-sans font-bold text-primary-900">Actividad Reciente</h2>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Últimos procesos consultados</p>
                 </div>
                 <button
@@ -125,7 +125,7 @@ export const SimpleDashboard: React.FC = () => {
                   <div className="animate-spin mb-4">
                     <Gavel size={40} className="text-accent-500" />
                   </div>
-                  <p className="font-serif italic">Sincronizando con bases de datos públicas...</p>
+                  <p className="font-sans italic">Sincronizando con bases de datos públicas...</p>
                 </div>
               ) : consultationHistory.length === 0 ? (
                 <div className="p-20 text-center bg-gray-50/30">
@@ -189,7 +189,7 @@ export const SimpleDashboard: React.FC = () => {
 
           {/* User Details Sidebar */}
           <aside className="space-y-8 animate-fade-in" data-tour="user-info">
-            <h2 className="text-2xl font-serif font-bold text-primary-900 border-b-2 border-accent-400 pb-1 inline-block">
+            <h2 className="text-2xl font-sans font-bold text-primary-900 border-b-2 border-accent-400 pb-1 inline-block">
               Perfil de Usuario
             </h2>
 
@@ -200,7 +200,7 @@ export const SimpleDashboard: React.FC = () => {
                   <div className="w-20 h-20 bg-accent-500 rounded-3xl flex items-center justify-center text-primary-900 shadow-xl mx-auto mb-4 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
                     <User className="w-10 h-10" />
                   </div>
-                  <h3 className="text-xl font-serif font-bold text-white mb-1">{displayName}</h3>
+                  <h3 className="text-xl font-sans font-bold text-white mb-1">{displayName}</h3>
                   <p className="text-accent-400 text-xs font-bold uppercase tracking-widest">{user?.user_type || 'Abogado'}</p>
                 </div>
               </div>
@@ -235,7 +235,7 @@ export const SimpleDashboard: React.FC = () => {
             <div className="bg-accent-500 rounded-3xl p-8 shadow-xl shadow-accent-500/20 relative overflow-hidden group">
               <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
               <div className="relative z-10">
-                <h4 className="text-primary-900 font-serif font-bold text-lg mb-2">Resumen General</h4>
+                <h4 className="text-primary-900 font-sans font-bold text-lg mb-2">Resumen General</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-[10px] font-bold text-primary-900/60 uppercase mb-1">Total Consultas</p>

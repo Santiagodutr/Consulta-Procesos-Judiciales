@@ -56,7 +56,7 @@ export const PublicFooter: React.FC = () => {
             <div className="flex items-center gap-3">
               <img src="/logo_justitrack.png" alt="JustiTrack" className="h-12 w-auto" />
               <div className="h-8 w-px bg-white/20 mx-2"></div>
-              <span className="text-lg font-serif tracking-widest text-accent-500 uppercase">JustiTrack</span>
+              <span className="text-lg font-sans tracking-widest text-accent-500 uppercase">JustiTrack</span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
               Potenciando la transparencia judicial en Colombia con tecnología de vanguardia.

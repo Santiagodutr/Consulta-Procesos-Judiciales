@@ -85,7 +85,7 @@ export const LoginPage: React.FC = () => {
               <ShieldCheck size={14} />
               <span className="text-[10px] font-bold uppercase tracking-widest leading-none">Plataforma Certificada</span>
             </div>
-            <h1 className="text-6xl font-serif font-bold text-white leading-tight">
+            <h1 className="text-6xl font-sans font-bold text-white leading-tight">
               Justicia <br />
               <span className="text-accent-500">Digital</span> de Alta Precisión.
             </h1>
@@ -96,11 +96,11 @@ export const LoginPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-2">
-              <p className="text-3xl font-serif font-bold text-white">24/7</p>
+              <p className="text-3xl font-sans font-bold text-white">24/7</p>
               <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Monitorización</p>
             </div>
             <div className="space-y-2">
-              <p className="text-3xl font-serif font-bold text-white">99.9%</p>
+              <p className="text-3xl font-sans font-bold text-white">99.9%</p>
               <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Sincronización</p>
             </div>
           </div>
@@ -131,7 +131,7 @@ export const LoginPage: React.FC = () => {
                 <img src="/logo_justitrack.png" alt="JustiTrack" className="h-10 w-auto" />
               </div>
             </div>
-            <h2 className="text-4xl font-serif font-bold text-primary-900 tracking-tight mb-2">Bienvenido de nuevo</h2>
+            <h2 className="text-4xl font-sans font-bold text-primary-900 tracking-tight mb-2">Bienvenido de nuevo</h2>
             <p className="text-gray-500">Ingrese sus credenciales para acceder a su panel profesional.</p>
           </div>
 

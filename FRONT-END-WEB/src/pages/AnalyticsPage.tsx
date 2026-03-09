@@ -645,7 +645,7 @@ const AnalyticsPage: React.FC = () => {
 							<span className="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
 							<span className="text-[10px] font-bold uppercase tracking-[0.2em]">Inteligencia Judicial</span>
 						</div>
-						<h1 className="text-4xl font-serif font-bold text-primary-900 leading-tight">Analítica de Procesos Favoritos</h1>
+						<h1 className="text-4xl font-sans font-bold text-primary-900 leading-tight">Analítica de Procesos Favoritos</h1>
 						<p className="mt-3 text-lg text-gray-500 max-w-2xl">
 							Explora la frecuencia de actuaciones judiciales, identifica picos de actividad y detecta periodos de inactividad con precisión estadística.
 						</p>
@@ -752,7 +752,7 @@ const AnalyticsPage: React.FC = () => {
 					<aside className="space-y-6 lg:col-span-1" data-tour="process-list">
 						<div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 ring-1 ring-gray-100/50">
 							<div className="bg-primary-900 px-6 py-5">
-								<h2 className="text-lg font-serif font-bold text-white mb-1">Portafolio</h2>
+								<h2 className="text-lg font-sans font-bold text-white mb-1">Portafolio</h2>
 								<p className="text-[10px] font-bold text-accent-500 uppercase tracking-widest">Favoritos analizados</p>
 							</div>
 
@@ -815,7 +815,7 @@ const AnalyticsPage: React.FC = () => {
 							<div className="flex flex-col gap-4 bg-gray-50/50 border-b border-gray-100 px-8 py-6 md:flex-row md:items-center md:justify-between">
 								<div>
 									<div className="flex items-center gap-2 mb-1">
-										<h2 className="text-xl font-serif font-bold text-primary-900">Actividad Procesal Dinámica</h2>
+										<h2 className="text-xl font-sans font-bold text-primary-900">Actividad Procesal Dinámica</h2>
 										{selectedProcess && (
 											<div className="px-3 py-0.5 rounded-full bg-accent-500 text-primary-900 text-[10px] font-bold font-mono shadow-sm">
 												{selectedProcess}
@@ -959,7 +959,7 @@ const AnalyticsPage: React.FC = () => {
 							<div className="bg-primary-900 px-8 py-6 border-b border-primary-800">
 								<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 									<div>
-										<h3 className="text-xl font-serif font-bold text-white">Consolidado de Actividad Proporcional</h3>
+										<h3 className="text-xl font-sans font-bold text-white">Consolidado de Actividad Proporcional</h3>
 										<p className="text-xs text-accent-500 font-bold uppercase tracking-widest mt-1">
 											Visión global de la carga procesal acumulada
 										</p>
